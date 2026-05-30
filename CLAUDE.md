@@ -1,0 +1,120 @@
+# CLAUDE.md
+
+Conventions and quick context for AI assistants working in this repo. Keep entries short — link out to the deeper docs.
+
+## Project at a glance
+
+- **Stack**: Next.js 16 (App Router, Turbopack) + React 19 + TypeScript 5.7 + Tailwind 3.4 + NextAuth + SQLite (via `better-sqlite3`).
+- **Auto-sync to GitHub**: a cron job at `/home/rhcsolutions_com/github-sync/auto-sync.sh` runs every 30 min and does `git add -A && git commit -m "Auto-sync: <timestamp>" && git push` against `master` of `rhcsolutions/rhcsolutions.com_2026`. **Anything you leave in the working tree will be auto-committed within 30 min under a generic timestamp message** — stage and commit deliberately *before* the next tick if you want a meaningful message, and don't expect a PR-review step. Logs: `logs/github-sync.log`. Lockfile: `/tmp/github-sync.lock`. To pause: comment the line in `crontab -e` on the host.
+- **CMS data**: JSON files in `cms-data/` (`pages.json`, `seo.json`, `cookies.json`, …) and `cms-data/cms.db`. The admin UI writes here. The site reads at request time.
+- **Deploy target**: PM2 on `web01` at `/home/rhcsolutions/htdocs/rhcsolutions.com`, fronted by Cloudflare. See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md).
+- **Deeper docs**: [docs/TECHNICAL.md](./docs/TECHNICAL.md), [docs/TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md), [docs/CHANGELOG_PERFORMANCE.md](./docs/CHANGELOG_PERFORMANCE.md), [docs/AUDIT_SEO_2026-05-18.md](./docs/AUDIT_SEO_2026-05-18.md) (deep SEO audit + phased plan; Phase 1 complete).
+
+## Working in this repo
+
+### Build / deploy
+
+```bash
+cd /home/rhcsolutions/htdocs/rhcsolutions.com
+npm run build && pm2 restart ecosystem.config.js
+```
+
+Build typically completes in ~3–5s. `pm2 status` shows two apps: `rhcsolutions` (this site, port 3001) and `web-check` (subapp on 3002, proxied under `/web-check/*` — see `rewrites()` in `next.config.mjs`).
+
+### Type-check
+
+```bash
+npx --no-install tsc --noEmit
+```
+
+### Where things live
+
+| Concern | Path |
+|---|---|
+| Public pages | `src/app/(public)/*` |
+| Admin pages | `src/app/admin/*` |
+| API routes | `src/app/api/*` |
+| Auth middleware | `middleware.ts` |
+| CMS block renderer | `src/components/cms/BlockRenderer.tsx` |
+| Page renderer entry | `src/lib/cms/page-renderer.tsx` |
+| Analytics/consent | `src/components/GoogleAnalytics.tsx`, `src/components/CookieConsent.tsx` |
+| Layout / head | `src/app/layout.tsx` |
+| CMS storage | `cms-data/*.json`, `cms-data/cms.db` |
+
+## Analytics architecture (read before touching)
+
+- GA4 uses **Google Consent Mode v2**: `gtag.js` loads immediately with `consent: 'denied'` defaults; upgrades on user accept. Don't re-gate the script load on consent — that breaks cookieless pings and zeros out the GA dashboard.
+- The GA4 ID is **passed server‑side** from `layout.tsx` → `<GoogleAnalytics ga4Id={…} />`. Don't add a client fetch back in.
+- CookieConsent dispatches `window.dispatchEvent(new CustomEvent('cookieConsentChanged', { detail: ids }))` on every accept/decline. New analytics/marketing components should listen for that event, not poll localStorage.
+- Third‑party trackers (GTM/Ahrefs/Hotjar/ContentSquare) load via `next/script` with explicit strategies. Don't drop raw `<script defer>` tags in `<head>` — they bypass Next's strategy system and add to TBT.
+
+Full design: [docs/TECHNICAL.md → Analytics & Tracking Architecture](./docs/TECHNICAL.md#analytics--tracking-architecture).
+
+## Performance conventions
+
+- **Below‑the‑fold home blocks** are dynamically imported with `ssr: false` in `BlockRenderer.tsx`. Don't move them back to sync imports — initial bundle balloons.
+- **Animations**: prefer CSS keyframes for one‑shot fade/slide effects. Only reach for `framer-motion` when you need orchestration, gestures, or layout animations. The global `@media (prefers-reduced-motion: reduce)` rule in `globals.css` collapses durations site‑wide; no per‑component check is required.
+- **Images**: anything under `public/` is served with a 1‑year immutable cache. Re-encode large source assets before committing — the logo was re-saved at 512×512 (~1.8 KB) from a 7088×7087 (218 KB) original. Use `sharp` (already a dep) for one‑off resizes.
+- **Critical CSS**: `scripts/inline-critical-css.mjs` runs after `next build` and inlines above‑the‑fold CSS into each prerendered `.html`. Don't reintroduce `experimental.optimizeCss` — it no‑ops in App Router.
+
+## Brand conventions
+
+- **Theme** is `cms-data/theme.json` (was "Google Dark" with Google's literal brand colors; replaced with the project's cyber/neon palette — `#00FF41` primary, `#00F0FF` secondary, `#00AAFF` accent). `ThemeProvider` applies it at runtime; do not re‑introduce Material/Google colors.
+- **Single source of truth** for tagline / "Since 1994" / value‑prop / stats / CTA labels lives in `cms-data/settings.json` under `brand`, `stats`, and `cta`. Components fetching from `/api/cms/settings` (or receiving via layout props) should prefer these over hardcoded strings.
+- **CTAs** are pinned to two labels: primary `"Book a 30‑min call"` → Outlook bookwithme URL (`settings.bookingUrl`); secondary `"Get in touch"` → `/contact`. Don't invent new variants without removing an old one.
+- **Icons**: hand‑built pages use `react-icons/fa`. CMS block defaults (cards/columns/list/testimonial/cta/button/contactform) now also use `react-icons/fa` — see the `CARD_ICONS` / `COLUMN_ICONS` arrays at the top of `BlockRenderer.tsx`. Don't add emoji literals.
+- **Logo**: `/public/logo.png` and `/public/uploads/1767004639953.png` are byte‑identical (1.8 KB). `src/app/icon.png` and `src/app/apple-icon.png` are the file‑convention favicons (Next auto‑generates the `<link>`s). Don't recreate `icon.tsx` / `apple-icon.tsx` — they rendered text instead of the brand mark.
+
+## SEO conventions
+
+- **robots.txt**: single source of truth is [src/app/robots.ts](./src/app/robots.ts). The admin SEO form previously had a robotsTxt textarea + a "Generate" button that wrote `public/robots.txt` (shadowed by `app/robots.ts`, and with a malformed indentation bug). Both were removed in the 2026‑05‑18 audit. Don't reintroduce them. The "Submit robots.txt to Google" button on the Google tab is separate (it pings GSC with the URL of the live `/robots.txt`) and stays.
+- **sitemap.xml**: [src/app/sitemap.ts](./src/app/sitemap.ts) reads `cms-data/pages.json` and falls back to filesystem discovery if the CMS load fails. Per‑page priority/changefreq are currently uniform — see audit phase 4 to vary them.
+- **Per‑page SEO** lives in `page.seo` inside [cms-data/pages.json](./cms-data/pages.json). `buildPageMetadata()` in [src/lib/cms/page-renderer.tsx](./src/lib/cms/page-renderer.tsx) consumes: `metaTitle`, `metaDescription`, `ogImage`, `keywords` (string or array), and noindex via either `noindex: true` (shorthand) or `robots: {…}` (full Next.js shape, takes precedence). Admin form currently only exposes `metaTitle`/`metaDescription` — other fields require hand‑editing `pages.json` until the form is extended.
+- **GSC verification** is `cms-data/seo.json.googleSearchConsoleVerification`, server‑rendered into `<head>` by `layout.tsx`. Don't reintroduce the deleted client‑side `useEffect` injector — Googlebot reads the initial HTML and may miss late‑bound meta tags.
+- **www → apex** is a 301 at the top of [middleware.ts](./middleware.ts). Cloudflare normally handles this at the edge; the middleware check is a defensive backstop. Don't add a competing redirect in `next.config.mjs` redirects.
+- **LCP image hint**: `CMSBlockRenderer` flags the first `image`‑type block on each page; that block sets `priority` on next/Image (or `fetchpriority="high"` + `loading="eager"` on the external‑img fallback). Don't set `priority` on every image — it stops being a priority signal.
+- **Structured data**: [src/components/JsonLd.tsx](./src/components/JsonLd.tsx) emits Organization + WebSite (root layout), BreadcrumbList (any CMS page via `renderCmsPage`), Service (leaf `/services/*` slugs only — handled in `renderCmsPage`), and JobPosting (one per visible job in `cms-data/jobs.json`, emitted by `CareersJobs` server component above the client list). FAQPage and LocalBusiness are still pending — `LocalBusiness` is intentionally gated on a non-empty `settings.contact.address`; `SearchAction` is intentionally omitted because there is no internal `/search` route. Don't reintroduce them without one of those prerequisites.
+- **Dynamic OG images**: [src/app/api/og/route.tsx](./src/app/api/og/route.tsx) (edge runtime, 1200×630) accepts `?title=&description=&tag=` and renders the brand palette. `buildPageMetadata()` defaults each page's `og:image` and `twitter:image` to this route unless `page.seo.ogImage` overrides. The static `/public/og-image.jpg` is kept only as a fallback for previously-scraped social card caches; don't reference it from new code.
+- **Sitemap priority/changefreq**: scaled in [src/app/sitemap.ts](./src/app/sitemap.ts) via `bucket(slug)`: `/` 1.0/weekly · `/services` and `/services/*` 0.9/monthly · primary nav (about/contact/clients/partners) 0.8/monthly · `/careers` 0.7/weekly · `/careers/*` 0.6/monthly · legal 0.3/yearly. Keep the function as the single source of truth — don't sprinkle per-page overrides.
+- **Trailing-slash canonicalization**: Next.js' built-in `trailingSlash: false` default 308s `/foo/` → `/foo` in the routing layer before middleware. 308 is method-preserving and is treated as a permanent redirect by Google. Don't add a competing redirect in [middleware.ts](./middleware.ts) — there's a comment there explaining the rationale.
+- **Related-services cross-links**: every `/services/*` leaf page has a `related-services-heading` + `related-services` cards block inserted before its trailing CTA (see [cms-data/pages.json](./cms-data/pages.json)). Re-running the cross-link injector is idempotent — it updates the content of an existing `related-services` block rather than appending a duplicate.
+- **Per-page SEO storage**: runtime metadata lives in the SQLite `pages` table (`cms-data/cms.db`), not in `cms-data/pages.json`. The JSON file is a snapshot/seed only. After editing SEO fields in `pages.json`, run `node scripts/sync-seo-from-json.mjs` to push them into `cms.db` — otherwise `npm run build` will keep rendering the old values. Legal pages (`/privacy`, `/terms`, `/cookies`) are *not* CMS-driven — their metadata is hard-coded in each `page.tsx` and the pages.json rows for those slugs are unused.
+- **`/api/cms/seo` is auth-only** (2026-05-19): this endpoint returns the full `seo.json` including `ahrefsApiKey` and `ipinfoToken`, so it must not be added to `publicApiEndpoints` in [middleware.ts](./middleware.ts). The handler additionally scrubs sensitive fields and sets `Cache-Control: private, no-store` as defense-in-depth. The only client-side caller (the `GoogleAnalytics` fallback fetch) degrades gracefully when this returns 401.
+
+## Security & auth
+
+- `middleware.ts` enforces NextAuth JWT + role + MFA gate **only** for `/admin/*` and `/api/cms/*`. **`/api/admin/*` is NOT covered by middleware** — every handler under `src/app/api/admin/*` must call `getToken` and check `role === 'admin'` itself (see [src/app/api/admin/environment/route.ts](src/app/api/admin/environment/route.ts) for the canonical pattern). The 2026‑05‑13 audit found multiple unauthenticated `/api/admin/*` handlers leaking secrets — see [docs/SECURITY_REMEDIATION.md](./docs/SECURITY_REMEDIATION.md).
+- Routes whitelisted in `publicApiEndpoints` are public on **GET only**. The same handler's `POST`/`PUT`/`DELETE` must enforce auth in‑body (the middleware whitelist is method‑agnostic). Pattern to copy: [src/app/api/cms/footer/route.ts](src/app/api/cms/footer/route.ts).
+- CSP is set in middleware. Adding a new third‑party requires updating both `script-src` and `connect-src` allow‑lists. Don't use `'unsafe-eval'` — it's intentionally removed.
+- Never commit `.env.local`. `NEXTAUTH_SECRET` rotation invalidates all sessions (intended after any leak).
+- `cms-data/users.json` holds bcrypt password hashes; `cms-data/cms.db` holds CMS content. Both must be `chmod 660` (group `rhcsolutions`), not world‑readable.
+
+## Filesystem layout & permissions
+
+The site runs as user `rhcsolutions_com`; SFTP / git access uses user `rhcsolutions`. Both share group `rhcsolutions` (gid 1008), which is how the same files are writable by either identity. Convention:
+
+| Path | Mode | Why |
+|---|---|---|
+| `.env.local`, `cms-data/*.json`, `cms-data/cms.db*` | `660` | Secrets / password hashes — owner+group only |
+| `cms-data/`, `cms-data/backups/` | `770` | Same; dirs need `+x` |
+| `public/uploads/` | `2775` | Setgid so admin‑UI uploads stay in group `rhcsolutions`; world‑read so Next can serve them |
+| Source code dirs (`src/**`, `.git/`, `.vscode/`) | `g+w,o-w` | Group write, no world write — fixes shared‑host tenant exposure |
+
+If you `git pull` or `npm install` and group write is stripped, restore with `find . -type d -not -path './node_modules/*' -not -path './.next/*' -exec chmod g+w,o-w {} +`.
+
+## Things to avoid
+
+- **Static export / `output: 'export'`** — disabled because the CMS needs API routes. Don't re-enable.
+- **`x-middleware-subrequest` header** — explicitly blocked in middleware (CVE bypass). Don't add code that sends it internally.
+- **Wildcard `remotePatterns`** in `next.config.mjs` — intentionally avoided (SSRF/DoS class). Add explicit hosts only.
+
+## Common debug entry points
+
+| Symptom | Start here |
+|---|---|
+| Build fails | `rm -rf .next && npm install && npm run build` |
+| Admin can't log in | `.env.local` has `NEXTAUTH_SECRET`? Cookies cleared? After a secret rotation **all** existing sessions are invalidated — that is expected. |
+| SFTP upload fails (permission denied) | `cms-data/` and `public/uploads/` need `g+w` for the `rhcsolutions` group. See the permissions table above. |
+| GA dashboard empty | [docs/TROUBLESHOOTING.md → Google Analytics Shows No Data](./docs/TROUBLESHOOTING.md#google-analytics-shows-no-data) |
+| Pages not updating | Check `cms-data/pages.json` was actually written; restart pm2 |
+| PM2 logs | `pm2 logs rhcsolutions` |

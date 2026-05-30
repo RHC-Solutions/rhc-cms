@@ -1,0 +1,50 @@
+# RHC Solutions
+
+> RHC Solutions is an enterprise IT consulting and managed services provider operating since 1994. Specialties: cloud infrastructure, cyber security, business continuity, professional services, and fractional CIO/CISO leadership.
+
+## Company snapshot
+- Founded: 1994 (30+ years in business)
+- Tagline: "We Just Do IT"
+- Areas: IT consulting, cloud (AWS / Azure / GCP), cyber security, business continuity, virtual office support, project management
+- Audience: SMB to mid-market enterprises seeking outsourced or fractional IT leadership
+
+## Canonical site
+- https://rhcsolutions.com/ — Homepage; service overview, stats, contact CTA
+
+## Primary pages
+- https://rhcsolutions.com/about-us — Company history, leadership, methodology
+- https://rhcsolutions.com/services — Top-level catalog of all service lines
+- https://rhcsolutions.com/contact — Contact form, office locations, contact methods (email, phone, Telegram, WhatsApp)
+- https://rhcsolutions.com/careers — Open roles, benefits, culture
+- https://rhcsolutions.com/clients — Selected client logos and case-study teasers
+- https://rhcsolutions.com/partners — Technology partners and reseller relationships
+
+## Service pages
+- https://rhcsolutions.com/services/it-consulting — Strategy, roadmaps, vendor selection, due-diligence
+- https://rhcsolutions.com/services/professional-services — Project delivery, integration, custom engagements
+- https://rhcsolutions.com/services/cio-as-a-service — Fractional CIO leadership and governance
+- https://rhcsolutions.com/services/ciso-as-a-service — Fractional CISO leadership, risk and compliance posture
+- https://rhcsolutions.com/services/cloud-infrastructure — AWS / Azure / GCP architecture, migration, optimization
+- https://rhcsolutions.com/services/cyber-security — Endpoint, network, identity, incident response
+- https://rhcsolutions.com/services/virtual-office — Modern workplace, M365, collaboration, identity
+- https://rhcsolutions.com/services/business-continuity — Backup, disaster recovery, resilience planning
+
+## Careers detail pages
+- https://rhcsolutions.com/careers/competitive-compensation — Compensation philosophy
+- https://rhcsolutions.com/careers/continuous-learning — Learning and certification support
+- https://rhcsolutions.com/careers/global-team — Distributed team model
+- https://rhcsolutions.com/careers/work-life-balance — Schedule and flexibility
+
+## Legal
+- https://rhcsolutions.com/privacy — Privacy policy
+- https://rhcsolutions.com/terms — Terms of service
+- https://rhcsolutions.com/cookies — Cookie policy
+
+## Contact
+- Web form: https://rhcsolutions.com/contact
+- Booking link (30-min strategy call): linked from header "Book a Meeting" CTA
+
+## Machine-readable resources
+- Sitemap: https://rhcsolutions.com/sitemap.xml
+- Robots: https://rhcsolutions.com/robots.txt
+- Organization schema (JSON-LD) is emitted on every page

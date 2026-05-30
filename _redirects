@@ -1,0 +1,10 @@
+# Cloudflare Pages redirects
+
+# Redirect www to non-www (optional - adjust as needed)
+# https://www.rhcsolutions.com/* https://rhcsolutions.com/:splat 301
+
+# Redirect old URLs (add your specific redirects here)
+# /old-page /new-page 301
+
+# SPA fallback for client-side routing
+/* /index.html 200

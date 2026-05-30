@@ -1,0 +1,11 @@
+# Modern-only target — drops legacy polyfills for Array.prototype.at,
+# Array.prototype.flat / flatMap, Object.fromEntries / hasOwn, and
+# String.prototype.trimStart / trimEnd (all baseline since 2020).
+# PSI flagged 14 KiB of polyfill payload before this was set.
+last 2 Chrome versions
+last 2 Firefox versions
+last 2 Safari versions
+last 2 Edge versions
+last 2 iOS versions
+not dead
+not op_mini all

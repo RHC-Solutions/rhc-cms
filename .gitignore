@@ -1,0 +1,66 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+.env
+
+# vercel
+.vercel
+
+# cloudflare
+.wrangler/
+wrangler.toml.local
+.dev.vars
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# cms database
+cms-data/cms.db
+cms-data/cms.db-shm
+cms-data/cms.db-wal
+
+# backups and large files
+cms-data/backups/
+*.zip
+*.tar.gz
+
+# cms data containing secrets / PII (do not commit)
+cms-data/users.json
+cms-data/seo.json
+cms-data/applications.json
+cms-data/submissions.json
+cms-data/*.backup-*
+*.backup
+
+# claude code worktrees / local state
+.claude/
+
+# shared data + uploads are symlinked to the public app at deploy time
+/cms-data
+/public/uploads
+
+.idea/

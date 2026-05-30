@@ -1,0 +1,57 @@
+# Cloudflare Pages custom headers for optimization
+
+/*
+  # Security headers
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  
+  # Content Security Policy (kept in sync with middleware.ts)
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://www.google-analytics.com https://analytics.ahrefs.com https://static.hotjar.com https://script.hotjar.com https://t.contentsquare.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://challenges.cloudflare.com https://cloudflareinsights.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://analytics.ahrefs.com https://*.hotjar.com https://*.hotjar.io wss://*.hotjar.com https://api.telegram.org https://t.contentsquare.net https://ipinfo.io; frame-src 'self' https://challenges.cloudflare.com https://outlook.office.com https://outlook.office365.com https://vars.hotjar.com; worker-src 'self' blob:; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests
+  
+  # HSTS (HTTP Strict Transport Security)
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  
+  # Performance headers
+  Cache-Control: public, max-age=31536000, immutable
+  
+  # Additional security headers  
+  X-Permitted-Cross-Domain-Policies: none
+
+# Cache static assets aggressively
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Cache images
+/*.jpg
+  Cache-Control: public, max-age=31536000, immutable
+/*.jpeg
+  Cache-Control: public, max-age=31536000, immutable
+/*.png
+  Cache-Control: public, max-age=31536000, immutable
+/*.webp
+  Cache-Control: public, max-age=31536000, immutable
+/*.svg
+  Cache-Control: public, max-age=31536000, immutable
+/*.ico
+  Cache-Control: public, max-age=31536000, immutable
+
+# Cache fonts
+/*.woff
+  Cache-Control: public, max-age=31536000, immutable
+/*.woff2
+  Cache-Control: public, max-age=31536000, immutable
+/*.ttf
+  Cache-Control: public, max-age=31536000, immutable
+/*.otf
+  Cache-Control: public, max-age=31536000, immutable
+
+# HTML pages - shorter cache, allow revalidation
+/*.html
+  Cache-Control: public, max-age=3600, must-revalidate
+
+# API routes - no cache
+/api/*
+  Cache-Control: no-store, no-cache, must-revalidate

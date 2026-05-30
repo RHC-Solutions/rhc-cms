@@ -1,0 +1,590 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+:root {
+  /* Color System - Can be overridden by ThemeProvider */
+  --color-dark: #0A0E27;
+  --color-dark-lighter: #1A1F3A;
+  --color-dark-card: #151B2F;
+  --color-dark-border: #1E2642;
+  --color-dark-input: #0F131F;
+  
+  --color-neon-green: #00FF41;
+  --color-neon-cyan: #00F0FF;
+  --color-neon-amber: #FFB800;
+  --color-neon-blue: #00AAFF;
+  --color-neon-purple: #BB86FC;
+  --color-neon-red: #FF4458;
+  --color-neon-success: #00FF88;
+  
+  --color-text-primary: #E8E8E8;
+  --color-text-secondary: #8892A6;
+  --color-text-muted: #9BA8BB;
+  --color-text-dark: #0A0E27;
+  
+  /* Font Families */
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-grotesk: 'Space Grotesk', system-ui, sans-serif;
+  
+  /* Shadows */
+  --shadow-glow-green: 0 0 20px rgba(0, 255, 65, 0.5);
+  --shadow-glow-cyan: 0 0 20px rgba(0, 240, 255, 0.5);
+  --shadow-glow-blue: 0 0 20px rgba(0, 170, 255, 0.5);
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 12px 32px rgba(0, 255, 65, 0.1);
+  
+  /* Border Radius */
+  --border-radius: 0.5rem;
+}
+
+@theme {
+  /* Reference CSS variables for Tailwind */
+  --color-dark: var(--color-dark);
+  --color-dark-lighter: var(--color-dark-lighter);
+  --color-dark-card: var(--color-dark-card);
+  --color-dark-border: var(--color-dark-border);
+  --color-dark-input: var(--color-dark-input);
+  
+  --color-neon-green: var(--color-neon-green);
+  --color-neon-cyan: var(--color-neon-cyan);
+  --color-neon-amber: var(--color-neon-amber);
+  --color-neon-blue: var(--color-neon-blue);
+  --color-neon-purple: var(--color-neon-purple);
+  --color-neon-red: var(--color-neon-red);
+  --color-neon-success: var(--color-neon-success);
+
+  /* Legacy `cyber-*` aliases — many components were written against this
+   * namespace before the theme tokens were renamed to `neon-*`. Aliasing
+   * here keeps both the historical class names and any future neon-*
+   * usage valid without rewriting 30+ files. */
+  --color-cyber-green: var(--color-neon-green);
+  --color-cyber-cyan: var(--color-neon-cyan);
+  --color-cyber-amber: var(--color-neon-amber);
+  --color-cyber-blue: var(--color-neon-blue);
+  --color-cyber-purple: var(--color-neon-purple);
+  --color-cyber-red: var(--color-neon-red);
+  --color-cyber-success: var(--color-neon-success);
+  --color-accent: var(--color-neon-cyan);
+
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-dark: var(--color-text-dark);
+  
+  /* Font Families */
+  --font-mono: var(--font-mono);
+  --font-sans: var(--font-sans);
+  --font-grotesk: var(--font-grotesk);
+  
+  /* Font Sizes */
+  --font-size-hero: 72px;
+  --font-size-h1: 48px;
+  --font-size-h2: 36px;
+  --font-size-h3: 24px;
+  --font-size-body: 16px;
+  --font-size-small: 14px;
+  
+  /* Shadows */
+  --shadow-glow-green: var(--shadow-glow-green);
+  --shadow-glow-cyan: var(--shadow-glow-cyan);
+  --shadow-glow-blue: var(--shadow-glow-blue);
+  --shadow-card: var(--shadow-card);
+  --shadow-card-hover: var(--shadow-card-hover);
+  
+  /* Animations */
+  --animate-fade-in: fadeIn 0.6s ease-in-out;
+  --animate-slide-up: slideUp 0.6s ease-out;
+  --animate-slide-down: slideDown 0.6s ease-out;
+  --animate-slide-left: slideLeft 0.6s ease-out;
+  --animate-slide-right: slideRight 0.6s ease-out;
+  --animate-scale-up: scaleUp 0.6s ease-out;
+  --animate-glow: glow 2s ease-in-out infinite;
+  --animate-pulse-glow: pulseGlow 2s ease-in-out infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-blink: blink 1s infinite;
+  --animate-typing: typing 3.5s steps(40, end);
+  --animate-shimmer: shimmer 2s infinite;
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* GPU-accelerated animations */
+@keyframes slideUp {
+  0% { transform: translate3d(0, 20px, 0); opacity: 0; }
+  100% { transform: translate3d(0, 0, 0); opacity: 1; }
+}
+
+@keyframes slideDown {
+  0% { transform: translate3d(0, -20px, 0); opacity: 0; }
+  100% { transform: translate3d(0, 0, 0); opacity: 1; }
+}
+
+@keyframes slideLeft {
+  0% { transform: translate3d(20px, 0, 0); opacity: 0; }
+  100% { transform: translate3d(0, 0, 0); opacity: 1; }
+}
+
+@keyframes slideRight {
+  0% { transform: translate3d(-20px, 0, 0); opacity: 0; }
+  100% { transform: translate3d(0, 0, 0); opacity: 1; }
+}
+
+@keyframes scaleUp {
+  0% { transform: scale3d(0.95, 0.95, 1); opacity: 0; }
+  100% { transform: scale3d(1, 1, 1); opacity: 1; }
+}
+
+@keyframes glow {
+  0%, 100% { 
+    transform: translate3d(0, 0, 0);
+    filter: drop-shadow(0 0 20px color-mix(in srgb, var(--color-neon-green) 50%, transparent));
+  }
+  50% { 
+    transform: translate3d(0, 0, 0);
+    filter: drop-shadow(0 0 40px color-mix(in srgb, var(--color-neon-green) 80%, transparent));
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { 
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--color-neon-cyan) 50%, transparent));
+  }
+  50% { 
+    opacity: 0.8;
+    transform: translate3d(0, 0, 0);
+    filter: drop-shadow(0 0 25px color-mix(in srgb, var(--color-neon-cyan) 80%, transparent));
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -20px, 0); }
+}
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-dark text-text-primary antialiased;
+    font-feature-settings: 'liga' 1, 'calt' 1;
+  }
+
+  * {
+    @apply border-dark-border;
+  }
+}
+
+@layer components {
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-padding {
+    @apply py-20 md:py-32;
+  }
+
+  .btn-primary {
+    @apply relative bg-gradient-to-r from-neon-green to-neon-cyan text-dark font-bold py-3 px-8 rounded-lg
+    overflow-hidden transition-all duration-300 inline-block;
+    box-shadow: var(--shadow-glow-green);
+  }
+
+  .btn-primary:hover {
+    @apply scale-105;
+    box-shadow: 0 0 30px color-mix(in srgb, var(--color-neon-green) 80%, transparent);
+  }
+
+  .btn-primary span {
+    @apply relative z-10;
+  }
+
+  .btn-secondary {
+    @apply bg-dark-card hover:bg-dark-border text-neon-green border-2 border-neon-green
+    font-bold py-3 px-8 rounded-lg transition-all duration-300 inline-block;
+  }
+
+  .btn-secondary:hover {
+    box-shadow: 0 0 20px color-mix(in srgb, var(--color-neon-green) 60%, transparent);
+  }
+
+  .btn-cta {
+    @apply bg-gradient-to-r from-neon-green to-neon-cyan text-black font-bold py-4 px-10 rounded-lg
+    transition-all duration-300 inline-block;
+  }
+
+  .btn-danger {
+    @apply bg-neon-red hover:bg-red-600 text-white font-bold py-3 px-8 rounded-lg
+    transition-all duration-300 inline-block;
+    box-shadow: 0 0 20px rgba(255, 68, 88, 0.3);
+  }
+
+  .heading-xl {
+    @apply text-5xl md:text-6xl lg:text-7xl font-bold font-grotesk text-text-primary;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  .heading-lg {
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold font-grotesk text-text-primary;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+
+  .heading-md {
+    @apply text-3xl md:text-4xl font-bold font-grotesk text-text-primary;
+    line-height: 1.3;
+  }
+
+  .heading-sm {
+    @apply text-2xl md:text-3xl font-semibold font-grotesk text-text-primary;
+    line-height: 1.4;
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, var(--color-neon-green) 0%, var(--color-neon-cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-mono {
+    @apply font-mono text-neon-green;
+  }
+
+  .card-dark {
+    @apply bg-dark-lighter border border-dark-border rounded-xl p-6 transition-all duration-300;
+  }
+
+  .card-dark:hover {
+    @apply border-neon-green;
+    box-shadow: var(--shadow-glow-green);
+  }
+
+  .card-cyber {
+    @apply bg-dark-card border-2 border-neon-green/30 rounded-xl p-8 transition-all duration-300 relative;
+  }
+
+  .card-cyber::before {
+    @apply absolute inset-0 bg-gradient-to-br from-neon-green/5 to-neon-cyan/5 rounded-xl opacity-0 transition-opacity duration-300;
+    content: '';
+    pointer-events: none;
+  }
+
+  .card-cyber:hover::before {
+    @apply opacity-100;
+  }
+
+  .card-cyber:hover {
+    @apply border-neon-green;
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-glow-green);
+  }
+
+  .bg-cyber-grid {
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--color-neon-green) 10%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--color-neon-green) 10%, transparent) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+
+  .bg-gradient-cyber {
+    background:
+      radial-gradient(circle at 20% 10%, color-mix(in srgb, var(--color-neon-blue) 18%, transparent) 0%, transparent 45%),
+      radial-gradient(circle at 80% 90%, color-mix(in srgb, var(--color-neon-purple) 16%, transparent) 0%, transparent 50%),
+      linear-gradient(135deg, var(--color-dark) 0%, var(--color-dark-lighter) 100%);
+  }
+
+  .bg-gradient-accent {
+    background-image: linear-gradient(135deg, var(--color-neon-blue), var(--color-neon-cyan));
+  }
+
+  .bg-noise {
+    background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 3px 3px;
+  }
+
+  .text-accent {
+    color: var(--color-neon-cyan);
+  }
+
+  .divider-glow {
+    @apply h-px bg-gradient-to-r from-transparent via-neon-blue to-transparent my-12;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    @apply outline-none ring-2 ring-neon-blue border-neon-blue;
+  }
+
+  ::selection {
+    @apply bg-neon-blue text-dark;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-lighter;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-neon-blue/50 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-neon-blue;
+  }
+}
+
+/* Leaflet Map Styling */
+.leaflet-container {
+  background-color: #0a0e27;
+  border-radius: 1rem;
+  font-family: var(--font-sans);
+}
+
+.leaflet-control {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+  border: 2px solid #00D9FF !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 0 20px rgba(0, 217, 255, 0.2) !important;
+}
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  color: #00D9FF !important;
+  font-weight: bold !important;
+  border: 1px solid #00D9FF !important;
+  background-color: rgba(15, 23, 42, 0.9) !important;
+}
+
+.leaflet-control-zoom-in:hover,
+.leaflet-control-zoom-out:hover {
+  background-color: #00D9FF !important;
+  color: #0a0e27 !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background-color: #0f172a !important;
+  border: 2px solid #00D9FF !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 0 20px rgba(0, 217, 255, 0.3) !important;
+}
+
+.leaflet-popup-tip {
+  background-color: #0f172a !important;
+  border: 2px solid #00D9FF !important;
+}
+
+.leaflet-popup-close-button {
+  color: #00D9FF !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #00ff88 !important;
+}
+
+.custom-popup .leaflet-popup-content {
+  margin: 0 !important;
+  font-size: 0.875rem !important;
+}
+
+@keyframes office-marker-pulse {
+  0% {
+    transform: translate3d(0, 0, 0);
+    filter: drop-shadow(0 0 0 rgba(0, 217, 255, 0.7));
+  }
+  70% {
+    transform: translate3d(0, 0, 0);
+    filter: drop-shadow(0 0 10px rgba(0, 217, 255, 0));
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+    filter: drop-shadow(0 0 0 rgba(0, 217, 255, 0));
+  }
+}
+
+.office-marker {
+  animation: office-marker-pulse 2s infinite;
+  will-change: filter, transform;
+}
+
+/* Block animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out forwards;
+}
+
+.animate-slide-in {
+  animation: slide-in 0.6s ease-out forwards;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 2s ease-in-out infinite;
+}
+/* Prose/RichText Styles for Legal Pages */
+.prose-cyber {
+  color: var(--color-text-primary);
+  line-height: 1.75;
+}
+
+.prose-cyber h2 {
+  color: var(--color-neon-cyan);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--color-dark-border);
+  padding-bottom: 0.5rem;
+}
+
+.prose-cyber h3 {
+  color: var(--color-neon-green);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose-cyber p {
+  color: var(--color-text-secondary);
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.prose-cyber ul,
+.prose-cyber ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--color-text-secondary);
+}
+
+.prose-cyber li {
+  margin-bottom: 0.5rem;
+  padding-left: 0.25rem;
+}
+
+.prose-cyber strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.prose-cyber a {
+  color: var(--color-neon-cyan);
+  text-decoration: underline;
+  transition: color 0.3s ease;
+}
+
+.prose-cyber a:hover {
+  color: var(--color-neon-green);
+}
+
+/* Performance optimizations */
+.animate-fade-in,
+.animate-slide-up,
+.animate-slide-in,
+.animate-pulse-slow,
+.animate-bounce-slow {
+  will-change: transform, opacity;
+  contain: layout style paint;
+}
+
+/* Optimize card hover states */
+.card-cyber,
+.btn-primary,
+.btn-secondary {
+  will-change: transform, box-shadow;
+  contain: layout style;
+}
+
+/* Optimize typing effect */
+.typing-cursor {
+  will-change: opacity;
+}
+
+/* Force hardware acceleration for animations */
+.transform-gpu {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Respect users who have asked for reduced motion (WCAG 2.3.3). framer-motion
+ * clients should additionally check `useReducedMotion()` for orchestration
+ * they care about. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
