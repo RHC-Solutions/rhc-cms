@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import AdminShell from '@/components/admin/AdminShell';
+import AdminShell from '@adminpanel/components/admin/AdminShell';
 import {
   FaCheckCircle,
   FaTimesCircle,
@@ -14,7 +14,7 @@ import {
   FaSpinner,
   FaFlask,
 } from 'react-icons/fa';
-import { INTEGRATIONS, type Integration, type IntegrationField } from '@/lib/integrations';
+import { INTEGRATIONS, type Integration, type IntegrationField } from '@adminpanel/lib/integrations';
 
 type ValueMap = Record<string, string>;
 type Message = { type: 'success' | 'error'; text: string };

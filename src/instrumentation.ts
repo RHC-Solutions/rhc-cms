@@ -4,7 +4,7 @@ export async function register() {
     }
 
     try {
-        const { initBackupScheduler } = await import('@/lib/scheduler-init');
+        const { initBackupScheduler } = await import('@adminpanel/lib/scheduler-init');
         await initBackupScheduler();
     } catch (error) {
         console.error('[SCHEDULER] Failed to register backup scheduler on startup:', error);

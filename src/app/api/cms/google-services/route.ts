@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
-import { getSecret } from '@/lib/env';
+import { getSecret } from '@adminpanel/lib/env';
 
 // Google Analytics Data
 async function fetchAnalyticsData(credentials: any) {

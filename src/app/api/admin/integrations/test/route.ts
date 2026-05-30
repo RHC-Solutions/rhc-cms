@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import nodemailer from 'nodemailer';
-import { getSecret } from '@/lib/env';
+import { getSecret } from '@adminpanel/lib/env';
 
 interface Check {
   name: string;

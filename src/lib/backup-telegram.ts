@@ -1,11 +1,11 @@
-import { getSecret } from '@/lib/env';
+import { getSecret } from '@adminpanel/lib/env';
 
 export async function getBackupTelegramConfig() {
     let savedBotToken = '';
     let savedChatId = '';
 
     try {
-        const { cmsDb } = await import('@/lib/cms/database');
+        const { cmsDb } = await import('@adminpanel/lib/cms/database');
         const settings = await cmsDb.getSettings();
         const telegram = (settings as any)?.telegram;
 

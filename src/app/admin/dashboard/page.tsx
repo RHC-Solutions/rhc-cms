@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
-import AdminShell from '@/components/admin/AdminShell';
+import AdminShell from '@adminpanel/components/admin/AdminShell';
 import { 
   FaUsers, FaFileAlt, FaImages, FaChartLine, FaEye, FaMousePointer,
   FaClock, FaGlobeAmericas, FaDesktop, FaMobile, FaArrowUp, FaArrowDown

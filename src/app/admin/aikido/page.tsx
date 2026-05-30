@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import AdminShell from '@/components/admin/AdminShell';
+import AdminShell from '@adminpanel/components/admin/AdminShell';
 import { FaShieldAlt, FaExternalLinkAlt, FaCheckCircle, FaExclamationTriangle, FaSync } from 'react-icons/fa';
 
 type AikidoStatus = {

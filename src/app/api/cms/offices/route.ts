@@ -2,7 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import { revalidateAllPublic } from '@/lib/revalidate';
+import { revalidateAllPublic } from '@adminpanel/lib/revalidate';
 
 const OFFICES_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'offices.json');
 

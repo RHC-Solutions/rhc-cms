@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
+import { authOptions } from '@adminpanel/lib/auth/config';
 import fs from 'fs';
 import path from 'path';
-import { setSecrets, getSecret } from '@/lib/env';
+import { setSecrets, getSecret } from '@adminpanel/lib/env';
 
 export async function POST(request: NextRequest) {
   try {

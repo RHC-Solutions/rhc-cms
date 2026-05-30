@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
-import LayoutWrapper from "@/components/LayoutWrapper";
-import GoogleAnalytics from "@/components/GoogleAnalytics";
-import ThemeProvider from "@/components/ThemeProvider";
-import { JsonLd, organizationLd, websiteLd } from "@/components/JsonLd";
+import LayoutWrapper from "@adminpanel/components/LayoutWrapper";
+import GoogleAnalytics from "@adminpanel/components/GoogleAnalytics";
+import ThemeProvider from "@adminpanel/components/ThemeProvider";
+import { JsonLd, organizationLd, websiteLd } from "@adminpanel/components/JsonLd";
 import { promises as fs } from 'fs';
 import path from 'path';
 

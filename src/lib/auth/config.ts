@@ -14,7 +14,7 @@ import {
   cleanupExpiredBlocks,
 } from './ip-blocker';
 import { getAuthSecret } from './secret';
-import { getSecret } from '@/lib/env';
+import { getSecret } from '@adminpanel/lib/env';
 
 async function sendTelegramNotification(email: string, success: boolean, reason?: string, ip?: string, city?: string, country?: string) {
   const botToken = getSecret('TELEGRAM_CONTACT_BOT_TOKEN');

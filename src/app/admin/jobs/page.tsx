@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import AdminShell from '@/components/admin/AdminShell';
-import { useToast } from '@/components/admin/Toast';
+import AdminShell from '@adminpanel/components/admin/AdminShell';
+import { useToast } from '@adminpanel/components/admin/Toast';
 import { motion } from 'framer-motion';
 import { FaPlus, FaEdit, FaTrash, FaEye, FaEyeSlash, FaBriefcase, FaTimes, FaSave, FaUsers, FaDownload } from 'react-icons/fa';
 

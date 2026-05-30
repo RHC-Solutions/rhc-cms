@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import AdminShell from '@/components/admin/AdminShell';
+import AdminShell from '@adminpanel/components/admin/AdminShell';
 import { FaSave, FaPlus, FaTimes, FaLink, FaArrowUp, FaArrowDown } from 'react-icons/fa';
 
 interface Link {

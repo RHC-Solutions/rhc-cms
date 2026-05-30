@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import AdminShell from '@/components/admin/AdminShell';
-import { useToast } from '@/components/admin/Toast';
+import AdminShell from '@adminpanel/components/admin/AdminShell';
+import { useToast } from '@adminpanel/components/admin/Toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaEdit, FaEye, FaSearch, FaTimes, FaSave, FaExternalLinkAlt, 
@@ -9,7 +9,7 @@ import {
   FaColumns, FaTh, FaQuoteRight, FaCode
 } from 'react-icons/fa';
 import Link from 'next/link';
-import { BlockRenderer } from '@/components/cms/BlockRenderer';
+import { BlockRenderer } from '@adminpanel/components/cms/BlockRenderer';
 
 interface ContentBlock {
   id: string;

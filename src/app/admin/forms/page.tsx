@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import AdminShell from '@/components/admin/AdminShell';
-import { useToast } from '@/components/admin/Toast';
+import AdminShell from '@adminpanel/components/admin/AdminShell';
+import { useToast } from '@adminpanel/components/admin/Toast';
 import { FaDownload, FaTrash, FaEye, FaExternalLinkAlt, FaEdit, FaToggleOn, FaToggleOff, FaPlus, FaTimes } from 'react-icons/fa';
 
 interface FormField {

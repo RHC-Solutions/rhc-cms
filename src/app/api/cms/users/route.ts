@@ -3,7 +3,7 @@ import { getToken } from 'next-auth/jwt';
 import fs from 'fs';
 import path from 'path';
 import bcrypt from 'bcryptjs';
-import { validatePassword } from '@/lib/auth/password';
+import { validatePassword } from '@adminpanel/lib/auth/password';
 
 export interface CMSUser {
   id: string;

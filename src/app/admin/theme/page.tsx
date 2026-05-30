@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import type React from 'react';
-import AdminShell from '@/components/admin/AdminShell';
+import AdminShell from '@adminpanel/components/admin/AdminShell';
 import { FaPalette, FaSave, FaTimes, FaImages } from 'react-icons/fa';
 
 interface ThemeColors {

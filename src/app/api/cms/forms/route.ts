@@ -3,8 +3,8 @@ import { getToken } from 'next-auth/jwt';
 import fs from 'fs';
 import path from 'path';
 import nodemailer from 'nodemailer';
-import { getSecret } from '@/lib/env';
-import { sendBrevoEmail, addBrevoContact } from '@/lib/brevo';
+import { getSecret } from '@adminpanel/lib/env';
+import { sendBrevoEmail, addBrevoContact } from '@adminpanel/lib/brevo';
 
 export interface FormSubmission {
   id: string;

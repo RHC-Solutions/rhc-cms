@@ -1,6 +1,6 @@
 // Cloudflare Turnstile verification service
 
-import { getSecret } from '@/lib/env';
+import { getSecret } from '@adminpanel/lib/env';
 
 export async function verifyTurnstileToken(token: string): Promise<{ success: boolean; error?: string }> {
   const secretKey = getSecret('CLOUDFLARE_TURNSTILE_SECRET_KEY');

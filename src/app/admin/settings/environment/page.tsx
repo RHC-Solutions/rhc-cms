@@ -1,6 +1,6 @@
 'use client';
 import { useState, useCallback, useEffect } from 'react';
-import AdminShell from '@/components/admin/AdminShell';
+import AdminShell from '@adminpanel/components/admin/AdminShell';
 import { FaKey, FaEnvelope, FaRobot, FaEye, FaEyeSlash, FaCheck, FaSync } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 

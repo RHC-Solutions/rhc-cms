@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import AdminShell from '@/components/admin/AdminShell';
+import AdminShell from '@adminpanel/components/admin/AdminShell';
 import { FaSync, FaTrash, FaGlobe, FaShieldAlt, FaDatabase, FaNetworkWired } from 'react-icons/fa';
 
 interface CloudflareData {

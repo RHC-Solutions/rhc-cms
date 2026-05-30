@@ -2,8 +2,8 @@
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import SessionProvider from '@/components/auth/SessionProvider';
-import { Toast } from '@/components/admin/Toast';
+import SessionProvider from '@adminpanel/components/auth/SessionProvider';
+import { Toast } from '@adminpanel/components/admin/Toast';
 
 function AdminGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();

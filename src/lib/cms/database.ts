@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
-import { cache } from '@/lib/cache';
+import { cache } from '@adminpanel/lib/cache';
 
 const dbPath = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'cms.db');
 const db = new Database(dbPath);

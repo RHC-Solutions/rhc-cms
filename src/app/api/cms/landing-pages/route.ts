@@ -7,7 +7,7 @@ import {
   getTemplate,
   slugify,
   type LandingPage,
-} from '@/lib/cms/landing-pages';
+} from '@adminpanel/lib/cms/landing-pages';
 
 const checkAdmin = async (request: NextRequest) => {
   const token = await getToken({ req: request as any, secret: process.env.NEXTAUTH_SECRET });

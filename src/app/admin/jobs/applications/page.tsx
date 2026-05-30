@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import AdminShell from '@/components/admin/AdminShell';
+import AdminShell from '@adminpanel/components/admin/AdminShell';
 import { motion } from 'framer-motion';
 import { FaEnvelope, FaPhone, FaLinkedin, FaEye, FaCheck, FaTimes, FaFilter, FaSpinner, FaTrash } from 'react-icons/fa';
 

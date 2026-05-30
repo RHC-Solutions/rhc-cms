@@ -1,8 +1,8 @@
 'use client';
 import { usePathname } from 'next/navigation';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
-import CookieConsent from '@/components/CookieConsent';
+import Header from '@adminpanel/components/layout/Header';
+import Footer from '@adminpanel/components/layout/Footer';
+import CookieConsent from '@adminpanel/components/CookieConsent';
 
 interface LayoutWrapperProps {
   children: React.ReactNode;

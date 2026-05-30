@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cmsDb } from '@/lib/cms/database';
+import { cmsDb } from '@adminpanel/lib/cms/database';
 import { getToken } from 'next-auth/jwt';
-import { revalidateAllPublic, revalidatePageBySlug } from '@/lib/revalidate';
+import { revalidateAllPublic, revalidatePageBySlug } from '@adminpanel/lib/revalidate';
 
 async function getWriterToken(request: NextRequest) {
   const token = await getToken({ req: request as any, secret: process.env.NEXTAUTH_SECRET });

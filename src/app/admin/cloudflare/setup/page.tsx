@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import AdminShell from '@/components/admin/AdminShell';
+import AdminShell from '@adminpanel/components/admin/AdminShell';
 import { FaLink, FaCheck, FaExclamationTriangle, FaSave, FaEye, FaEyeSlash, FaCheckCircle, FaTimesCircle, FaVial, FaCloudflare } from 'react-icons/fa';
 import type { IconType } from 'react-icons';
 

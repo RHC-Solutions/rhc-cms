@@ -2,7 +2,7 @@ import { getToken } from 'next-auth/jwt';
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
-import { revalidateAllPublic } from '@/lib/revalidate';
+import { revalidateAllPublic } from '@adminpanel/lib/revalidate';
 
 const DATA_DIR = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data');
 const TYPOGRAPHY_FILE = path.join(DATA_DIR, 'typography.json');

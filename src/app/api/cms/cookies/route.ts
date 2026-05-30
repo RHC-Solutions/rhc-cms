@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import fs from 'fs';
 import path from 'path';
-import { revalidateAllPublic } from '@/lib/revalidate';
+import { revalidateAllPublic } from '@adminpanel/lib/revalidate';
 
 interface CookieCategory {
   id: string;

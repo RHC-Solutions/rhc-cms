@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import { cmsDb } from '@/lib/cms/database';
-import { reinitScheduler } from '@/lib/scheduler-init';
+import { cmsDb } from '@adminpanel/lib/cms/database';
+import { reinitScheduler } from '@adminpanel/lib/scheduler-init';
 
 // Check if user is admin
 async function checkAdmin(request: NextRequest) {

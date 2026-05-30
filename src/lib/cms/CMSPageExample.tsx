@@ -1,7 +1,7 @@
 // Example: How to use CMS content in your pages
 // This file shows the pattern for integrating CMS with Next.js pages
 
-import { cmsDb } from '@/lib/cms/database';
+import { cmsDb } from '@adminpanel/lib/cms/database';
 
 export default async function CMSPage({ params }: { params: { slug: string } }) {
   // Fetch page content from CMS

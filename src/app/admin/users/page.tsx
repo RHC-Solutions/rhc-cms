@@ -1,9 +1,9 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import AdminShell from '@/components/admin/AdminShell';
-import { useToast } from '@/components/admin/Toast';
+import AdminShell from '@adminpanel/components/admin/AdminShell';
+import { useToast } from '@adminpanel/components/admin/Toast';
 import { FaUserPlus, FaSave, FaTrash, FaShieldAlt, FaExclamationTriangle, FaCheckCircle } from 'react-icons/fa';
-import { validatePassword, getStrengthText, getStrengthColor } from '@/lib/auth/password';
+import { validatePassword, getStrengthText, getStrengthColor } from '@adminpanel/lib/auth/password';
 
 type Role = 'admin' | 'editor' | 'jobs_manager';
 type Status = 'active' | 'disabled';

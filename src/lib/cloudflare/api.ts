@@ -1,6 +1,6 @@
 // Cloudflare API service
 
-import { getSecret } from '@/lib/env';
+import { getSecret } from '@adminpanel/lib/env';
 
 interface CloudflareZoneAnalytics {
   requests: number;

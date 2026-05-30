@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
-import AdminShell from '@/components/admin/AdminShell';
+import AdminShell from '@adminpanel/components/admin/AdminShell';
 
 interface MfaInitResponse {
   enabled: boolean;

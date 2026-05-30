@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { FaDownload, FaTrash, FaSync, FaUpload, FaCheck, FaTimes, FaDatabase, FaClock } from 'react-icons/fa';
-import { useToast } from '@/components/admin/Toast';
-import AdminShell from '@/components/admin/AdminShell';
+import { useToast } from '@adminpanel/components/admin/Toast';
+import AdminShell from '@adminpanel/components/admin/AdminShell';
 
 const RETENTION_DAYS = 14;
 

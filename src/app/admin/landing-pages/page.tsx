@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import AdminShell from '@/components/admin/AdminShell';
-import { useToast } from '@/components/admin/Toast';
+import AdminShell from '@adminpanel/components/admin/AdminShell';
+import { useToast } from '@adminpanel/components/admin/Toast';
 import {
   FaPlus, FaEdit, FaTrash, FaExternalLinkAlt, FaCopy, FaSpinner,
   FaInbox, FaList, FaCheck, FaTimes, FaImage, FaLink,

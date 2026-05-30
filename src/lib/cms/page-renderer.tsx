@@ -1,6 +1,6 @@
-import CMSBlockRenderer from '@/components/cms/BlockRenderer';
-import { cmsDb, CMSPage } from '@/lib/cms/database';
-import { JsonLd, SITE_URL, breadcrumbLd, serviceLd, faqLd, type FaqItem } from '@/components/JsonLd';
+import CMSBlockRenderer from '@adminpanel/components/cms/BlockRenderer';
+import { cmsDb, CMSPage } from '@adminpanel/lib/cms/database';
+import { JsonLd, SITE_URL, breadcrumbLd, serviceLd, faqLd, type FaqItem } from '@adminpanel/components/JsonLd';
 import { notFound } from 'next/navigation';
 
 const normalizeSlug = (slug: string) => {

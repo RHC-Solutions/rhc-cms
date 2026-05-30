@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaSearch, FaTimes } from 'react-icons/fa';
-import { searchAdmin } from '@/lib/admin-search';
+import { searchAdmin } from '@adminpanel/lib/admin-search';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AdminSearch() {

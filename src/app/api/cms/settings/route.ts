@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import { cmsDb } from '@/lib/cms/database';
+import { cmsDb } from '@adminpanel/lib/cms/database';
 import fs from 'fs';
 import path from 'path';
-import { revalidateAllPublic } from '@/lib/revalidate';
+import { revalidateAllPublic } from '@adminpanel/lib/revalidate';
 
 async function requireWriter(request: NextRequest) {
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });

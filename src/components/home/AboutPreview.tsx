@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaCheckCircle } from 'react-icons/fa';
-import { AnimatedStatsGrid } from '@/components/AnimatedStats';
+import { AnimatedStatsGrid } from '@adminpanel/components/AnimatedStats';
 
 const DEFAULT_VALUES = ['Professionalism', 'Reliability', 'Accountability', 'Innovation'];
 

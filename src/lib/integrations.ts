@@ -3,7 +3,7 @@
  * live in cms-data/secrets.json (managed via /admin/integrations).
  *
  * Adding a new integration: append an entry below, then in the consumer code
- * replace `process.env.X` with `getSecret('X')` from '@/lib/env'. No UI or API
+ * replace `process.env.X` with `getSecret('X')` from '@adminpanel/lib/env'. No UI or API
  * changes needed — the /admin/integrations page reads this list at runtime.
  */
 

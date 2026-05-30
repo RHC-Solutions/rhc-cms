@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import { generateSecret, buildOtpauthURL } from '@/lib/auth/totp';
+import { generateSecret, buildOtpauthURL } from '@adminpanel/lib/auth/totp';
 
 const USERS_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'users.json');
 const CMS_DATA_DIR = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data');

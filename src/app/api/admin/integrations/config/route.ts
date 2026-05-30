@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
-import { getSecret, setSecrets } from '@/lib/env';
-import { MANAGED_SECRET_KEYS } from '@/lib/integrations';
+import { authOptions } from '@adminpanel/lib/auth/config';
+import { getSecret, setSecrets } from '@adminpanel/lib/env';
+import { MANAGED_SECRET_KEYS } from '@adminpanel/lib/integrations';
 
 const MAX_VALUE_LEN = 16 * 1024;
 

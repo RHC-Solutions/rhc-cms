@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import AdminShell from "@/components/admin/AdminShell";
+import AdminShell from "@adminpanel/components/admin/AdminShell";
 import { FaCog, FaEnvelope, FaGlobe, FaPalette, FaShieldAlt } from "react-icons/fa";
-import { useToast } from "@/components/admin/Toast";
-import { TIMEZONES, getGeoTimezone } from "@/lib/timezones";
+import { useToast } from "@adminpanel/components/admin/Toast";
+import { TIMEZONES, getGeoTimezone } from "@adminpanel/lib/timezones";
 
 type SocialLink = { platform: string; url: string };
 type Settings = {

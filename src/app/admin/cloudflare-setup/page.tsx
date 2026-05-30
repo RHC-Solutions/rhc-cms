@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import AdminShell from '@/components/admin/AdminShell';
+import AdminShell from '@adminpanel/components/admin/AdminShell';
 import { FaCloudflare, FaKey, FaLink, FaCheck, FaCopy, FaExclamationTriangle } from 'react-icons/fa';
 
 interface Credential {

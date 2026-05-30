@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import { generateSecret, buildOtpauthURL, verifyTotp, generateRecoveryCodes } from '@/lib/auth/totp';
-import { loadUsers, saveUsers, sanitizeUser } from '@/lib/auth/users';
+import { generateSecret, buildOtpauthURL, verifyTotp, generateRecoveryCodes } from '@adminpanel/lib/auth/totp';
+import { loadUsers, saveUsers, sanitizeUser } from '@adminpanel/lib/auth/users';
 
 const authError = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

@@ -26,9 +26,9 @@ import {
   FaInbox,
 } from 'react-icons/fa';
 import type { IconType } from 'react-icons';
-import { CMSPage, ContentBlock } from '@/lib/cms/database';
-import TypingEffect from '@/components/TypingEffect';
-import { sanitizeRichText } from '@/lib/sanitize';
+import { CMSPage, ContentBlock } from '@adminpanel/lib/cms/database';
+import TypingEffect from '@adminpanel/components/TypingEffect';
+import { sanitizeRichText } from '@adminpanel/lib/sanitize';
 
 const CARD_ICONS: IconType[] = [FaLock, FaShieldAlt, FaBolt, FaKey, FaGlobe, FaLaptopCode, FaChartBar, FaBullseye, FaRocket, FaCog];
 const COLUMN_ICONS: IconType[] = [FaClipboardList, FaLightbulb, FaBolt, FaBullseye];
@@ -38,13 +38,13 @@ const COLUMN_ICONS: IconType[] = [FaClipboardList, FaLightbulb, FaBolt, FaBullse
 // bounds for desktop; mobile fills the slack near-instantly.
 const reserve = (px: number) => () => <div style={{ minHeight: px }} aria-hidden="true" />;
 
-const InteractiveWorldMap = dynamic(() => import('@/components/InteractiveWorldMap'), { ssr: false, loading: reserve(560) });
-const ContactForm = dynamic(() => import('@/components/ContactForm'), { ssr: false, loading: reserve(600) });
-const ServicesCarousel = dynamic(() => import('@/components/ServicesCarousel'), { ssr: false, loading: reserve(620) });
-const TestimonialsCarousel = dynamic(() => import('@/components/TestimonialsCarousel'), { ssr: false, loading: reserve(360) });
-const ClientsTeaser = dynamic(() => import('@/components/home/ClientsTeaser'), { ssr: false, loading: reserve(600) });
-const AboutPreview = dynamic(() => import('@/components/home/AboutPreview'), { ssr: false, loading: reserve(720) });
-const CTASection = dynamic(() => import('@/components/home/CTASection'), { ssr: false, loading: reserve(400) });
+const InteractiveWorldMap = dynamic(() => import('@adminpanel/components/InteractiveWorldMap'), { ssr: false, loading: reserve(560) });
+const ContactForm = dynamic(() => import('@adminpanel/components/ContactForm'), { ssr: false, loading: reserve(600) });
+const ServicesCarousel = dynamic(() => import('@adminpanel/components/ServicesCarousel'), { ssr: false, loading: reserve(620) });
+const TestimonialsCarousel = dynamic(() => import('@adminpanel/components/TestimonialsCarousel'), { ssr: false, loading: reserve(360) });
+const ClientsTeaser = dynamic(() => import('@adminpanel/components/home/ClientsTeaser'), { ssr: false, loading: reserve(600) });
+const AboutPreview = dynamic(() => import('@adminpanel/components/home/AboutPreview'), { ssr: false, loading: reserve(720) });
+const CTASection = dynamic(() => import('@adminpanel/components/home/CTASection'), { ssr: false, loading: reserve(400) });
 
 const alignClass = (align?: 'left' | 'center' | 'right') => {
   if (align === 'center') return 'text-center items-center';

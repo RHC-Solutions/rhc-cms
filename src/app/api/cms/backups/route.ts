@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import archiver from 'archiver';
 import { getToken } from 'next-auth/jwt';
-import { getBackupTelegramConfig } from '@/lib/backup-telegram';
+import { getBackupTelegramConfig } from '@adminpanel/lib/backup-telegram';
 
 const BACKUPS_DIR = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'backups');
 const CMS_DATA_DIR = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data');
