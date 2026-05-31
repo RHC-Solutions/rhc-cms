@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { FaUser, FaLock, FaShieldAlt, FaCheckCircle } from 'react-icons/fa';
 import QRCode from 'qrcode';
@@ -126,8 +127,16 @@ export default function SetupWizard() {
         <div className="bg-gray-800 rounded-lg shadow-2xl max-w-2xl w-full p-8 border border-gray-700 transition-card transition-delay-2">
         {/* Header */}
         <div className="text-center mb-8 transition-slide-up transition-delay-3">
+          <Image
+            src="/logo.png"
+            alt="RHC Solutions"
+            width={64}
+            height={64}
+            priority
+            className="w-16 h-16 object-contain mx-auto mb-4"
+          />
           <h1 className="heading-xl text-gradient mb-2">
-            🚀 Welcome to RHC Solutions CMS
+            Welcome to Admin by RHC Solutions
           </h1>
           <p className="text-gray-400">
             {step === 1

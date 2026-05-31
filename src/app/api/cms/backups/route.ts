@@ -338,7 +338,7 @@ async function createBackupZip(targetPath: string): Promise<boolean> {
     archive.append(JSON.stringify(manifest, null, 2), { name: 'BACKUP_MANIFEST.json' });
 
     // Add README with restore instructions
-    const readme = `# RHC Solutions CMS - Backup Restoration Guide
+    const readme = `# Admin by RHC Solutions - Backup Restoration Guide
 
 ## 📦 Backup Information
 - Date: ${new Date().toISOString()}

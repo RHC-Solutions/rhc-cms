@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
+import Image from 'next/image';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -153,9 +154,16 @@ function LoginPageInner() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
-            className="w-16 h-16 bg-linear-to-br from-blue-500 to-cyan-500 rounded-xl mx-auto mb-4 flex items-center justify-center"
+            className="w-16 h-16 mx-auto mb-4 flex items-center justify-center"
           >
-            <FaLock className="text-white text-2xl" />
+            <Image
+              src="/logo.png"
+              alt="RHC Solutions"
+              width={64}
+              height={64}
+              priority
+              className="w-16 h-16 object-contain"
+            />
           </motion.div>
           <h1 className="heading-xl text-gradient mb-2">RHC Admin</h1>
           <p className="text-slate-400">{resetMode ? 'Reset Your Password' : 'Sign in to manage your content'}</p>
