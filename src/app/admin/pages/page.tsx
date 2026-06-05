@@ -299,6 +299,12 @@ export default function CMSPagesEditor() {
               placeholder="Hero subtitle"
               className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
             />
+            <textarea
+              value={block.props.description || ''}
+              onChange={(e) => updateBlock(block.id, { props: { ...block.props, description: e.target.value }})}
+              placeholder="Hero description / subheading"
+              className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm min-h-16 resize-y"
+            />
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="text"
@@ -475,6 +481,19 @@ export default function CMSPagesEditor() {
                       updateCards(next);
                     }}
                     placeholder="Emoji or icon text"
+                    className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={card.link?.url ?? card.url ?? ''}
+                    onChange={(e) => {
+                      const url = e.target.value;
+                      const next = cards.map((c: any, i: number) =>
+                        i === idx ? { ...c, link: { ...(c.link || {}), url } } : c
+                      );
+                      updateCards(next);
+                    }}
+                    placeholder="Link URL (optional, e.g. /services/cloud-infrastructure)"
                     className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
                   />
                 </div>
