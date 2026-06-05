@@ -10,6 +10,7 @@ type Settings = {
   siteName: string;
   tagline: string;
   siteUrl?: string;
+  bookingUrl?: string;
   contact: {
     email?: string;
     phone?: string;
@@ -24,6 +25,25 @@ type Settings = {
     dateFormat?: string;
     language?: string;
   };
+  // Homepage / brand copy consumed by the bespoke home page (src/app/page.tsx).
+  brand?: {
+    valueProp?: string;
+    yearsHeadlineNumber?: string;
+    ctaSection?: {
+      headingLead?: string;
+      headingHighlight?: string;
+      headingTrailing?: string;
+      description?: string;
+    };
+  };
+  stats?: {
+    projects?: string;
+    projectsLabel?: string;
+    industries?: string;
+    industriesLabel?: string;
+    satisfaction?: string;
+    satisfactionLabel?: string;
+  };
 };
 
 export default function SettingsPage() {
@@ -31,6 +51,9 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<Settings | null>(null);
+  // Raw settings as loaded, kept so we can deep-merge nested objects (brand/stats)
+  // on save instead of clobbering keys the form doesn't expose (about, values, etc.).
+  const [raw, setRaw] = useState<Record<string, any>>({});
 
   useEffect(() => {
     fetchSettings();
@@ -44,18 +67,20 @@ export default function SettingsPage() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      setRaw(data || {});
       const social = (data.footer?.socialLinks || []) as SocialLink[];
-      
+
       // Get default timezone from geo IP if not set
       let timezone = data.regional?.timezone;
       if (!timezone) {
         timezone = await getGeoTimezone();
       }
-      
+
       setForm({
         siteName: data.siteName || "",
         tagline: data.tagline || "",
         siteUrl: data.siteUrl || "https://rhcsolutions.com",
+        bookingUrl: data.bookingUrl || "",
         contact: {
           email: data.contact?.email || "",
           phone: data.contact?.phone || "",
@@ -69,6 +94,24 @@ export default function SettingsPage() {
           timezone: timezone,
           dateFormat: data.regional?.dateFormat || "MM/DD/YYYY",
           language: data.regional?.language || "en-US",
+        },
+        brand: {
+          valueProp: data.brand?.valueProp || "",
+          yearsHeadlineNumber: data.brand?.yearsHeadlineNumber || "",
+          ctaSection: {
+            headingLead: data.brand?.ctaSection?.headingLead || "",
+            headingHighlight: data.brand?.ctaSection?.headingHighlight || "",
+            headingTrailing: data.brand?.ctaSection?.headingTrailing || "",
+            description: data.brand?.ctaSection?.description || "",
+          },
+        },
+        stats: {
+          projects: data.stats?.projects || "",
+          projectsLabel: data.stats?.projectsLabel || "",
+          industries: data.stats?.industries || "",
+          industriesLabel: data.stats?.industriesLabel || "",
+          satisfaction: data.stats?.satisfaction || "",
+          satisfactionLabel: data.stats?.satisfactionLabel || "",
         },
       });
     } catch (e) {
@@ -86,6 +129,7 @@ export default function SettingsPage() {
         siteName: form.siteName,
         tagline: form.tagline,
         siteUrl: form.siteUrl,
+        bookingUrl: form.bookingUrl,
         contact: {
           email: form.contact?.email,
           phone: form.contact?.phone,
@@ -99,6 +143,29 @@ export default function SettingsPage() {
           timezone: form.regional?.timezone,
           dateFormat: form.regional?.dateFormat,
           language: form.regional?.language,
+        },
+        // Deep-merge onto the raw objects so keys the form doesn't expose
+        // (brand.about, brand.values, stats.support, …) are preserved.
+        brand: {
+          ...(raw.brand || {}),
+          valueProp: form.brand?.valueProp,
+          yearsHeadlineNumber: form.brand?.yearsHeadlineNumber,
+          ctaSection: {
+            ...(raw.brand?.ctaSection || {}),
+            headingLead: form.brand?.ctaSection?.headingLead,
+            headingHighlight: form.brand?.ctaSection?.headingHighlight,
+            headingTrailing: form.brand?.ctaSection?.headingTrailing,
+            description: form.brand?.ctaSection?.description,
+          },
+        },
+        stats: {
+          ...(raw.stats || {}),
+          projects: form.stats?.projects,
+          projectsLabel: form.stats?.projectsLabel,
+          industries: form.stats?.industries,
+          industriesLabel: form.stats?.industriesLabel,
+          satisfaction: form.stats?.satisfaction,
+          satisfactionLabel: form.stats?.satisfactionLabel,
         },
       };
       const res = await fetch("/api/cms/settings", {
@@ -189,6 +256,134 @@ export default function SettingsPage() {
               onChange={(e) => setForm({ ...form, contact: { ...(form.contact || {}), email: e.target.value } })}
               className="w-full bg-dark-card border-2 border-dark-border rounded-lg py-3 px-4 text-text-primary 
                        focus:border-cyber-green focus:outline-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Homepage Content */}
+      <div className="card-cyber p-8 mb-8">
+        <div className="flex items-center space-x-3 mb-6">
+          <FaGlobe className="text-3xl text-cyber-green" />
+          <h2 className="text-xl font-bold text-text-primary">Homepage Content</h2>
+        </div>
+        <p className="text-text-secondary text-sm mb-6">
+          Copy shown on the homepage hero, stats band, and the closing call-to-action.
+        </p>
+        <div className="space-y-6">
+          <div>
+            <label className="block text-text-primary font-semibold mb-2">Value proposition</label>
+            <textarea
+              value={form.brand?.valueProp || ""}
+              onChange={(e) => setForm({ ...form, brand: { ...(form.brand || {}), valueProp: e.target.value } })}
+              rows={2}
+              className="w-full bg-dark-card border-2 border-dark-border rounded-lg py-3 px-4 text-text-primary focus:border-cyber-green focus:outline-none"
+            />
+            <p className="text-xs text-text-muted mt-1">Hero subheading (used unless the home Hero block sets its own description).</p>
+          </div>
+
+          <div>
+            <label className="block text-text-primary font-semibold mb-2">Booking URL</label>
+            <input
+              type="url"
+              value={form.bookingUrl || ""}
+              onChange={(e) => setForm({ ...form, bookingUrl: e.target.value })}
+              placeholder="https://outlook.office.com/bookwithme/..."
+              className="w-full bg-dark-card border-2 border-dark-border rounded-lg py-3 px-4 text-text-primary focus:border-cyber-green focus:outline-none"
+            />
+            <p className="text-xs text-text-muted mt-1">Destination of the primary &quot;Book a 30-min call&quot; button.</p>
+          </div>
+
+          {/* Stats band */}
+          <div>
+            <label className="block text-text-primary font-semibold mb-3">Stats band</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input
+                type="text"
+                value={form.brand?.yearsHeadlineNumber || ""}
+                onChange={(e) => setForm({ ...form, brand: { ...(form.brand || {}), yearsHeadlineNumber: e.target.value } })}
+                placeholder="Years number, e.g. 30+"
+                className="bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+              />
+              <div className="hidden md:block" />
+              <input
+                type="text"
+                value={form.stats?.projects || ""}
+                onChange={(e) => setForm({ ...form, stats: { ...(form.stats || {}), projects: e.target.value } })}
+                placeholder="Projects number, e.g. 500+"
+                className="bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+              />
+              <input
+                type="text"
+                value={form.stats?.projectsLabel || ""}
+                onChange={(e) => setForm({ ...form, stats: { ...(form.stats || {}), projectsLabel: e.target.value } })}
+                placeholder="Projects label, e.g. Projects delivered"
+                className="bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+              />
+              <input
+                type="text"
+                value={form.stats?.industries || ""}
+                onChange={(e) => setForm({ ...form, stats: { ...(form.stats || {}), industries: e.target.value } })}
+                placeholder="Industries number, e.g. 15+"
+                className="bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+              />
+              <input
+                type="text"
+                value={form.stats?.industriesLabel || ""}
+                onChange={(e) => setForm({ ...form, stats: { ...(form.stats || {}), industriesLabel: e.target.value } })}
+                placeholder="Industries label, e.g. Industries served"
+                className="bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+              />
+              <input
+                type="text"
+                value={form.stats?.satisfaction || ""}
+                onChange={(e) => setForm({ ...form, stats: { ...(form.stats || {}), satisfaction: e.target.value } })}
+                placeholder="Satisfaction number, e.g. 98%"
+                className="bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+              />
+              <input
+                type="text"
+                value={form.stats?.satisfactionLabel || ""}
+                onChange={(e) => setForm({ ...form, stats: { ...(form.stats || {}), satisfactionLabel: e.target.value } })}
+                placeholder="Satisfaction label, e.g. Client satisfaction"
+                className="bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+              />
+            </div>
+            <p className="text-xs text-text-muted mt-1">The first stat uses the years number with a fixed &quot;Years of excellence&quot; label.</p>
+          </div>
+
+          {/* Closing CTA band */}
+          <div>
+            <label className="block text-text-primary font-semibold mb-3">Closing call-to-action</label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+              <input
+                type="text"
+                value={form.brand?.ctaSection?.headingLead || ""}
+                onChange={(e) => setForm({ ...form, brand: { ...(form.brand || {}), ctaSection: { ...(form.brand?.ctaSection || {}), headingLead: e.target.value } } })}
+                placeholder="Heading lead, e.g. Ready to transform your"
+                className="bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+              />
+              <input
+                type="text"
+                value={form.brand?.ctaSection?.headingHighlight || ""}
+                onChange={(e) => setForm({ ...form, brand: { ...(form.brand || {}), ctaSection: { ...(form.brand?.ctaSection || {}), headingHighlight: e.target.value } } })}
+                placeholder="Highlighted word, e.g. IT infrastructure"
+                className="bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+              />
+              <input
+                type="text"
+                value={form.brand?.ctaSection?.headingTrailing || ""}
+                onChange={(e) => setForm({ ...form, brand: { ...(form.brand || {}), ctaSection: { ...(form.brand?.ctaSection || {}), headingTrailing: e.target.value } } })}
+                placeholder="Trailing, e.g. ?"
+                className="bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+              />
+            </div>
+            <textarea
+              value={form.brand?.ctaSection?.description || ""}
+              onChange={(e) => setForm({ ...form, brand: { ...(form.brand || {}), ctaSection: { ...(form.brand?.ctaSection || {}), description: e.target.value } } })}
+              rows={2}
+              placeholder="CTA description"
+              className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
             />
           </div>
         </div>
