@@ -53,6 +53,17 @@ function writeProp(props: any, key: string, value: string): Record<string, any> 
   return { ...base, [key]: value };
 }
 
+// Card icon choices. Empty value = auto (the public renderer derives an icon from the
+// card title). Keep this list in sync with NAMED in
+// src/components/redesign/icons.tsx (resolveServiceIcon honours these names).
+const ICON_OPTIONS = [
+  'cloud', 'security', 'ciso', 'cio', 'server', 'team', 'code', 'consulting', 'network',
+  'operations', 'migration', 'cost', 'architecture', 'audit', 'recovery', 'performance',
+  'project', 'learning', 'global', 'balance', 'partnership', 'innovation', 'excellence',
+  'rocket', 'lock', 'bolt', 'chart', 'target', 'finance', 'health', 'aerospace', 'gaming',
+  'telecom', 'briefcase', 'calendar', 'email', 'check',
+];
+
 export default function CMSPagesEditor() {
   const { addToast } = useToast();
   const [pages, setPages] = useState<CMSPage[]>([]);
@@ -473,16 +484,19 @@ export default function CMSPagesEditor() {
                     placeholder="Card description"
                     className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm min-h-15 resize-none"
                   />
-                  <input
-                    type="text"
-                    value={card.icon || ''}
+                  <select
+                    value={ICON_OPTIONS.includes(card.icon) ? card.icon : ''}
                     onChange={(e) => {
                       const next = cards.map((c: any, i: number) => i === idx ? { ...c, icon: e.target.value } : c);
                       updateCards(next);
                     }}
-                    placeholder="Emoji or icon text"
                     className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
-                  />
+                  >
+                    <option value="">Icon: Auto (from title)</option>
+                    {ICON_OPTIONS.map((name) => (
+                      <option key={name} value={name}>{`Icon: ${name}`}</option>
+                    ))}
+                  </select>
                   <input
                     type="text"
                     value={card.link?.url ?? card.url ?? ''}

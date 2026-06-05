@@ -356,13 +356,10 @@ export class CMSDatabase {
   }
 
   async getPage(slugOrId: string): Promise<CMSPage | null> {
-    // Cache individual pages for 2 minutes
-    const cacheKey = `cms:page:${slugOrId}`;
-    const cached = cache.get<CMSPage>(cacheKey);
-    if (cached !== null) {
-      return cached;
-    }
-
+    // No in-process cache: the public renderer runs in a different module instance
+    // than this admin PUT, so a cache here would make Next re-render stale data after
+    // revalidatePath() and edits wouldn't appear on the site. Single indexed SQLite
+    // lookup is sub-millisecond and the render is still cached by ISR + Cloudflare.
     const stmt = db.prepare('SELECT * FROM pages WHERE slug = ? OR id = ? LIMIT 1');
     const row = stmt.get(slugOrId, slugOrId) as any;
 
@@ -381,9 +378,6 @@ export class CMSDatabase {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt
     };
-
-    // Cache for 2 minutes
-    cache.set(cacheKey, page, 2 * 60 * 1000);
 
     return page;
   }
