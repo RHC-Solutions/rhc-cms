@@ -44,6 +44,18 @@ type Settings = {
     satisfaction?: string;
     satisfactionLabel?: string;
   };
+  // Bespoke home-page copy (src/app/page.tsx + HomeHero).
+  homeContent?: {
+    hero?: { eyebrow?: string; headline?: string; highlight?: string };
+    industriesLabel?: string;
+    industries?: string[];
+  };
+  // Bespoke contact-page copy (src/app/contact/page.tsx).
+  contactContent?: {
+    hero?: { eyebrow?: string; headline?: string; highlight?: string; lead?: string };
+    expect?: { eyebrow?: string; heading?: string; highlight?: string; subcopy?: string; steps?: { title?: string; desc?: string }[] };
+    about?: { eyebrow?: string; heading?: string; highlight?: string; paragraphs?: string[]; checklistHeading?: string; checklist?: string[] };
+  };
 };
 
 export default function SettingsPage() {
@@ -113,6 +125,41 @@ export default function SettingsPage() {
           satisfaction: data.stats?.satisfaction || "",
           satisfactionLabel: data.stats?.satisfactionLabel || "",
         },
+        homeContent: {
+          hero: {
+            eyebrow: data.homeContent?.hero?.eyebrow || "",
+            headline: data.homeContent?.hero?.headline || "",
+            highlight: data.homeContent?.hero?.highlight || "",
+          },
+          industriesLabel: data.homeContent?.industriesLabel || "",
+          industries: data.homeContent?.industries || [],
+        },
+        contactContent: {
+          hero: {
+            eyebrow: data.contactContent?.hero?.eyebrow || "",
+            headline: data.contactContent?.hero?.headline || "",
+            highlight: data.contactContent?.hero?.highlight || "",
+            lead: data.contactContent?.hero?.lead || "",
+          },
+          expect: {
+            eyebrow: data.contactContent?.expect?.eyebrow || "",
+            heading: data.contactContent?.expect?.heading || "",
+            highlight: data.contactContent?.expect?.highlight || "",
+            subcopy: data.contactContent?.expect?.subcopy || "",
+            steps: [0, 1, 2].map((i) => ({
+              title: data.contactContent?.expect?.steps?.[i]?.title || "",
+              desc: data.contactContent?.expect?.steps?.[i]?.desc || "",
+            })),
+          },
+          about: {
+            eyebrow: data.contactContent?.about?.eyebrow || "",
+            heading: data.contactContent?.about?.heading || "",
+            highlight: data.contactContent?.about?.highlight || "",
+            paragraphs: data.contactContent?.about?.paragraphs || [],
+            checklistHeading: data.contactContent?.about?.checklistHeading || "",
+            checklist: data.contactContent?.about?.checklist || [],
+          },
+        },
       });
     } catch (e) {
       console.error("Failed to load settings", e);
@@ -166,6 +213,33 @@ export default function SettingsPage() {
           industriesLabel: form.stats?.industriesLabel,
           satisfaction: form.stats?.satisfaction,
           satisfactionLabel: form.stats?.satisfactionLabel,
+        },
+        homeContent: {
+          ...(raw.homeContent || {}),
+          hero: { ...(raw.homeContent?.hero || {}), ...(form.homeContent?.hero || {}) },
+          industriesLabel: form.homeContent?.industriesLabel,
+          industries: (form.homeContent?.industries || []).map((s) => s.trim()).filter(Boolean),
+        },
+        contactContent: {
+          ...(raw.contactContent || {}),
+          hero: { ...(raw.contactContent?.hero || {}), ...(form.contactContent?.hero || {}) },
+          expect: {
+            ...(raw.contactContent?.expect || {}),
+            eyebrow: form.contactContent?.expect?.eyebrow,
+            heading: form.contactContent?.expect?.heading,
+            highlight: form.contactContent?.expect?.highlight,
+            subcopy: form.contactContent?.expect?.subcopy,
+            steps: (form.contactContent?.expect?.steps || []).filter((s) => (s.title || "").trim() || (s.desc || "").trim()),
+          },
+          about: {
+            ...(raw.contactContent?.about || {}),
+            eyebrow: form.contactContent?.about?.eyebrow,
+            heading: form.contactContent?.about?.heading,
+            highlight: form.contactContent?.about?.highlight,
+            paragraphs: (form.contactContent?.about?.paragraphs || []).map((s) => s.trim()).filter(Boolean),
+            checklistHeading: form.contactContent?.about?.checklistHeading,
+            checklist: (form.contactContent?.about?.checklist || []).map((s) => s.trim()).filter(Boolean),
+          },
         },
       };
       const res = await fetch("/api/cms/settings", {
@@ -385,6 +459,121 @@ export default function SettingsPage() {
               placeholder="CTA description"
               className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
             />
+          </div>
+
+          {/* Hero headline */}
+          <div>
+            <label className="block text-text-primary font-semibold mb-3">Hero</label>
+            <div className="space-y-3">
+              <input
+                type="text"
+                value={form.homeContent?.hero?.eyebrow || ""}
+                onChange={(e) => setForm({ ...form, homeContent: { ...(form.homeContent || {}), hero: { ...(form.homeContent?.hero || {}), eyebrow: e.target.value } } })}
+                placeholder="Eyebrow, e.g. Enterprise IT · Cloud · Security"
+                className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+              />
+              <input
+                type="text"
+                value={form.homeContent?.hero?.headline || ""}
+                onChange={(e) => setForm({ ...form, homeContent: { ...(form.homeContent || {}), hero: { ...(form.homeContent?.hero || {}), headline: e.target.value } } })}
+                placeholder="Headline, e.g. IT infrastructure built for always-on business."
+                className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+              />
+              <input
+                type="text"
+                value={form.homeContent?.hero?.highlight || ""}
+                onChange={(e) => setForm({ ...form, homeContent: { ...(form.homeContent || {}), hero: { ...(form.homeContent?.hero || {}), highlight: e.target.value } } })}
+                placeholder="Highlighted phrase within the headline, e.g. always-on"
+                className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+              />
+              <p className="text-xs text-text-muted">The highlighted phrase must appear in the headline; it renders in the brand gradient.</p>
+            </div>
+          </div>
+
+          {/* Industries strip */}
+          <div>
+            <label className="block text-text-primary font-semibold mb-3">Industries strip</label>
+            <input
+              type="text"
+              value={form.homeContent?.industriesLabel || ""}
+              onChange={(e) => setForm({ ...form, homeContent: { ...(form.homeContent || {}), industriesLabel: e.target.value } })}
+              placeholder="Lead label, e.g. Delivering for"
+              className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan mb-2"
+            />
+            <textarea
+              value={(form.homeContent?.industries || []).join("\n")}
+              onChange={(e) => setForm({ ...form, homeContent: { ...(form.homeContent || {}), industries: e.target.value.split("\n") } })}
+              rows={5}
+              placeholder={"One industry per line:\nFinancial Services\nHealthcare"}
+              className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+            />
+            <p className="text-xs text-text-muted mt-1">One per line. Icons are assigned automatically by position.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Contact Page */}
+      <div className="card-cyber p-8 mb-8">
+        <div className="flex items-center space-x-3 mb-6">
+          <FaEnvelope className="text-3xl text-cyber-green" />
+          <h2 className="text-xl font-bold text-text-primary">Contact Page</h2>
+        </div>
+        <p className="text-text-secondary text-sm mb-6">Copy on the /contact page. The contact methods themselves are set under Contact Information above.</p>
+        <div className="space-y-6">
+          {/* Contact hero */}
+          <div>
+            <label className="block text-text-primary font-semibold mb-3">Hero</label>
+            <div className="space-y-3">
+              <input type="text" value={form.contactContent?.hero?.eyebrow || ""} onChange={(e) => setForm({ ...form, contactContent: { ...(form.contactContent || {}), hero: { ...(form.contactContent?.hero || {}), eyebrow: e.target.value } } })} placeholder="Eyebrow, e.g. Let's talk" className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan" />
+              <input type="text" value={form.contactContent?.hero?.headline || ""} onChange={(e) => setForm({ ...form, contactContent: { ...(form.contactContent || {}), hero: { ...(form.contactContent?.hero || {}), headline: e.target.value } } })} placeholder="Headline" className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan" />
+              <input type="text" value={form.contactContent?.hero?.highlight || ""} onChange={(e) => setForm({ ...form, contactContent: { ...(form.contactContent || {}), hero: { ...(form.contactContent?.hero || {}), highlight: e.target.value } } })} placeholder="Highlighted phrase within the headline" className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan" />
+              <input type="text" value={form.contactContent?.hero?.lead || ""} onChange={(e) => setForm({ ...form, contactContent: { ...(form.contactContent || {}), hero: { ...(form.contactContent?.hero || {}), lead: e.target.value } } })} placeholder="Lead sentence under the headline" className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan" />
+            </div>
+          </div>
+
+          {/* What to expect */}
+          <div>
+            <label className="block text-text-primary font-semibold mb-3">&quot;What to expect&quot; section</label>
+            <div className="space-y-3">
+              <input type="text" value={form.contactContent?.expect?.eyebrow || ""} onChange={(e) => setForm({ ...form, contactContent: { ...(form.contactContent || {}), expect: { ...(form.contactContent?.expect || {}), eyebrow: e.target.value } } })} placeholder="Eyebrow, e.g. What to expect" className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan" />
+              <input type="text" value={form.contactContent?.expect?.heading || ""} onChange={(e) => setForm({ ...form, contactContent: { ...(form.contactContent || {}), expect: { ...(form.contactContent?.expect || {}), heading: e.target.value } } })} placeholder="Heading" className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan" />
+              <input type="text" value={form.contactContent?.expect?.highlight || ""} onChange={(e) => setForm({ ...form, contactContent: { ...(form.contactContent || {}), expect: { ...(form.contactContent?.expect || {}), highlight: e.target.value } } })} placeholder="Highlighted phrase within the heading" className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan" />
+              <textarea value={form.contactContent?.expect?.subcopy || ""} onChange={(e) => setForm({ ...form, contactContent: { ...(form.contactContent || {}), expect: { ...(form.contactContent?.expect || {}), subcopy: e.target.value } } })} rows={2} placeholder="Intro sentence" className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan" />
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="bg-dark-lighter border border-dark-border rounded p-3 space-y-2">
+                  <span className="text-xs text-text-muted">Step {i + 1}</span>
+                  <input
+                    type="text"
+                    value={form.contactContent?.expect?.steps?.[i]?.title || ""}
+                    onChange={(e) => { const steps = [...(form.contactContent?.expect?.steps || [])]; while (steps.length <= i) steps.push({ title: "", desc: "" }); steps[i] = { ...steps[i], title: e.target.value }; setForm({ ...form, contactContent: { ...(form.contactContent || {}), expect: { ...(form.contactContent?.expect || {}), steps } } }); }}
+                    placeholder="Step title"
+                    className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+                  />
+                  <textarea
+                    value={form.contactContent?.expect?.steps?.[i]?.desc || ""}
+                    onChange={(e) => { const steps = [...(form.contactContent?.expect?.steps || [])]; while (steps.length <= i) steps.push({ title: "", desc: "" }); steps[i] = { ...steps[i], desc: e.target.value }; setForm({ ...form, contactContent: { ...(form.contactContent || {}), expect: { ...(form.contactContent?.expect || {}), steps } } }); }}
+                    rows={2}
+                    placeholder="Step description"
+                    className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Who you're working with */}
+          <div>
+            <label className="block text-text-primary font-semibold mb-3">&quot;Who you&apos;re working with&quot; section</label>
+            <div className="space-y-3">
+              <input type="text" value={form.contactContent?.about?.eyebrow || ""} onChange={(e) => setForm({ ...form, contactContent: { ...(form.contactContent || {}), about: { ...(form.contactContent?.about || {}), eyebrow: e.target.value } } })} placeholder="Eyebrow" className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan" />
+              <input type="text" value={form.contactContent?.about?.heading || ""} onChange={(e) => setForm({ ...form, contactContent: { ...(form.contactContent || {}), about: { ...(form.contactContent?.about || {}), heading: e.target.value } } })} placeholder="Heading, e.g. An IT partner since 1994" className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan" />
+              <input type="text" value={form.contactContent?.about?.highlight || ""} onChange={(e) => setForm({ ...form, contactContent: { ...(form.contactContent || {}), about: { ...(form.contactContent?.about || {}), highlight: e.target.value } } })} placeholder="Highlighted phrase within the heading, e.g. 1994" className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan" />
+              <textarea value={(form.contactContent?.about?.paragraphs || []).join("\n")} onChange={(e) => setForm({ ...form, contactContent: { ...(form.contactContent || {}), about: { ...(form.contactContent?.about || {}), paragraphs: e.target.value.split("\n") } } })} rows={5} placeholder="One paragraph per line" className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan" />
+              <p className="text-xs text-text-muted">One paragraph per line.</p>
+              <input type="text" value={form.contactContent?.about?.checklistHeading || ""} onChange={(e) => setForm({ ...form, contactContent: { ...(form.contactContent || {}), about: { ...(form.contactContent?.about || {}), checklistHeading: e.target.value } } })} placeholder="Checklist heading, e.g. What we help with" className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan" />
+              <textarea value={(form.contactContent?.about?.checklist || []).join("\n")} onChange={(e) => setForm({ ...form, contactContent: { ...(form.contactContent || {}), about: { ...(form.contactContent?.about || {}), checklist: e.target.value.split("\n") } } })} rows={6} placeholder={"One item per line. Use ' — ' to bold the lead, e.g.\nCloud & infrastructure — migration, optimization, and managed hosting."} className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan" />
+              <p className="text-xs text-text-muted">One item per line. Text before &quot; — &quot; renders bold.</p>
+            </div>
           </div>
         </div>
       </div>
