@@ -38,6 +38,21 @@ interface CMSPage {
   updatedAt: string;
 }
 
+// Content blocks keep their primary text inside props, e.g. { text, level, align }
+// for headings or { text } for paragraphs/lists. A few legacy rows stored props as a
+// bare string; tolerate both on read and always normalise to an object on write so the
+// align/level controls don't clobber the text — and so the public renderer, which reads
+// props.text, keeps rendering after an edit.
+function readProp(props: any, key: string): string {
+  if (props && typeof props === 'object') return props[key] ?? '';
+  if (typeof props === 'string') return props;
+  return '';
+}
+function writeProp(props: any, key: string, value: string): Record<string, any> {
+  const base = props && typeof props === 'object' ? props : {};
+  return { ...base, [key]: value };
+}
+
 export default function CMSPagesEditor() {
   const { addToast } = useToast();
   const [pages, setPages] = useState<CMSPage[]>([]);
@@ -306,31 +321,51 @@ export default function CMSPagesEditor() {
         return (
           <input
             type="text"
-            value={block.props}
-            onChange={(e) => updateBlock(block.id, { props: e.target.value })}
+            value={readProp(block.props, 'text')}
+            onChange={(e) => updateBlock(block.id, { props: writeProp(block.props, 'text', e.target.value) })}
             placeholder="Heading text"
             className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
           />
         );
       case 'paragraph':
-      case 'list':
         return (
           <textarea
-            value={block.props}
-            onChange={(e) => updateBlock(block.id, { props: e.target.value })}
+            value={readProp(block.props, 'text')}
+            onChange={(e) => updateBlock(block.id, { props: writeProp(block.props, 'text', e.target.value) })}
             className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm min-h-20 resize-none"
-            placeholder="Enter content..."
+            placeholder="Enter paragraph text..."
           />
+        );
+      case 'list':
+        return (
+          <div className="space-y-1">
+            <textarea
+              value={readProp(block.props, 'text')}
+              onChange={(e) => updateBlock(block.id, { props: writeProp(block.props, 'text', e.target.value) })}
+              className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm min-h-24 resize-y"
+              placeholder={'One item per line:\nFirst point\nSecond point'}
+            />
+            <p className="text-xs text-text-muted">One list item per line.</p>
+          </div>
         );
       case 'image':
         return (
-          <input
-            type="text"
-            value={block.props}
-            onChange={(e) => updateBlock(block.id, { props: e.target.value })}
-            placeholder="/uploads/image.jpg"
-            className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
-          />
+          <div className="space-y-2">
+            <input
+              type="text"
+              value={readProp(block.props, 'url')}
+              onChange={(e) => updateBlock(block.id, { props: writeProp(block.props, 'url', e.target.value) })}
+              placeholder="/uploads/image.jpg"
+              className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
+            />
+            <input
+              type="text"
+              value={readProp(block.props, 'alt')}
+              onChange={(e) => updateBlock(block.id, { props: writeProp(block.props, 'alt', e.target.value) })}
+              placeholder="Alt text (accessibility & SEO)"
+              className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
+            />
+          </div>
         );
       case 'button':
         return (
@@ -599,6 +634,68 @@ export default function CMSPagesEditor() {
             </div>
           </div>
         );
+      case 'richtext':
+        return (
+          <div className="space-y-2">
+            <textarea
+              value={block.props?.html || ''}
+              onChange={(e) => updateBlock(block.id, { props: { ...block.props, html: e.target.value }})}
+              placeholder="<h2>Title</h2><p>Content...</p>"
+              className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm min-h-48 resize-y font-mono"
+            />
+            <p className="text-xs text-text-muted">HTML tags: &lt;h2&gt;, &lt;p&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;strong&gt;</p>
+          </div>
+        );
+      case 'faq': {
+        const items: { question: string; answer: string }[] = Array.isArray(block.props?.items) ? block.props.items : [];
+        const setItems = (next: { question: string; answer: string }[]) =>
+          updateBlock(block.id, { props: { ...block.props, items: next } });
+        return (
+          <div className="space-y-3">
+            <input
+              type="text"
+              value={block.props?.title ?? ''}
+              onChange={(e) => updateBlock(block.id, { props: { ...block.props, title: e.target.value } })}
+              placeholder="Section heading (e.g. Frequently asked questions)"
+              className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
+            />
+            {items.map((it, idx) => (
+              <div key={idx} className="bg-dark-lighter border border-dark-border rounded p-3 space-y-2">
+                <div className="flex items-center justify-between text-xs text-text-muted">
+                  <span>Q&amp;A #{idx + 1}</span>
+                  <button
+                    type="button"
+                    onClick={() => setItems(items.filter((_, i) => i !== idx))}
+                    className="text-cyber-red hover:text-red-400"
+                  >
+                    Remove
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={it.question}
+                  onChange={(e) => setItems(items.map((x, i) => (i === idx ? { ...x, question: e.target.value } : x)))}
+                  placeholder="Question"
+                  className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
+                />
+                <textarea
+                  value={it.answer}
+                  onChange={(e) => setItems(items.map((x, i) => (i === idx ? { ...x, answer: e.target.value } : x)))}
+                  placeholder="Answer"
+                  className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm min-h-20 resize-y"
+                />
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setItems([...items, { question: '', answer: '' }])}
+              className="w-full bg-dark border border-dashed border-cyber-cyan text-cyber-cyan rounded py-2 text-sm hover:bg-dark-lighter"
+            >
+              + Add Q&amp;A
+            </button>
+          </div>
+        );
+      }
       default:
         return <div className="text-text-muted text-sm">Complex block - edit via JSON</div>;
     }
@@ -859,7 +956,6 @@ export default function CMSPagesEditor() {
                 <th className="text-left px-4 py-3">Slug</th>
                 <th className="text-left px-4 py-3">Status</th>
                 <th className="text-left px-4 py-3">Category</th>
-                <th className="text-left px-4 py-3">Creator</th>
                 <th className="text-left px-4 py-3">Last Edited</th>
                 <th className="text-right px-4 py-3">Actions</th>
               </tr>
@@ -879,7 +975,6 @@ export default function CMSPagesEditor() {
                     </span>
                   </td>
                   <td className="px-4 py-3">{page.category}</td>
-                  <td className="px-4 py-3">{(page as any).createdBy || '—'}</td>
                   <td className="px-4 py-3">{new Date(page.updatedAt).toLocaleString()}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end items-center gap-2">

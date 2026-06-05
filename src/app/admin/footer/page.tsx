@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaSave, FaPlus, FaTimes, FaLink, FaArrowUp, FaArrowDown } from 'react-icons/fa';
+import { FaSave, FaPlus, FaTimes, FaLink, FaArrowUp, FaArrowDown, FaLinkedin, FaFacebook, FaInstagram, FaTelegram } from 'react-icons/fa';
 
 interface Link {
   name: string;
@@ -260,50 +260,73 @@ export default function FooterManagement() {
                     className="w-full bg-dark border border-dark-border rounded px-4 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-text-primary font-semibold mb-2">Telegram</label>
-                    <input
-                      type="text"
-                      value={section.telegram || ''}
-                      onChange={(e) => updateSection(sIndex, { ...section, telegram: e.target.value })}
-                      className="w-full bg-dark border border-dark-border rounded px-4 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-text-primary font-semibold mb-2">WhatsApp</label>
-                    <input
-                      type="text"
-                      value={section.whatsapp || ''}
-                      onChange={(e) => updateSection(sIndex, { ...section, whatsapp: e.target.value })}
-                      className="w-full bg-dark border border-dark-border rounded px-4 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
-                    />
-                  </div>
-                </div>
                 <div>
-                  <label className="block text-text-primary font-semibold mb-2">Social Links</label>
-                  <div className="space-y-2">
-                    <input
-                      type="url"
-                      value={section.socials?.linkedin || ''}
-                      onChange={(e) => updateSection(sIndex, { ...section, socials: { ...section.socials, linkedin: e.target.value } })}
-                      placeholder="LinkedIn URL"
-                      className="w-full bg-dark border border-dark-border rounded px-4 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
-                    />
-                    <input
-                      type="url"
-                      value={section.socials?.facebook || ''}
-                      onChange={(e) => updateSection(sIndex, { ...section, socials: { ...section.socials, facebook: e.target.value } })}
-                      placeholder="Facebook URL"
-                      className="w-full bg-dark border border-dark-border rounded px-4 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
-                    />
-                    <input
-                      type="url"
-                      value={section.socials?.instagram || ''}
-                      onChange={(e) => updateSection(sIndex, { ...section, socials: { ...section.socials, instagram: e.target.value } })}
-                      placeholder="Instagram URL"
-                      className="w-full bg-dark border border-dark-border rounded px-4 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
-                    />
+                  <label className="block text-text-primary font-semibold mb-2">WhatsApp</label>
+                  <input
+                    type="text"
+                    value={section.whatsapp || ''}
+                    onChange={(e) => updateSection(sIndex, { ...section, whatsapp: e.target.value })}
+                    className="w-full bg-dark border border-dark-border rounded px-4 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+                  />
+                </div>
+
+                {/* Footer social icons — these four inputs map 1:1 to the icons rendered
+                    in the public site footer, in this exact order. */}
+                <div className="bg-dark-lighter border border-dark-border rounded-lg p-4">
+                  <label className="block text-text-primary font-semibold mb-1">Footer social icons</label>
+                  <p className="text-text-muted text-sm mb-4">
+                    These are the icons shown in the site footer. Leave a field blank to hide that icon.
+                  </p>
+                  <div className="space-y-3">
+                    {/* LinkedIn */}
+                    <div className="flex items-center gap-3">
+                      <FaLinkedin className="text-cyber-cyan text-xl shrink-0" title="LinkedIn" />
+                      <input
+                        type="url"
+                        value={section.socials?.linkedin || ''}
+                        onChange={(e) => updateSection(sIndex, { ...section, socials: { ...section.socials, linkedin: e.target.value } })}
+                        placeholder="https://www.linkedin.com/company/your-company"
+                        className="flex-1 bg-dark border border-dark-border rounded px-4 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+                      />
+                    </div>
+                    {/* Facebook */}
+                    <div className="flex items-center gap-3">
+                      <FaFacebook className="text-cyber-cyan text-xl shrink-0" title="Facebook" />
+                      <input
+                        type="url"
+                        value={section.socials?.facebook || ''}
+                        onChange={(e) => updateSection(sIndex, { ...section, socials: { ...section.socials, facebook: e.target.value } })}
+                        placeholder="https://www.facebook.com/your-page"
+                        className="flex-1 bg-dark border border-dark-border rounded px-4 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+                      />
+                    </div>
+                    {/* Instagram */}
+                    <div className="flex items-center gap-3">
+                      <FaInstagram className="text-cyber-cyan text-xl shrink-0" title="Instagram" />
+                      <input
+                        type="url"
+                        value={section.socials?.instagram || ''}
+                        onChange={(e) => updateSection(sIndex, { ...section, socials: { ...section.socials, instagram: e.target.value } })}
+                        placeholder="https://www.instagram.com/your-handle"
+                        className="flex-1 bg-dark border border-dark-border rounded px-4 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+                      />
+                    </div>
+                    {/* Telegram — stored as a handle; rendered as https://t.me/<handle> */}
+                    <div className="flex items-center gap-3">
+                      <FaTelegram className="text-cyber-cyan text-xl shrink-0" title="Telegram" />
+                      <input
+                        type="text"
+                        value={section.telegram || ''}
+                        onChange={(e) => updateSection(sIndex, { ...section, telegram: e.target.value })}
+                        placeholder="username (without @)"
+                        className="flex-1 bg-dark border border-dark-border rounded px-4 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
+                      />
+                    </div>
+                    {section.telegram && (
+                      <p className="text-xs text-text-muted pl-8">
+                        Links to https://t.me/{section.telegram.replace(/^[@+]/, '')}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
