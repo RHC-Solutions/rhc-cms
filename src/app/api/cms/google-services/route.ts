@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { getSecret } from '@adminpanel/lib/env';
 
-// Google Analytics Data
+// Google Analytics Data (GA4 Data API).
+// Returns a SUPERSET so both consumers work: the legacy keys (users/pageviews/…) used
+// by /admin/analytics AND the keys the dashboard reads (totalUsers, newUsers,
+// screenPageViews, bounceRate, topPages, trafficSources, deviceCategory).
 async function fetchAnalyticsData(credentials: any) {
   try {
     const auth = new google.auth.GoogleAuth({
@@ -14,30 +17,61 @@ async function fetchAnalyticsData(credentials: any) {
     });
 
     const analyticsData = google.analyticsdata('v1beta');
-    const propertyId = `properties/${credentials.propertyId}`;
+    const property = `properties/${credentials.propertyId}`;
+    const dateRanges = [{ startDate: '30daysAgo', endDate: 'today' }];
+    const report = (requestBody: any) =>
+      analyticsData.properties.runReport({ auth, property, requestBody: { dateRanges, ...requestBody } });
 
-    const response = await analyticsData.properties.runReport({
-      auth,
-      property: propertyId,
-      requestBody: {
-        dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
-        metrics: [
-          { name: 'activeUsers' },
-          { name: 'sessions' },
-          { name: 'screenPageViews' },
-          { name: 'averageSessionDuration' },
-        ],
-      },
+    const [overall, pages, sources, devices] = await Promise.allSettled([
+      report({ metrics: [
+        { name: 'totalUsers' }, { name: 'newUsers' }, { name: 'sessions' },
+        { name: 'screenPageViews' }, { name: 'averageSessionDuration' }, { name: 'bounceRate' },
+      ] }),
+      report({ dimensions: [{ name: 'pagePath' }], metrics: [{ name: 'screenPageViews' }],
+        orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }], limit: 10 }),
+      report({ dimensions: [{ name: 'sessionSourceMedium' }], metrics: [{ name: 'activeUsers' }],
+        orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }], limit: 10 }),
+      report({ dimensions: [{ name: 'deviceCategory' }], metrics: [{ name: 'activeUsers' }] }),
+    ]);
+    const data = (s: PromiseSettledResult<any>) => (s.status === 'fulfilled' ? s.value.data : null);
+
+    // If the core report failed, surface that (likely a permissions/property error).
+    if (overall.status !== 'fulfilled') {
+      console.error('Analytics fetch error:', (overall as PromiseRejectedResult).reason?.message);
+      return null;
+    }
+
+    const o = data(overall)?.rows?.[0]?.metricValues || [];
+    const num = (i: number) => parseInt(o[i]?.value || '0');
+    const totalUsers = num(0), newUsers = num(1), sessions = num(2), screenPageViews = num(3);
+    const avgSecs = parseFloat(o[4]?.value || '0');
+    const bounceRate = Math.round(parseFloat(o[5]?.value || '0') * 100); // GA4 returns a 0-1 ratio
+    const avgSessionDuration = `${Math.floor(avgSecs / 60)}:${String(Math.round(avgSecs % 60)).padStart(2, '0')}`;
+
+    const topPages = (data(pages)?.rows || []).map((r: any) => ({
+      pagePath: r.dimensionValues?.[0]?.value || '',
+      screenPageViews: parseInt(r.metricValues?.[0]?.value || '0'),
+    }));
+
+    const srcRows = data(sources)?.rows || [];
+    const srcTotal = srcRows.reduce((s: number, r: any) => s + parseInt(r.metricValues?.[0]?.value || '0'), 0) || 1;
+    const trafficSources = srcRows.map((r: any) => {
+      const activeUsers = parseInt(r.metricValues?.[0]?.value || '0');
+      return { sourceMedium: r.dimensionValues?.[0]?.value || 'Direct', activeUsers, percentage: Math.round((activeUsers / srcTotal) * 100) };
     });
 
-    const rows = response.data.rows || [];
-    const values = rows[0]?.metricValues || [];
+    const devRows = data(devices)?.rows || [];
+    const devTotal = devRows.reduce((s: number, r: any) => s + parseInt(r.metricValues?.[0]?.value || '0'), 0) || 1;
+    const deviceCategory = devRows.map((r: any) => {
+      const u = parseInt(r.metricValues?.[0]?.value || '0');
+      return { deviceCategory: (r.dimensionValues?.[0]?.value || '').toLowerCase(), percentage: Math.round((u / devTotal) * 100) };
+    });
 
     return {
-      users: parseInt(values[0]?.value || '0'),
-      sessions: parseInt(values[1]?.value || '0'),
-      pageviews: parseInt(values[2]?.value || '0'),
-      avgSessionDuration: parseFloat(values[3]?.value || '0').toFixed(2),
+      // legacy aliases (kept for /admin/analytics)
+      users: totalUsers, pageviews: screenPageViews, sessions, avgSessionDuration,
+      // dashboard keys
+      totalUsers, newUsers, screenPageViews, bounceRate, topPages, trafficSources, deviceCategory,
     };
   } catch (error) {
     console.error('Analytics fetch error:', error);
@@ -57,10 +91,33 @@ async function fetchSearchConsoleData(credentials: any, siteUrl: string) {
     });
 
     const searchConsole = google.searchconsole('v1');
-    
+
+    // Resolve the property the service account can actually read. GSC properties are
+    // either URL-prefix ("https://rhcsolutions.com/") or Domain ("sc-domain:rhcsolutions.com");
+    // pick whichever this account has been granted, so it works regardless of type.
+    let resolvedSite = siteUrl;
+    try {
+      const list = await searchConsole.sites.list({ auth });
+      const entries = (list.data.siteEntry || []).map((e: any) => e.siteUrl).filter(Boolean);
+      if (entries.length === 0) {
+        return {
+          error: `Search Console access not granted. Add the service account (${credentials.serviceAccountEmail}) as a user on this property in Search Console → Settings → Users and permissions.`,
+        };
+      }
+      const host = siteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      resolvedSite =
+        entries.find((s: string) => s === siteUrl) ||
+        entries.find((s: string) => s === `${siteUrl}/`) ||
+        entries.find((s: string) => s === `sc-domain:${host}`) ||
+        entries.find((s: string) => s.includes(host)) ||
+        entries[0];
+    } catch {
+      // sites.list failed (rare) — fall through and try the configured siteUrl directly.
+    }
+
     const response = await searchConsole.searchanalytics.query({
       auth,
-      siteUrl,
+      siteUrl: resolvedSite,
       requestBody: {
         startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         endDate: new Date().toISOString().split('T')[0],
