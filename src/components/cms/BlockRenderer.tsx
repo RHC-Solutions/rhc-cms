@@ -24,6 +24,33 @@ import {
   FaMapMarkerAlt,
   FaCheck,
   FaInbox,
+  FaCloud,
+  FaServer,
+  FaUsers,
+  FaUserTie,
+  FaUserShield,
+  FaSitemap,
+  FaCogs,
+  FaExchangeAlt,
+  FaNetworkWired,
+  FaCheckCircle,
+  FaTachometerAlt,
+  FaClipboardCheck,
+  FaHistory,
+  FaDraftingCompass,
+  FaGraduationCap,
+  FaGlobeAmericas,
+  FaBalanceScale,
+  FaMoneyBillWave,
+  FaHandshake,
+  FaStar,
+  FaUniversity,
+  FaHeartbeat,
+  FaPlane,
+  FaDice,
+  FaBroadcastTower,
+  FaBriefcase,
+  FaCalendarCheck,
 } from 'react-icons/fa';
 import type { IconType } from 'react-icons';
 import { CMSPage, ContentBlock } from '@adminpanel/lib/cms/database';
@@ -32,6 +59,63 @@ import { sanitizeRichText } from '@adminpanel/lib/sanitize';
 
 const CARD_ICONS: IconType[] = [FaLock, FaShieldAlt, FaBolt, FaKey, FaGlobe, FaLaptopCode, FaChartBar, FaBullseye, FaRocket, FaCog];
 const COLUMN_ICONS: IconType[] = [FaClipboardList, FaLightbulb, FaBolt, FaBullseye];
+
+// Mirror of the public site's resolveServiceIcon (src/components/redesign/icons.tsx) so
+// the editor preview shows the SAME card icons visitors see — derived from the card
+// title (or an explicit named icon), NOT the raw stored emoji. Keep NAMED/RULES in sync
+// with that file.
+const ICON_NAMED: Record<string, IconType> = {
+  cloud: FaCloud, security: FaShieldAlt, ciso: FaUserShield, cio: FaUserTie,
+  server: FaServer, team: FaUsers, code: FaLaptopCode, consulting: FaDraftingCompass,
+  network: FaNetworkWired, operations: FaCogs, migration: FaExchangeAlt, cost: FaMoneyBillWave,
+  architecture: FaSitemap, audit: FaClipboardCheck, recovery: FaHistory, performance: FaTachometerAlt,
+  project: FaClipboardList, learning: FaGraduationCap, global: FaGlobeAmericas, balance: FaBalanceScale,
+  partnership: FaHandshake, innovation: FaLightbulb, excellence: FaStar, rocket: FaRocket,
+  lock: FaLock, bolt: FaBolt, chart: FaChartBar, target: FaBullseye, finance: FaUniversity,
+  health: FaHeartbeat, aerospace: FaPlane, gaming: FaDice, telecom: FaBroadcastTower,
+  briefcase: FaBriefcase, calendar: FaCalendarCheck, email: FaEnvelope, check: FaCheckCircle,
+};
+const ICON_RULES: { test: RegExp; icon: IconType }[] = [
+  { test: /schedule|book a|30.?min|consultation|calendar|strategy call/i, icon: FaCalendarCheck },
+  { test: /email us|send (us )?a (detailed )?message|^email/i, icon: FaEnvelope },
+  { test: /landing zone|architecture|sitemap|topolog/i, icon: FaSitemap },
+  { test: /migrat|lift.?and.?shift|exchange/i, icon: FaExchangeAlt },
+  { test: /cost|optimi|budget|spend|saving|compensation|salary|pay/i, icon: FaMoneyBillWave },
+  { test: /managed op|operation|24\/7|monitor|devops|reliab/i, icon: FaCogs },
+  { test: /cloud/i, icon: FaCloud },
+  { test: /\bcio\b|executive|leadership|fractional/i, icon: FaUserTie },
+  { test: /\bciso\b/i, icon: FaUserShield },
+  { test: /security analyst|cyber|threat|secur/i, icon: FaShieldAlt },
+  { test: /continuity|disaster|backup|server|infrastructure|data ?cent/i, icon: FaServer },
+  { test: /virtual office|remote|collaborat|team|workforce/i, icon: FaUsers },
+  { test: /professional services|implementation|delivery/i, icon: FaLaptopCode },
+  { test: /consult|advis|strateg|compass|blueprint/i, icon: FaDraftingCompass },
+  { test: /learning|training|certif|education|graduat/i, icon: FaGraduationCap },
+  { test: /global|world|distributed|international/i, icon: FaGlobeAmericas },
+  { test: /work.?life|balance|flexib|wellbeing/i, icon: FaBalanceScale },
+  { test: /partnership|partner|relationship/i, icon: FaHandshake },
+  { test: /integrity|trust|accountab/i, icon: FaCheckCircle },
+  { test: /innovation|innovat|idea/i, icon: FaLightbulb },
+  { test: /excellence|quality|award|professional/i, icon: FaStar },
+  { test: /network|hybrid|connect/i, icon: FaNetworkWired },
+  { test: /project|program|manage|plan/i, icon: FaClipboardList },
+  { test: /uptime|performance|speed|latency|gauge/i, icon: FaTachometerAlt },
+  { test: /audit|complian|governance|policy/i, icon: FaClipboardCheck },
+  { test: /recovery|failover|restore|history/i, icon: FaHistory },
+  { test: /financ|bank|trading|payment|fintech/i, icon: FaUniversity },
+  { test: /health|medical|hospital|care/i, icon: FaHeartbeat },
+  { test: /aero|aviation|flight|aircraft/i, icon: FaPlane },
+  { test: /gaming|game|gambl|betting|casino/i, icon: FaDice },
+  { test: /telecom|voip|broadcast|carrier/i, icon: FaBroadcastTower },
+];
+const ICON_FALLBACK: IconType[] = [FaLock, FaShieldAlt, FaBolt, FaCloud, FaChartBar, FaBullseye, FaRocket, FaCog];
+function resolveCardIcon(title: string | undefined, idx = 0, explicit?: string): IconType {
+  const key = (explicit || '').trim().toLowerCase();
+  if (key && ICON_NAMED[key]) return ICON_NAMED[key];
+  const t = (title || '').toLowerCase();
+  for (const r of ICON_RULES) if (r.test.test(t)) return r.icon;
+  return ICON_FALLBACK[idx % ICON_FALLBACK.length];
+}
 
 // loading placeholders reserve final rendered height so dynamic mounts
 // don't cause Cumulative Layout Shift. Heights are conservative upper
@@ -190,8 +274,9 @@ function renderBlock(block: ContentBlock, opts: { priority?: boolean } = {}) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {cards.map((card: any, idx: number) => {
               const linkUrl = card.link?.url || card.url || defaultLinkUrl;
-              const CardIcon = CARD_ICONS[idx % CARD_ICONS.length];
-              const customIconText = typeof card.icon === 'string' ? card.icon : null;
+              // Match the public site: derive from title (or an explicit named icon),
+              // not the raw stored emoji.
+              const CardIcon = resolveCardIcon(getText(card.title), idx, typeof card.icon === 'string' ? card.icon : undefined);
 
               return (
                 <Link
@@ -201,7 +286,7 @@ function renderBlock(block: ContentBlock, opts: { priority?: boolean } = {}) {
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
                   <div className="text-4xl text-cyber-green mb-2 group-hover:scale-110 transition-transform duration-300">
-                    {customIconText ? customIconText : <CardIcon aria-hidden="true" />}
+                    <CardIcon aria-hidden="true" />
                   </div>
                   {card.title && (
                     <h3 className="text-xl font-semibold text-text-primary group-hover:text-cyber-green transition-colors duration-300">
