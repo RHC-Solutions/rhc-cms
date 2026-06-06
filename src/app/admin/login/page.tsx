@@ -210,7 +210,7 @@ function LoginPageInner() {
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="admin@rhcsolutions.com"
+                  placeholder="admin@example.com"
                   required
                 />
               </div>
@@ -275,7 +275,7 @@ function LoginPageInner() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="admin@rhcsolutions.com"
+                placeholder="admin@example.com"
               />
             </div>
           </div>

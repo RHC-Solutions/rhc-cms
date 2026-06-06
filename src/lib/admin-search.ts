@@ -9,6 +9,9 @@ export const ADMIN_SEARCH_INDEX = [
   // Pages
   { id: 'pages', title: 'Pages', description: 'Manage website pages', href: '/admin/pages', keywords: ['pages', 'content', 'create', 'edit', 'delete'] },
   
+  // Landing Pages
+  { id: 'landing-pages', title: 'Landing Pages', description: 'Manage marketing landing pages', href: '/admin/landing-pages', keywords: ['landing', 'campaigns', 'marketing', 'lead', 'pages'] },
+  
   // Media
   { id: 'media', title: 'Media Library', description: 'Manage images and files', href: '/admin/media', keywords: ['media', 'images', 'files', 'upload', 'gallery'] },
   
@@ -39,14 +42,23 @@ export const ADMIN_SEARCH_INDEX = [
   // Cookies
   { id: 'cookies', title: 'Cookie Settings', description: 'Manage cookie consent and tracking', href: '/admin/cookies', keywords: ['cookies', 'consent', 'privacy', 'gdpr', 'tracking'] },
   
+  // Cloudflare
+  { id: 'cloudflare', title: 'Cloudflare', description: 'Cache, DNS, Turnstile, and WAF status', href: '/admin/cloudflare', keywords: ['cloudflare', 'cdn', 'cache', 'dns', 'turnstile', 'waf'] },
+  
+  // Integrations
+  { id: 'integrations', title: 'Integrations', description: 'Connect third-party services (SMTP, Telegram, WhatsApp, Brevo)', href: '/admin/integrations', keywords: ['integrations', 'smtp', 'telegram', 'whatsapp', 'brevo', 'email', 'notifications'] },
+  
   // Backups
   { id: 'backups', title: 'Backups', description: 'Manage database backups', href: '/admin/backups', keywords: ['backups', 'restore', 'database', 'recovery'] },
-  
+
+  // Automation
+  { id: 'automation', title: 'Automation', description: 'Daily site audit + weekly dependency PRs', href: '/admin/automation', keywords: ['automation', 'audit', 'cron', 'schedule', 'dependencies', 'auto-fix', 'reports'] },
+
   // Settings
   { id: 'settings', title: 'General Settings', description: 'Configure general site settings', href: '/admin/settings', keywords: ['settings', 'configuration', 'general', 'site', 'domain'] },
   
-  // Security
-  { id: 'security', title: 'Security - Blocked IPs', description: 'Manage blocked IP addresses', href: '/admin/security', keywords: ['security', 'blocked', 'ips', 'brute force', 'protection'] },
+  // Security (Aikido)
+  { id: 'aikido', title: 'Security (Aikido)', description: 'Aikido security scanner — issues, blocked IPs, brute-force protection', href: '/admin/aikido', keywords: ['security', 'aikido', 'blocked', 'ips', 'brute force', 'protection', 'scanner', 'issues'] },
   
   // MFA Setup
   { id: 'mfa-setup', title: 'MFA Setup', description: 'Configure two-factor authentication', href: '/admin/mfa-setup', keywords: ['mfa', '2fa', 'authentication', 'totp', 'security'] },

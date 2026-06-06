@@ -28,6 +28,21 @@ const submoduleRoot = path.resolve(siteRoot, submoduleRel);
 const submoduleSrcApp = path.join(submoduleRoot, 'src', 'app');
 const hostSrcApp = path.join(siteRoot, 'src', 'app');
 
+// --print-deps is a pure read of THIS package.json; allow it to run from
+// anywhere (e.g. `node scripts/install-into-site.mjs --print-deps` inside the
+// admin_panel repo itself) so it works as a discovery tool before the host
+// site has wired up the submodule.
+if (args.includes('--print-deps')) {
+  const selfPkgPath = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', 'package.json');
+  const pkgPath = fs.existsSync(path.join(submoduleRoot, 'package.json'))
+    ? path.join(submoduleRoot, 'package.json')
+    : selfPkgPath;
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  console.log('Runtime deps to install in the host site:\n');
+  console.log(Object.entries(pkg.dependencies || {}).map(([k, v]) => `  ${k}@${v}`).join('\n'));
+  if (!fs.existsSync(submoduleSrcApp)) process.exit(0); // discovery-only mode
+}
+
 if (!fs.existsSync(submoduleSrcApp)) {
   console.error(`✗ Could not find ${submoduleSrcApp}\n  Add the submodule first:\n  git submodule add https://github.com/RHC-Solutions/admin_panel.git ${submoduleRel}`);
   process.exit(1);
@@ -120,10 +135,10 @@ console.log(`\nNext steps (one-time per site):
 
 5) Data: the admin reads/writes ./cms-data in the host site (its own theme,
    pages, users, secrets). Nothing to share — each site keeps its own.
-`);
 
-if (args.includes('--print-deps')) {
-  const pkg = JSON.parse(fs.readFileSync(path.join(submoduleRoot, 'package.json'), 'utf8'));
-  console.log('Runtime deps to install in the host site:\n');
-  console.log(Object.entries(pkg.dependencies || {}).map(([k, v]) => `  ${k}@${v}`).join('\n'));
-}
+6) (Optional) Automation — the /admin/automation audit scheduler runs
+   ${submoduleRel}/scripts/audit/*.sh. Because they live in the submodule, set
+   AUDIT_SCRIPTS_DIR in .env.local so the API can find them:
+     AUDIT_SCRIPTS_DIR=${submoduleRel}/scripts/audit
+   and AUDIT_GH_REPO=<owner/repo> if you want auto-fix PRs. See .env.local.example.
+`);

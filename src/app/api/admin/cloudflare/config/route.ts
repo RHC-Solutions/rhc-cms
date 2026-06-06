@@ -128,7 +128,8 @@ export async function POST(request: NextRequest) {
       message += ` ✅ ${validationResults.zone_id.message}`;
     }
     if (publicSubmitted) {
-      message += ' Public values (NEXT_PUBLIC_*) changed — rebuild required: npm run build && pm2 restart rhcsolutions.';
+      const pm2App = process.env.NEXT_PUBLIC_PM2_APP_NAME || 'your-app';
+      message += ` Public values (NEXT_PUBLIC_*) changed — rebuild required: npm run build && pm2 restart ${pm2App}.`;
     } else {
       message += ' Server secrets are live immediately — no restart needed.';
     }

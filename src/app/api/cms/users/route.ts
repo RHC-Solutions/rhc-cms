@@ -26,6 +26,14 @@ export interface CMSUser {
 
 const USERS_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'users.json');
 
+// Default seed emails derive from the site domain so a fresh site doesn't
+// inherit rhcsolutions.com addresses. Override with SEED_ADMIN_EMAIL / SEED_JOBS_EMAIL.
+const SEED_DOMAIN = (process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'https://example.com')
+  .replace(/^https?:\/\//, '')
+  .replace(/\/$/, '') || 'example.com';
+const SEED_ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || `admin@${SEED_DOMAIN}`;
+const SEED_JOBS_EMAIL = process.env.SEED_JOBS_EMAIL || `jobs@${SEED_DOMAIN}`;
+
 const ensureUsersFile = (): CMSUser[] => {
   const dir = path.dirname(USERS_FILE);
   if (!fs.existsSync(dir)) {
@@ -37,7 +45,7 @@ const ensureUsersFile = (): CMSUser[] => {
     {
       id: '1',
       name: 'Admin User',
-      email: 'admin@rhcsolutions.com',
+      email: SEED_ADMIN_EMAIL,
       role: 'admin',
       status: 'active',
       passwordHash: defaultPassword,
@@ -52,7 +60,7 @@ const ensureUsersFile = (): CMSUser[] => {
     {
       id: '2',
       name: 'Jobs Manager',
-      email: 'jobs@rhcsolutions.com',
+      email: SEED_JOBS_EMAIL,
       role: 'jobs_manager',
       status: 'active',
       passwordHash: defaultPassword,
