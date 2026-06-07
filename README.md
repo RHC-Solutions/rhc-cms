@@ -39,6 +39,10 @@ path, compose `adminAuthGate` in `middleware.ts`, install the listed deps
 (`--print-deps`), and set `NEXTAUTH_SECRET` / `NEXTAUTH_URL` /
 `NEXT_PUBLIC_SITE_URL` in `.env.local`. Build and you have `/admin`.
 
+📖 **Full step-by-step guide with every setting: [INSTALL.md](./INSTALL.md)** —
+prerequisites, complete env-var reference, permissions, first-run setup wizard,
+automation cron, updating, and troubleshooting.
+
 ## Pull updates into every site
 
 ```bash
