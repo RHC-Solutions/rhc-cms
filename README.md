@@ -28,16 +28,36 @@ your-site/
 
 ## Add to a new site
 
+**One command**, run from the root of your site:
+
+```bash
+npx github:RHC-Solutions/admin_panel init
+```
+
+That adds the submodule, patches `tsconfig.json`, wires `adminAuthGate` into
+`middleware.ts`, generates the route wrappers, installs the deps, and scaffolds
+`.env.local` with a fresh `NEXTAUTH_SECRET`. It's idempotent — safe to re-run.
+Then set `NEXTAUTH_URL` / `NEXT_PUBLIC_SITE_URL`, `npm run build`, and open
+`/admin`. Flags: `--no-install`, `--submodule <path>`, `--url <git-url>`.
+
+Pull a newer panel later:
+
+```bash
+npx github:RHC-Solutions/admin_panel update   # or: node vendor/admin-panel/bin/admin-panel.mjs update
+```
+
+<details><summary>Or do it by hand (what <code>init</code> automates)</summary>
+
 ```bash
 cd your-site
 git submodule add https://github.com/RHC-Solutions/admin_panel.git vendor/admin-panel
 node vendor/admin-panel/scripts/install-into-site.mjs   # generates route wrappers
 ```
 
-Then follow the checklist the script prints: add the `@adminpanel/*` tsconfig
-path, compose `adminAuthGate` in `middleware.ts`, install the listed deps
-(`--print-deps`), and set `NEXTAUTH_SECRET` / `NEXTAUTH_URL` /
-`NEXT_PUBLIC_SITE_URL` in `.env.local`. Build and you have `/admin`.
+Then add the `@adminpanel/*` tsconfig path, compose `adminAuthGate` in
+`middleware.ts`, install the listed deps (`--print-deps`), and set
+`NEXTAUTH_SECRET` / `NEXTAUTH_URL` / `NEXT_PUBLIC_SITE_URL` in `.env.local`.
+</details>
 
 📖 **Full step-by-step guide with every setting: [INSTALL.md](./INSTALL.md)** —
 prerequisites, complete env-var reference, permissions, first-run setup wizard,

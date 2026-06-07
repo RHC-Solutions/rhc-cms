@@ -1,0 +1,251 @@
+#!/usr/bin/env node
+// admin-panel CLI — one-command installer for the embeddable CMS admin.
+//
+//   npx github:RHC-Solutions/admin_panel init     # bootstrap into the current site
+//   npx github:RHC-Solutions/admin_panel update   # pull a newer panel + refresh wrappers
+//
+// `init` is idempotent — safe to re-run. It:
+//   1. adds the panel as a git submodule at vendor/admin-panel
+//   2. adds the @adminpanel/* path to tsconfig.json
+//   3. creates middleware.ts wired to adminAuthGate (or prints the snippet if one exists)
+//   4. generates the Next route wrappers (install-into-site.mjs)
+//   5. installs the runtime deps           (skip with --no-install)
+//   6. scaffolds .env.local + a fresh NEXTAUTH_SECRET, and updates .gitignore
+//
+// Flags: --submodule <path> (default vendor/admin-panel) · --url <git-url>
+//        --no-install · --yes (assume defaults) · --help
+//
+// Uses Node built-ins only — no dependencies.
+
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+
+const DEFAULT_URL = 'https://github.com/RHC-Solutions/admin_panel.git';
+const SITE = process.cwd();
+
+// ---------- arg parsing ----------
+const argv = process.argv.slice(2);
+const flag = (name) => argv.includes(`--${name}`);
+const cmd = (flag('help') || argv.includes('-h'))
+  ? 'help'
+  : (argv.find((a) => !a.startsWith('-')) || 'init');
+const opt = (name, def) => {
+  const i = argv.indexOf(`--${name}`);
+  return i >= 0 && argv[i + 1] && !argv[i + 1].startsWith('-') ? argv[i + 1] : def;
+};
+const SUBMODULE = opt('submodule', 'vendor/admin-panel');
+const URL = opt('url', DEFAULT_URL);
+const NO_INSTALL = flag('no-install');
+
+// ---------- tiny logger ----------
+const c = (n, s) => (process.stdout.isTTY ? `\x1b[${n}m${s}\x1b[0m` : s);
+const ok = (m) => console.log(`${c(32, '✓')} ${m}`);
+const info = (m) => console.log(`${c(36, '•')} ${m}`);
+const warn = (m) => console.log(`${c(33, '!')} ${m}`);
+const skip = (m) => console.log(`${c(90, '·')} ${m} ${c(90, '(already done)')}`);
+const die = (m) => { console.error(`${c(31, '✗')} ${m}`); process.exit(1); };
+const sh = (file, args, o = {}) =>
+  execFileSync(file, args, { cwd: SITE, stdio: 'pipe', encoding: 'utf8', ...o });
+const shQuiet = (file, args) => { try { return sh(file, args); } catch { return null; } };
+
+// ---------- guards ----------
+function assertHostSite() {
+  const pkgPath = path.join(SITE, 'package.json');
+  if (!fs.existsSync(pkgPath)) {
+    die(`No package.json in ${SITE}.\n  Run this from the root of the site you want to add the admin to.`);
+  }
+  try {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    if (pkg.name === 'rhcsolutions-admin') {
+      die(`This is the admin_panel repo itself — run \`init\` from a *host* site, not from inside the panel.`);
+    }
+  } catch { /* unreadable package.json is fine to proceed past */ }
+}
+
+const isGitRepo = () => !!shQuiet('git', ['rev-parse', '--is-inside-work-tree']);
+
+// ---------- steps ----------
+function ensureGit() {
+  if (isGitRepo()) return;
+  info('Initializing a git repository (required for submodules)…');
+  sh('git', ['init'], { stdio: 'inherit' });
+  ok('git initialized');
+}
+
+function ensureSubmodule() {
+  const abs = path.join(SITE, SUBMODULE);
+  if (fs.existsSync(path.join(abs, 'src', 'app'))) { skip(`submodule present at ${SUBMODULE}`); return abs; }
+  info(`Adding submodule ${URL} → ${SUBMODULE} …`);
+  try {
+    sh('git', ['submodule', 'add', '--force', URL, SUBMODULE], { stdio: 'inherit' });
+  } catch {
+    // Maybe registered but not checked out
+    shQuiet('git', ['submodule', 'update', '--init', '--recursive', SUBMODULE]);
+  }
+  if (!fs.existsSync(path.join(abs, 'src', 'app'))) die(`Could not check out the submodule at ${SUBMODULE}.`);
+  ok(`submodule ready at ${SUBMODULE}`);
+  return abs;
+}
+
+function patchTsconfig() {
+  const tsPath = ['tsconfig.json', 'jsconfig.json'].map((f) => path.join(SITE, f)).find(fs.existsSync);
+  const mapping = `./${SUBMODULE}/src/*`;
+  if (!tsPath) {
+    warn(`No tsconfig.json found — add this manually:\n      "paths": { "@adminpanel/*": ["${mapping}"] }`);
+    return;
+  }
+  let text = fs.readFileSync(tsPath, 'utf8');
+  if (text.includes('@adminpanel/*')) { skip('tsconfig @adminpanel/* path'); return; }
+
+  const line = `"@adminpanel/*": ["${mapping}"]`;
+  if (/"paths"\s*:\s*\{/.test(text)) {
+    text = text.replace(/("paths"\s*:\s*\{)/, `$1\n      ${line},`);
+  } else if (/"compilerOptions"\s*:\s*\{/.test(text)) {
+    text = text.replace(/("compilerOptions"\s*:\s*\{)/, `$1\n    "baseUrl": ".",\n    "paths": { ${line} },`);
+  } else {
+    warn(`Couldn't auto-edit ${path.basename(tsPath)} — add manually:\n      "paths": { "@adminpanel/*": ["${mapping}"] }`);
+    return;
+  }
+  fs.writeFileSync(tsPath, text);
+  ok(`tsconfig: added @adminpanel/* → ${mapping}`);
+}
+
+const MIDDLEWARE_TEMPLATE = `import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { adminAuthGate, ADMIN_MATCHER } from '@adminpanel/admin-middleware';
+
+// Composed by admin-panel init. Keep your own site-level concerns here
+// (canonical host, CSP/security headers, caching) and call the gate.
+export async function middleware(req: NextRequest) {
+  const gate = await adminAuthGate(req); // login, MFA, roles, first-run setup
+  if (gate) return gate;
+  return NextResponse.next();
+}
+
+export const config = { matcher: [...ADMIN_MATCHER] };
+`;
+
+function wireMiddleware() {
+  const existing = ['middleware.ts', 'middleware.js', 'src/middleware.ts', 'src/middleware.js']
+    .map((f) => path.join(SITE, f)).find(fs.existsSync);
+  if (existing) {
+    const body = fs.readFileSync(existing, 'utf8');
+    if (body.includes('adminAuthGate')) { skip('middleware adminAuthGate'); return; }
+    warn(`You already have ${path.relative(SITE, existing)} — I won't overwrite it. Add inside your middleware():
+
+      import { adminAuthGate, ADMIN_MATCHER } from '@adminpanel/admin-middleware';
+      const gate = await adminAuthGate(req); if (gate) return gate;
+      // and merge ...ADMIN_MATCHER into your config.matcher`);
+    return;
+  }
+  const target = fs.existsSync(path.join(SITE, 'src')) ? path.join(SITE, 'middleware.ts') : path.join(SITE, 'middleware.ts');
+  fs.writeFileSync(target, MIDDLEWARE_TEMPLATE);
+  ok(`created ${path.relative(SITE, target)} (adminAuthGate wired)`);
+}
+
+function generateWrappers(abs, force) {
+  const script = path.join(abs, 'scripts', 'install-into-site.mjs');
+  if (!fs.existsSync(script)) { warn('install-into-site.mjs missing in submodule — skipping wrapper generation.'); return; }
+  info('Generating route wrappers…');
+  const args = [script, '--submodule', SUBMODULE, '--site', '.'];
+  if (force) args.push('--force');
+  sh('node', args, { stdio: 'inherit' });
+}
+
+function installDeps(abs) {
+  if (NO_INSTALL) { warn('Skipping dependency install (--no-install). Run install-into-site.mjs --print-deps to see them.'); return; }
+  let deps = {};
+  try { deps = JSON.parse(fs.readFileSync(path.join(abs, 'package.json'), 'utf8')).dependencies || {}; } catch { /* */ }
+  const names = Object.keys(deps).filter((n) => !n.startsWith('@types/'));
+  const types = Object.keys(deps).filter((n) => n.startsWith('@types/'));
+  if (!names.length) { skip('dependencies'); return; }
+  info(`Installing ${names.length} runtime deps (this can take a minute)…`);
+  sh('npm', ['install', ...names, '--legacy-peer-deps'], { stdio: 'inherit' });
+  if (types.length) sh('npm', ['install', '-D', ...types, '--legacy-peer-deps'], { stdio: 'inherit' });
+  ok('dependencies installed');
+}
+
+function scaffoldEnv(abs) {
+  const envPath = path.join(SITE, '.env.local');
+  const examplePath = path.join(abs, '.env.local.example');
+  if (fs.existsSync(envPath)) {
+    skip('.env.local (present — verify NEXTAUTH_SECRET / NEXTAUTH_URL / NEXT_PUBLIC_SITE_URL)');
+    return;
+  }
+  let body = fs.existsSync(examplePath) ? fs.readFileSync(examplePath, 'utf8')
+    : 'NEXTAUTH_SECRET=\nNEXTAUTH_URL=https://your-domain.com\nNEXT_PUBLIC_SITE_URL=https://your-domain.com\n';
+  const secret = crypto.randomBytes(32).toString('base64');
+  body = body.replace(/^NEXTAUTH_SECRET=.*$/m, `NEXTAUTH_SECRET=${secret}`);
+  if (!/^NEXTAUTH_SECRET=/m.test(body)) body = `NEXTAUTH_SECRET=${secret}\n` + body;
+  fs.writeFileSync(envPath, body);
+  fs.chmodSync(envPath, 0o600);
+  ok('.env.local scaffolded with a fresh NEXTAUTH_SECRET (fill in NEXTAUTH_URL / NEXT_PUBLIC_SITE_URL)');
+}
+
+function updateGitignore() {
+  const giPath = path.join(SITE, '.gitignore');
+  const needed = ['.env.local', 'cms-data/secrets.json', 'cms-data/users.json', 'cms-data/cms.db'];
+  let body = fs.existsSync(giPath) ? fs.readFileSync(giPath, 'utf8') : '';
+  const missing = needed.filter((e) => !body.split(/\r?\n/).includes(e));
+  if (!missing.length) { skip('.gitignore secrets'); return; }
+  body += (body.endsWith('\n') || body === '' ? '' : '\n') + '\n# admin-panel: never commit secrets\n' + missing.join('\n') + '\n';
+  fs.writeFileSync(giPath, body);
+  ok(`.gitignore: ignoring ${missing.join(', ')}`);
+}
+
+// ---------- commands ----------
+function runInit() {
+  console.log(c(1, '\nadmin-panel init') + ` → ${SITE}\n`);
+  assertHostSite();
+  ensureGit();
+  const abs = ensureSubmodule();
+  patchTsconfig();
+  wireMiddleware();
+  generateWrappers(abs, false);
+  installDeps(abs);
+  scaffoldEnv(abs);
+  updateGitignore();
+  console.log(`
+${c(32, '✔ Admin panel installed.')} Next:
+
+  1) Edit ${c(1, '.env.local')} — set NEXTAUTH_URL and NEXT_PUBLIC_SITE_URL to your domain.
+  2) ${c(1, 'npm run build && npm start')}   (or pm2/systemd in production)
+  3) Open ${c(1, '/admin')} → the setup wizard creates your admin account, then enroll MFA.
+
+Full reference: ${SUBMODULE}/INSTALL.md
+`);
+}
+
+function runUpdate() {
+  assertHostSite();
+  if (!fs.existsSync(path.join(SITE, SUBMODULE, 'src', 'app'))) die(`No submodule at ${SUBMODULE}. Run \`init\` first.`);
+  info('Pulling latest panel…');
+  sh('git', ['submodule', 'update', '--remote', SUBMODULE], { stdio: 'inherit' });
+  generateWrappers(path.join(SITE, SUBMODULE), true);
+  ok('Panel updated. Rebuild: npm run build && restart your server.');
+}
+
+function runHelp() {
+  console.log(`admin-panel — embeddable CMS admin installer
+
+Usage (from your site's root):
+  npx github:RHC-Solutions/admin_panel init [options]
+  npx github:RHC-Solutions/admin_panel update
+
+init options:
+  --submodule <path>   submodule location (default: vendor/admin-panel)
+  --url <git-url>      panel repo URL (default: ${DEFAULT_URL})
+  --no-install         don't run npm install for the panel's deps
+  --yes                assume defaults, no prompts
+  --help               this help
+`);
+}
+
+switch (cmd) {
+  case 'init': runInit(); break;
+  case 'update': runUpdate(); break;
+  case 'help': case '--help': runHelp(); break;
+  default: warn(`Unknown command "${cmd}".`); runHelp(); process.exit(1);
+}

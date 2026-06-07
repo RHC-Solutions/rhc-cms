@@ -35,7 +35,41 @@ The host can be brand-new: `npx create-next-app@latest your-site --typescript --
 
 ---
 
-## 2. Add the submodule + generate route wrappers
+## 2. Install
+
+### Fast path — one command (recommended)
+
+From the root of your site:
+
+```bash
+npx github:RHC-Solutions/admin_panel init
+```
+
+This runs the bundled CLI ([bin/admin-panel.mjs](./bin/admin-panel.mjs)), which
+does **all** of steps 2–4 and 6 for you, idempotently:
+
+- adds the submodule at `vendor/admin-panel`
+- adds the `@adminpanel/*` path to `tsconfig.json`
+- creates `middleware.ts` wired to `adminAuthGate` (or prints the snippet if you
+  already have one — it won't overwrite yours)
+- generates the Next route wrappers
+- installs the runtime deps (`--no-install` to skip)
+- scaffolds `.env.local` with a fresh `NEXTAUTH_SECRET` and updates `.gitignore`
+
+Flags: `--no-install` · `--submodule <path>` (default `vendor/admin-panel`) ·
+`--url <git-url>` · `--help`. Then jump to **step 4** to fill in the 3 required
+env vars, and **step 6** to run.
+
+> The first `npx` run clones the panel once to execute the CLI; that's expected.
+
+To pull a newer panel later: `npx github:RHC-Solutions/admin_panel update` (or
+`node vendor/admin-panel/bin/admin-panel.mjs update`) — see step 8.
+
+### Manual path — what the CLI automates
+
+If you'd rather wire it up yourself (or the CLI can't auto-edit a commented
+`tsconfig`/existing `middleware`), do the submodule + wrappers here and the rest
+in steps 3–4:
 
 ```bash
 cd your-site
