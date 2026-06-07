@@ -1,5 +1,19 @@
 # Security Remediation
 
+## 2026‑06‑07 — Leaked Telegram bot token (`functions/api/apply.js`)
+
+GitHub secret‑scanning ([alert #1](https://github.com/RHC-Solutions/admin_panel/security/secret-scanning/1)) flagged a hardcoded Telegram bot token committed as a fallback in [functions/api/apply.js](../functions/api/apply.js) — the job‑application Cloudflare Pages function (`@RHC_CV_bot`, id `8212839523`). The same literal was present in the live `rhcsolutions.com` repo and in git history (commit `ffbb523`).
+
+**Closed:**
+- Removed the hardcoded token **and** chat id from `functions/api/apply.js` in both repos; the function now requires `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` from the environment and fails safe (500) if absent. Never reintroduce a literal fallback.
+- Token **revoked** in @BotFather (verified: `getMe` now returns `401`); replacement set via `/admin/integrations` (→ `cms-data/secrets.json`), not in code. Backup/contact bot tokens were rotated too.
+- GitHub alert #1 resolved as **revoked**.
+- The dead literal remains in git history but is inert (revoked) — no purge needed.
+
+**Hardening status:**
+- `RHC-Solutions/admin_panel` (public): secret scanning **+ push protection enabled** ✓
+- `RHC-Solutions/rhcsolutions.com_2026` (private): secret scanning is **off**; on a private repo it requires GitHub Advanced Security (paid). Enable it (org billing decision) so future commits are scanned/blocked at push time.
+
 ## 2026‑05‑13 — Pen‑test follow‑up audit
 
 A targeted audit + live pen‑test of production found nine unauthenticated endpoints, several leaking secrets to the open internet. All are now patched, the leaked `NEXTAUTH_SECRET` has been rotated, and filesystem permissions have been tightened. **Provider‑side secret rotations are still on the user** — see the checklist below.
