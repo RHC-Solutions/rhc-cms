@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { getToken } from 'next-auth/jwt';
 
-const execPromise = promisify(exec);
+const execPromise = promisify(execFile);
 
 const BACKUPS_DIR = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'backups');
 const CMS_DATA_DIR = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data');
@@ -61,12 +61,16 @@ async function restoreFromBackup(backupName: string): Promise<{ success: boolean
       
       if (isWindows) {
         // Use PowerShell to extract ZIP on Windows
-        await execPromise(`powershell -Command "Expand-Archive -Path '${backupPath}' -DestinationPath '${restoreDir}' -Force"`, {
-          maxBuffer: 100 * 1024 * 1024, // 100MB buffer
-        });
+        await execPromise(
+          'powershell',
+          ['-Command', 'Expand-Archive', '-Path', backupPath, '-DestinationPath', restoreDir, '-Force'],
+          {
+            maxBuffer: 100 * 1024 * 1024, // 100MB buffer
+          }
+        );
       } else {
         // Use unzip on Unix systems
-        await execPromise(`unzip -q "${backupPath}" -d "${restoreDir}"`, {
+        await execPromise('unzip', ['-q', backupPath, '-d', restoreDir], {
           maxBuffer: 100 * 1024 * 1024,
         });
       }
