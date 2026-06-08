@@ -32,11 +32,36 @@ function extractJsonLd(html) {
   return { count: blocks.length, types: types.flat(), errors };
 }
 
+// Remove <tag>…</tag> blocks (and their text content) using plain index
+// scanning rather than a tag-matching regex. A browser ends such a block at
+// the first case-insensitive `</tag`, regardless of trailing whitespace or
+// junk before the `>` (e.g. `</script\t\n bar>`), which is exactly the class
+// of end tag a regex filter keeps mismatching (js/bad-tag-filter). This is
+// metrics-only word counting, not security sanitization.
+function stripTagBlocks(html, tag) {
+  const lower = html.toLowerCase();
+  const open = `<${tag}`;
+  const close = `</${tag}`;
+  let out = '';
+  let i = 0;
+  while (i < html.length) {
+    const start = lower.indexOf(open, i);
+    if (start === -1) {
+      out += html.slice(i);
+      break;
+    }
+    out += html.slice(i, start);
+    const closeStart = lower.indexOf(close, start + open.length);
+    if (closeStart === -1) break; // unterminated block — drop the remainder
+    const gt = html.indexOf('>', closeStart);
+    i = gt === -1 ? html.length : gt + 1;
+  }
+  return out;
+}
+
 function textStats(html) {
   const body = (html.match(/<body[\s\S]*?<\/body>/i) || [html])[0];
-  const stripped = body
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  const stripped = stripTagBlocks(stripTagBlocks(body, 'script'), 'style')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();

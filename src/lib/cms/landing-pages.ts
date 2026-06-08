@@ -227,5 +227,8 @@ export const slugify = (s: string) =>
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+    // Runs of separators are already collapsed to a single '-' above, so a
+    // single-char strip suffices. Avoids the `-+$` anchored quantifier that
+    // triggers polynomial backtracking (js/polynomial-redos).
+    .replace(/^-|-$/g, '')
     .slice(0, 80);

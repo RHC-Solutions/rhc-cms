@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
 const USERS_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'users.json');
@@ -31,6 +32,12 @@ function ipRateLimited(ip: string): boolean {
   return hits.length > IP_MAX;
 }
 
+// Pick one character from `chars` using a CSPRNG (unbiased: randomInt rejects
+// values that would skew the modulo). Never use Math.random() for secrets.
+function pick(chars: string): string {
+  return chars[crypto.randomInt(chars.length)];
+}
+
 // Generate a secure 64-character password with extra complexity
 function generateSecurePassword(length: number = 64): string {
   const lowercase = 'abcdefghijklmnopqrstuvwxyz';
@@ -38,24 +45,29 @@ function generateSecurePassword(length: number = 64): string {
   const numbers = '0123456789';
   const specialChars = '!@#$%^&*()_+-=[]{}|;:,.<>?';
   const allChars = lowercase + uppercase + numbers + specialChars;
-  
-  let password = '';
-  
+
+  const chars: string[] = [];
+
   // Ensure at least 2 of each type for extra complexity
   for (let i = 0; i < 2; i++) {
-    password += lowercase[Math.floor(Math.random() * lowercase.length)];
-    password += uppercase[Math.floor(Math.random() * uppercase.length)];
-    password += numbers[Math.floor(Math.random() * numbers.length)];
-    password += specialChars[Math.floor(Math.random() * specialChars.length)];
+    chars.push(pick(lowercase));
+    chars.push(pick(uppercase));
+    chars.push(pick(numbers));
+    chars.push(pick(specialChars));
   }
-  
+
   // Fill the rest randomly
-  for (let i = password.length; i < length; i++) {
-    password += allChars[Math.floor(Math.random() * allChars.length)];
+  while (chars.length < length) {
+    chars.push(pick(allChars));
   }
-  
-  // Shuffle the password to randomize the guaranteed characters
-  return password.split('').sort(() => Math.random() - 0.5).join('');
+
+  // Cryptographic Fisher-Yates shuffle to randomize the guaranteed characters.
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+
+  return chars.join('');
 }
 
 // Send message to Telegram
