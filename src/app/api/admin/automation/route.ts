@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
         typeof c?.recipientEmail === 'string' ? c.recipientEmail.trim() : '',
       updatedAt: new Date().toISOString(),
     };
-    if (next.recipientEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(next.recipientEmail)) {
+    if (next.recipientEmail && !/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(next.recipientEmail)) {
       return NextResponse.json({ error: 'Invalid recipient email' }, { status: 400 });
     }
     try {
