@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
     // Strict allowlist — backup files are named with letters, digits, dots,
     // dashes and underscores only. This blocks directory traversal and any
     // shell-significant characters as defense-in-depth.
-    if (!/^[A-Za-z0-9._-]+$/.test(backupName) || backupName.includes('..')) {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(backupName) || backupName.includes('..')) {
       return NextResponse.json({ error: 'Invalid backup name format' }, { status: 400 });
     }
 
