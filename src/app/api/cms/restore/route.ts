@@ -64,10 +64,12 @@ async function restoreFromBackup(backupName: string): Promise<{ success: boolean
       if (isWindows) {
         // Use PowerShell to extract ZIP on Windows. Parameters are passed as
         // discrete argv entries (no shell string), so the path is never parsed
-        // as a command.
+        // as a command. -LiteralPath (vs -Path) stops PowerShell treating any
+        // [ ] * ? in the backup filename as a wildcard. NB: there is no
+        // -LiteralDestinationPath param — the destination is always -DestinationPath.
         await execFilePromise(
           'powershell',
-          ['-NoProfile', '-Command', 'Expand-Archive', '-Path', backupPath, '-DestinationPath', restoreDir, '-Force'],
+          ['-NoProfile', '-Command', 'Expand-Archive', '-LiteralPath', backupPath, '-DestinationPath', restoreDir, '-Force'],
           { maxBuffer: 100 * 1024 * 1024 }, // 100MB buffer
         );
       } else {
