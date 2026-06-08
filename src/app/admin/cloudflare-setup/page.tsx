@@ -130,7 +130,7 @@ export default function CloudflareSetupPage() {
   };
 
   const envTemplate = credentials
-    .map((c) => `${c.envVar}=your-${c.id.replace('-', '-')}`)
+    .map((c) => `${c.envVar}=your-${c.id}`)
     .join('\n');
 
   return (

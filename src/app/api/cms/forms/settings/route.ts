@@ -52,9 +52,20 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { formId, enabled, emailTo, notifications } = body;
 
+    // Reject prototype-pollution keys before using formId as an index
+    // (js/prototype-polluting-assignment).
+    if (
+      typeof formId !== 'string' ||
+      formId === '__proto__' ||
+      formId === 'constructor' ||
+      formId === 'prototype'
+    ) {
+      return NextResponse.json({ error: 'Invalid form id' }, { status: 400 });
+    }
+
     const forms = loadForms();
 
-    if (!forms[formId]) {
+    if (!Object.prototype.hasOwnProperty.call(forms, formId)) {
       return NextResponse.json({ error: 'Form not found' }, { status: 404 });
     }
 

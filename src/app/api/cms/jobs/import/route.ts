@@ -115,10 +115,12 @@ export async function POST(request: NextRequest) {
 
     // If no structured data found, create a default imported job
     if (parsedJobs.length === 0) {
-      // Extract visible job titles from HTML using regex
-      const titleMatches = html.match(/<h2[^>]*>([^<]+)<\/h2>/g) || [];
+      // Extract visible job titles from HTML. Capture the inner text group
+      // directly (it's already `[^<]+`, i.e. tag-free) rather than stripping
+      // tags after the fact (js/incomplete-multi-character-sanitization).
+      const titleMatches = [...html.matchAll(/<h2[^>]*>([^<]+)<\/h2>/g)];
       parsedJobs = titleMatches.map((match, idx) => {
-        const title = match.replace(/<[^>]*>/g, '').trim();
+        const title = match[1].trim();
         return {
           id: `imported-${Date.now()}-${idx}`,
           title: title || 'Career Opportunity',

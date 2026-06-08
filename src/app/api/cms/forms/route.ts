@@ -23,6 +23,16 @@ const FORMS_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-da
 
 const getAdminEmail = () => getSecret('ADMIN_EMAIL') || 'info@rhcsolutions.com';
 
+// Escape untrusted form data before embedding it in HTML email bodies or
+// Telegram messages (both use HTML parse modes) — prevents js/xss / injection.
+const escapeHtml = (value: unknown): string =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 const ensureDir = () => {
   const dir = path.dirname(SUBMISSIONS_FILE);
   if (!fs.existsSync(dir)) {
@@ -204,17 +214,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Send notifications
+    // Send notifications — every interpolated value is untrusted form input,
+    // so HTML-escape it before placing it in the email/Telegram HTML body.
+    const safeFormName = escapeHtml(formName);
+    const safeEmail = escapeHtml(email || 'N/A');
     const dataStr = Object.entries(data)
-      .map(([k, v]) => `<b>${k}:</b> ${v}`)
+      .map(([k, v]) => `<b>${escapeHtml(k)}:</b> ${escapeHtml(v)}`)
       .join('<br/>');
 
-    const telegramMsg = `📋 <b>New Form Submission</b>\n\n<b>Form:</b> ${formName}\n<b>Email:</b> ${email || 'N/A'}\n\n${dataStr}`;
+    const telegramMsg = `📋 <b>New Form Submission</b>\n\n<b>Form:</b> ${safeFormName}\n<b>Email:</b> ${safeEmail}\n\n${dataStr}`;
     await sendTelegram(telegramMsg);
 
     const emailHtml = `
-      <h2>New ${formName} Submission</h2>
-      <p><strong>Email:</strong> ${email || 'N/A'}</p>
+      <h2>New ${safeFormName} Submission</h2>
+      <p><strong>Email:</strong> ${safeEmail}</p>
       <hr/>
       ${dataStr}
     `;

@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { getToken } from 'next-auth/jwt';
 
-const execPromise = promisify(exec);
+// execFile (no shell) — arguments are passed as an argv array, so a crafted
+// backup name can never be interpreted as a shell command (js/command-line-injection).
+const execFilePromise = promisify(execFile);
 
 const BACKUPS_DIR = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'backups');
 const CMS_DATA_DIR = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data');
@@ -60,13 +62,17 @@ async function restoreFromBackup(backupName: string): Promise<{ success: boolean
       const isWindows = process.platform === 'win32';
       
       if (isWindows) {
-        // Use PowerShell to extract ZIP on Windows
-        await execPromise(`powershell -Command "Expand-Archive -Path '${backupPath}' -DestinationPath '${restoreDir}' -Force"`, {
-          maxBuffer: 100 * 1024 * 1024, // 100MB buffer
-        });
+        // Use PowerShell to extract ZIP on Windows. Parameters are passed as
+        // discrete argv entries (no shell string), so the path is never parsed
+        // as a command.
+        await execFilePromise(
+          'powershell',
+          ['-NoProfile', '-Command', 'Expand-Archive', '-Path', backupPath, '-DestinationPath', restoreDir, '-Force'],
+          { maxBuffer: 100 * 1024 * 1024 }, // 100MB buffer
+        );
       } else {
         // Use unzip on Unix systems
-        await execPromise(`unzip -q "${backupPath}" -d "${restoreDir}"`, {
+        await execFilePromise('unzip', ['-q', backupPath, '-d', restoreDir], {
           maxBuffer: 100 * 1024 * 1024,
         });
       }
@@ -169,8 +175,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid backup name' }, { status: 400 });
     }
 
-    // Validate backup name format (prevent directory traversal)
-    if (backupName.includes('..') || backupName.includes('/') || backupName.includes('\\')) {
+    // Strict allowlist — backup files are named with letters, digits, dots,
+    // dashes and underscores only. This blocks directory traversal and any
+    // shell-significant characters as defense-in-depth.
+    if (!/^[A-Za-z0-9._-]+$/.test(backupName) || backupName.includes('..')) {
       return NextResponse.json({ error: 'Invalid backup name format' }, { status: 400 });
     }
 

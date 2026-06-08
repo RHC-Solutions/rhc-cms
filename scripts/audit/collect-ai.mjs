@@ -34,9 +34,13 @@ function extractJsonLd(html) {
 
 function textStats(html) {
   const body = (html.match(/<body[\s\S]*?<\/body>/i) || [html])[0];
+  // Match script/style blocks with a tag-name word boundary and a whitespace-
+  // tolerant closing tag (browsers accept `</script >`), so the block can't be
+  // smuggled past the filter (js/bad-tag-filter). This is metrics-only word
+  // counting, not security sanitization.
   const stripped = body
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script\b[\s\S]*?<\/script\s*>/gi, ' ')
+    .replace(/<style\b[\s\S]*?<\/style\s*>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
