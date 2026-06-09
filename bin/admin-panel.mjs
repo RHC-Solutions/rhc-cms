@@ -11,9 +11,11 @@
 //   4. generates the Next route wrappers (install-into-site.mjs)
 //   5. installs the runtime deps           (skip with --no-install)
 //   6. scaffolds .env.local + a fresh NEXTAUTH_SECRET, and updates .gitignore
+//   7. drops a renovate.json so the site auto-updates the panel + deps (--no-renovate)
 //
 // Flags: --submodule <path> (default vendor/admin-panel) · --url <git-url>
-//        --no-install · --yes (assume defaults) · --help
+//        --branch <name> (submodule tracking branch, default main)
+//        --no-install · --no-renovate · --yes (assume defaults) · --help
 //
 // Uses Node built-ins only — no dependencies.
 
@@ -37,7 +39,9 @@ const opt = (name, def) => {
 };
 const SUBMODULE = opt('submodule', 'vendor/admin-panel');
 const URL = opt('url', DEFAULT_URL);
+const BRANCH = opt('branch', 'main');
 const NO_INSTALL = flag('no-install');
+const NO_RENOVATE = flag('no-renovate');
 
 // ---------- tiny logger ----------
 const c = (n, s) => (process.stdout.isTTY ? `\x1b[${n}m${s}\x1b[0m` : s);
@@ -74,17 +78,27 @@ function ensureGit() {
   ok('git initialized');
 }
 
+// Record the tracking branch in .gitmodules so BOTH `git submodule update --remote`
+// and Renovate's git-submodules manager follow the same branch deterministically.
+// Idempotent — safe to call on an already-present submodule.
+function setSubmoduleBranch() {
+  if (!fs.existsSync(path.join(SITE, '.gitmodules'))) return;
+  shQuiet('git', ['config', '-f', '.gitmodules', `submodule.${SUBMODULE}.branch`, BRANCH]);
+  shQuiet('git', ['submodule', 'sync', '--', SUBMODULE]);
+}
+
 function ensureSubmodule() {
   const abs = path.join(SITE, SUBMODULE);
-  if (fs.existsSync(path.join(abs, 'src', 'app'))) { skip(`submodule present at ${SUBMODULE}`); return abs; }
-  info(`Adding submodule ${URL} → ${SUBMODULE} …`);
+  if (fs.existsSync(path.join(abs, 'src', 'app'))) { skip(`submodule present at ${SUBMODULE}`); setSubmoduleBranch(); return abs; }
+  info(`Adding submodule ${URL} → ${SUBMODULE} (branch ${BRANCH}) …`);
   try {
-    sh('git', ['submodule', 'add', '--force', URL, SUBMODULE], { stdio: 'inherit' });
+    sh('git', ['submodule', 'add', '-b', BRANCH, '--force', URL, SUBMODULE], { stdio: 'inherit' });
   } catch {
     // Maybe registered but not checked out
     shQuiet('git', ['submodule', 'update', '--init', '--recursive', SUBMODULE]);
   }
   if (!fs.existsSync(path.join(abs, 'src', 'app'))) die(`Could not check out the submodule at ${SUBMODULE}.`);
+  setSubmoduleBranch();
   ok(`submodule ready at ${SUBMODULE}`);
   return abs;
 }
@@ -231,6 +245,58 @@ function updateGitignore() {
   ok(`.gitignore: ignoring ${missing.join(', ')}`);
 }
 
+// Self-contained host Renovate config. Renovate keeps each site current on its own:
+// the git-submodules manager (off by default — enabled here) bumps vendor/admin-panel
+// to its tracked branch, and the npm manager bumps the panel's deps in the host's
+// package.json. Everything arrives as a reviewable PR — nothing auto-merges, matching
+// the panel's "nothing deploys automatically" policy. Flip a packageRule's automerge
+// to true (with CI + branch protection) to make safe bumps hands-off.
+const RENOVATE_TEMPLATE = JSON.stringify({
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: ['config:recommended', ':dependencyDashboard', ':semanticCommits'],
+  'git-submodules': { enabled: true },
+  schedule: ['before 6am on monday'],
+  packageRules: [
+    {
+      description: 'Embedded admin panel: open a PR to bump vendor/admin-panel to its tracked branch. Review before merge — panel updates can be breaking.',
+      matchManagers: ['git-submodules'],
+      addLabels: ['admin-panel'],
+      automerge: false,
+    },
+    {
+      description: 'Group npm patch+minor into one weekly PR. Set automerge:true (with CI) to make these hands-off.',
+      matchManagers: ['npm'],
+      matchUpdateTypes: ['patch', 'minor'],
+      groupName: 'npm patch+minor',
+      automerge: false,
+    },
+    {
+      description: 'npm major updates: one PR each, manual review.',
+      matchManagers: ['npm'],
+      matchUpdateTypes: ['major'],
+      addLabels: ['dependencies', 'major'],
+      automerge: false,
+    },
+  ],
+}, null, 2) + '\n';
+
+function writeRenovateConfig() {
+  if (NO_RENOVATE) { warn('Skipping renovate.json (--no-renovate).'); return; }
+  const candidates = ['renovate.json', 'renovate.json5', '.renovaterc', '.renovaterc.json', '.github/renovate.json'];
+  const existing = candidates.map((f) => path.join(SITE, f)).find(fs.existsSync);
+  if (existing) {
+    const rel = path.relative(SITE, existing);
+    if (!/git-submodules/.test(fs.readFileSync(existing, 'utf8'))) {
+      warn(`${rel} exists but doesn't enable git-submodules — add this so Renovate also bumps ${SUBMODULE}:\n      "git-submodules": { "enabled": true }`);
+    } else {
+      skip(`renovate config (${rel})`);
+    }
+    return;
+  }
+  fs.writeFileSync(path.join(SITE, 'renovate.json'), RENOVATE_TEMPLATE);
+  ok('renovate.json written — auto-updates vendor/admin-panel + npm deps via PRs');
+}
+
 // ---------- commands ----------
 function runInit() {
   console.log(c(1, '\nadmin-panel init') + ` → ${SITE}\n`);
@@ -244,12 +310,14 @@ function runInit() {
   checkPeers(abs);
   scaffoldEnv(abs);
   updateGitignore();
+  writeRenovateConfig();
   console.log(`
 ${c(32, '✔ Admin panel installed.')} Next:
 
   1) Edit ${c(1, '.env.local')} — set NEXTAUTH_URL and NEXT_PUBLIC_SITE_URL to your domain.
   2) ${c(1, 'npm run build && npm start')}   (or pm2/systemd in production)
   3) Open ${c(1, '/admin')} → the setup wizard creates your admin account, then enroll MFA.
+  4) Enable the ${c(1, 'Renovate')} app on this repo so renovate.json keeps the panel + deps current.
 
 Full reference: ${SUBMODULE}/INSTALL.md
 `);
@@ -259,6 +327,7 @@ function runUpdate() {
   assertHostSite();
   const abs = path.join(SITE, SUBMODULE);
   if (!fs.existsSync(path.join(abs, 'src', 'app'))) die(`No submodule at ${SUBMODULE}. Run \`init\` first.`);
+  setSubmoduleBranch(); // backfill the tracking branch for hosts created before this existed
   info('Pulling latest panel…');
   sh('git', ['submodule', 'update', '--remote', SUBMODULE], { stdio: 'inherit' });
   generateWrappers(abs, true);
@@ -267,6 +336,7 @@ function runUpdate() {
   // `new ZipArchive`) while still resolving an older dep, and crash at runtime.
   installDeps(abs);
   checkPeers(abs);
+  writeRenovateConfig(); // backfill auto-updates for hosts created before this existed
   ok('Panel updated. Rebuild: npm run build && restart your server.');
 }
 
@@ -284,9 +354,15 @@ the panel's required minimum. Rebuild + restart afterwards.
 init options:
   --submodule <path>   submodule location (default: vendor/admin-panel)
   --url <git-url>      panel repo URL (default: ${DEFAULT_URL})
+  --branch <name>      submodule tracking branch (default: main)
   --no-install         don't run npm install for the panel's deps
+  --no-renovate        don't write a renovate.json
   --yes                assume defaults, no prompts
   --help               this help
+
+renovate.json (written on init/update unless --no-renovate) enables Renovate's
+git-submodules + npm managers so each site auto-opens PRs that bump vendor/admin-panel
+and the panel's deps. Requires the Renovate GitHub App (or self-hosted) on the repo.
 `);
 }
 
