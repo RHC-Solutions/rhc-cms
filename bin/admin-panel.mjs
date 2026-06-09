@@ -2,7 +2,7 @@
 // admin-panel CLI — one-command installer for the embeddable CMS admin.
 //
 //   npx github:RHC-Solutions/admin_panel init     # bootstrap into the current site
-//   npx github:RHC-Solutions/admin_panel update   # pull a newer panel + refresh wrappers
+//   npx github:RHC-Solutions/admin_panel update   # pull a newer panel + refresh wrappers + sync deps
 //
 // `init` is idempotent — safe to re-run. It:
 //   1. adds the panel as a git submodule at vendor/admin-panel
@@ -154,17 +154,53 @@ function generateWrappers(abs, force) {
   sh('node', args, { stdio: 'inherit' });
 }
 
+// Install the panel's runtime deps INTO the host, pinned to the version ranges
+// the panel *declares* (e.g. archiver@^8.0.0) — not bare `latest`. This keeps the
+// host's deps in lockstep with the panel source: bumping the submodule to a build
+// that calls the archiver-8 API also pulls archiver ^8 into the host. Caret ranges
+// mean a host already on a compatible-or-newer version is left untouched; only a
+// host below the range is upgraded. Run on both `init` and `update`.
 function installDeps(abs) {
   if (NO_INSTALL) { warn('Skipping dependency install (--no-install). Run install-into-site.mjs --print-deps to see them.'); return; }
   let deps = {};
   try { deps = JSON.parse(fs.readFileSync(path.join(abs, 'package.json'), 'utf8')).dependencies || {}; } catch { /* */ }
+  const spec = (n) => `${n}@${deps[n]}`;
   const names = Object.keys(deps).filter((n) => !n.startsWith('@types/'));
   const types = Object.keys(deps).filter((n) => n.startsWith('@types/'));
   if (!names.length) { skip('dependencies'); return; }
-  info(`Installing ${names.length} runtime deps (this can take a minute)…`);
-  sh('npm', ['install', ...names, '--legacy-peer-deps'], { stdio: 'inherit' });
-  if (types.length) sh('npm', ['install', '-D', ...types, '--legacy-peer-deps'], { stdio: 'inherit' });
+  info(`Installing ${names.length} runtime deps at the panel's declared versions (this can take a minute)…`);
+  sh('npm', ['install', ...names.map(spec), '--legacy-peer-deps'], { stdio: 'inherit' });
+  if (types.length) sh('npm', ['install', '-D', ...types.map(spec), '--legacy-peer-deps'], { stdio: 'inherit' });
   ok('dependencies installed');
+}
+
+// Safety net for (b): warn if the host is running a dep BELOW the panel's declared
+// peerDependencies floor — the skew that makes panel source crash (e.g. the source
+// calls `new ZipArchive` from archiver 8 but the host still has archiver 7). The
+// normal init/update flow installs at the declared ranges so this is satisfied;
+// this catches hosts that pinned an old version themselves or ran with --no-install.
+// Built-ins only: compares the installed MAJOR against the floor's major, which is
+// exactly the granularity a breaking major rename needs.
+function floorMajor(range) { const m = String(range).match(/(\d+)/); return m ? parseInt(m[1], 10) : 0; }
+function installedMajor(name) {
+  try {
+    const v = JSON.parse(fs.readFileSync(path.join(SITE, 'node_modules', name, 'package.json'), 'utf8')).version;
+    return floorMajor(v);
+  } catch { return null; } // not installed — npm install will place it; nothing to warn about
+}
+function checkPeers(abs) {
+  let peers = {};
+  try { peers = JSON.parse(fs.readFileSync(path.join(abs, 'package.json'), 'utf8')).peerDependencies || {}; } catch { return; }
+  const bad = [];
+  for (const [name, range] of Object.entries(peers)) {
+    const have = installedMajor(name);
+    if (have !== null && have < floorMajor(range)) bad.push(`${name}: need ${range}, host has v${have}.x`);
+  }
+  if (bad.length) {
+    warn(`Host deps are BELOW the panel's required minimums — panel code may crash at runtime:\n      ${bad.join('\n      ')}\n      Fix: re-run \`admin-panel update\` (or \`npm install ${Object.keys(peers).join(' ')}\`) then rebuild.`);
+  } else {
+    ok('peer dependency minimums satisfied');
+  }
 }
 
 function scaffoldEnv(abs) {
@@ -205,6 +241,7 @@ function runInit() {
   wireMiddleware();
   generateWrappers(abs, false);
   installDeps(abs);
+  checkPeers(abs);
   scaffoldEnv(abs);
   updateGitignore();
   console.log(`
@@ -220,10 +257,16 @@ Full reference: ${SUBMODULE}/INSTALL.md
 
 function runUpdate() {
   assertHostSite();
-  if (!fs.existsSync(path.join(SITE, SUBMODULE, 'src', 'app'))) die(`No submodule at ${SUBMODULE}. Run \`init\` first.`);
+  const abs = path.join(SITE, SUBMODULE);
+  if (!fs.existsSync(path.join(abs, 'src', 'app'))) die(`No submodule at ${SUBMODULE}. Run \`init\` first.`);
   info('Pulling latest panel…');
   sh('git', ['submodule', 'update', '--remote', SUBMODULE], { stdio: 'inherit' });
-  generateWrappers(path.join(SITE, SUBMODULE), true);
+  generateWrappers(abs, true);
+  // Keep the host's deps in lockstep with the new panel source. Without this a
+  // host could pull source that calls a newer dep API (e.g. archiver 8's
+  // `new ZipArchive`) while still resolving an older dep, and crash at runtime.
+  installDeps(abs);
+  checkPeers(abs);
   ok('Panel updated. Rebuild: npm run build && restart your server.');
 }
 
@@ -233,6 +276,10 @@ function runHelp() {
 Usage (from your site's root):
   npx github:RHC-Solutions/admin_panel init [options]
   npx github:RHC-Solutions/admin_panel update
+
+update pulls the newest panel source, regenerates the route wrappers, syncs the
+host's deps to the versions the panel declares, and warns if any host dep is below
+the panel's required minimum. Rebuild + restart afterwards.
 
 init options:
   --submodule <path>   submodule location (default: vendor/admin-panel)

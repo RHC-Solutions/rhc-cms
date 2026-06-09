@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
-import archiver from 'archiver';
+import { ZipArchive } from 'archiver';
 import { getToken } from 'next-auth/jwt';
 import { getBackupTelegramConfig } from '@adminpanel/lib/backup-telegram';
 
@@ -235,7 +235,7 @@ async function createBackupZip(targetPath: string): Promise<boolean> {
 
   return new Promise((resolve) => {
     const output = fs.createWriteStream(targetPath);
-    const archive = archiver('zip', { zlib: { level: 9 } });
+    const archive = new ZipArchive({ zlib: { level: 9 } });
 
     output.on('close', () => {
       console.log(`Backup created: ${archive.pointer()} bytes`);

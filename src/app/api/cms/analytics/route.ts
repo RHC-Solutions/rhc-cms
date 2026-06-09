@@ -91,7 +91,7 @@ async function getGA4AccessToken(): Promise<string> {
 
     return tokenData.access_token;
   } catch (error) {
-    throw new Error(`Failed to authenticate with Google: ${String(error)}`);
+    throw new Error(`Failed to authenticate with Google: ${String(error)}`, { cause: error });
   }
 }
 
