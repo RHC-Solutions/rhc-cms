@@ -66,7 +66,12 @@ does **all** of steps 2–4 and 6 for you, idempotently:
   already have one — it won't overwrite yours)
 - generates the Next route wrappers
 - installs the runtime deps (`--no-install` to skip)
-- scaffolds `.env.local` with a fresh `NEXTAUTH_SECRET` and updates `.gitignore`
+- runs an interactive **`.env.local` wizard** — prompts for the admin/site URLs, offers
+  to auto-generate `NEXTAUTH_SECRET`, asks for an optional Postgres `DATABASE_URL`, then
+  optionally walks every other setting (GA, SMTP, Telegram, Cloudflare…). Press Enter to
+  accept a `[default]`; a blank skips an optional. Pass `--yes` (or run non-interactively,
+  e.g. piped/CI) to skip the wizard and write defaults + a generated secret instead. Also
+  updates `.gitignore`.
 
 Flags: `--no-install` · `--static-site` (scaffold the root catch-all that serves a
 design pack at clean routes — single-purpose pack hosts only) · `--submodule <path>`
@@ -376,6 +381,7 @@ npm run build && pm2 restart your-app
 | `/admin` 404s | ran `install-into-site.mjs`? wrappers present under `src/app/admin`? |
 | Redirected to `/admin/setup` forever | finish the wizard — it sets a `setup-complete` cookie; clear cookies to retry. |
 | Can't log in after setup | the account uses bcrypt `passwordHash`; if you hand-edited `users.json`, hash with `scripts/hash-password.ts`. |
+| `Configuring Next.js via 'next.config.ts' is not supported` | Your host resolved an **old Next (<15)** (stale `node_modules` or a skipped install) — `create-next-app` emits a `next.config.ts` that only Next ≥15 reads. Fix: `npm install next@latest react@latest react-dom@latest && rm -rf .next && npm run build` (or rename `next.config.ts` → `next.config.js`). `init` now warns when it detects this. |
 | `better-sqlite3` build fails | install build tools (`build-essential`, `python3`) and reinstall. |
 | `npm warn deprecated` during install (`prebuild-install`, `node-domexception`, `glob`) | Harmless. These are **transitive** deps of `better-sqlite3` / `node-fetch` / `googleapis`, each already the latest version its parent allows (`npm audit` = 0). They clear only when those upstreams update — not panel-controllable. `init` already pins `uuid` forward (next-auth ships a deprecated `uuid@8`) via a propagated `overrides` entry, so that one won't appear. |
 | Automation "Script not found" | set `AUDIT_SCRIPTS_DIR` to `vendor/admin-panel/scripts/audit`. |
