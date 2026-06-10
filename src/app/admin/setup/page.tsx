@@ -387,12 +387,12 @@ export default function SetupWizard() {
             {provisionResult && (
               <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-3 space-y-1 text-sm">
                 {provisionResult.validation.length === 0 && provisionResult.dns.length === 0 && <div className="text-gray-300">Saved.</div>}
-                {provisionResult.validation.map((v: any, i: number) => (
+                {provisionResult.validation.map((v: { ok: boolean; service: string; message: string }, i: number) => (
                   <div key={`v${i}`} className={v.ok ? 'text-green-300' : 'text-yellow-300'}>
                     {v.ok ? '✓' : '⚠'} {v.service}: {v.message}
                   </div>
                 ))}
-                {provisionResult.dns.map((d: any, i: number) => (
+                {provisionResult.dns.map((d: { ok: boolean; type: string; name: string; action?: string; message?: string }, i: number) => (
                   <div key={`d${i}`} className={d.ok ? 'text-green-300' : 'text-yellow-300'}>
                     {d.ok ? '✓' : '⚠'} DNS {d.type} {d.name}: {d.ok ? d.action : d.message}
                   </div>
