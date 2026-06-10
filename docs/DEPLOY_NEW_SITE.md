@@ -1,11 +1,11 @@
-# Deploy a new site (e.g. bigdatacybercloud.com)
+# Deploy a new site (e.g. example.com)
 
 End-to-end runbook for standing up a fresh site whose public surface is a **design pack**,
 with the admin panel embedded for tooling. Reflects the hardening from the deploy audit.
 
 ## 0. Prerequisites
 - A host (VPS/box) with **Node ≥ 20.9** (the CLI uses global `fetch`/`FormData`/`Blob`), `git`, and a process manager (PM2 or systemd).
-- A domain (e.g. `bigdatacybercloud.com`) and, optionally, a Cloudflare zone (API token with **DNS edit** + Zone/Account IDs) for DNS + analytics.
+- A domain (e.g. `example.com`) and, optionally, a Cloudflare zone (API token with **DNS edit** + Zone/Account IDs) for DNS + analytics.
 - A design pack `.zip` from Claude Design (static-site pack), or a CMS-block pack.
 
 ## 1. Create the host app + embed the panel
@@ -26,8 +26,8 @@ The installer prints a checklist; heed any "remove your own / page" warning (a r
 Edit **before** building — `NEXT_PUBLIC_*` are baked in at build time:
 ```
 NEXTAUTH_SECRET=<kept from init>
-NEXTAUTH_URL=https://admin.bigdatacybercloud.com      # the ADMIN URL (subdomain is fine)
-NEXT_PUBLIC_SITE_URL=https://bigdatacybercloud.com    # the public site URL
+NEXTAUTH_URL=https://admin.example.com      # the ADMIN URL (subdomain is fine)
+NEXT_PUBLIC_SITE_URL=https://example.com    # the public site URL
 ```
 > The provisioning wizard can set `NEXT_PUBLIC_SITE_URL` for you, but **not** `NEXTAUTH_URL` (it never overwrites it). Any `.env.local` change needs a rebuild + restart.
 
@@ -54,8 +54,8 @@ Open `https://admin.<domain>/admin` → the wizard runs while no admin exists ye
 
 **5b. CLI alternative (scriptable):**
 ```bash
-npx github:RHC-Solutions/admin_panel apply-pack ./BigDataCyberCloud.zip \
-  --site-url http://localhost:<port> --tokens '{"siteName":"BigData CyberCloud","domain":"bigdatacybercloud.com"}'
+npx github:RHC-Solutions/admin_panel apply-pack ./design-pack.zip \
+  --site-url http://localhost:<port> --tokens '{"siteName":"Acme Inc","domain":"example.com"}'
 ```
 (File upload works first-run; a remote `https` URL pack requires admin login.)
 

@@ -405,7 +405,7 @@ and the panel's deps. Requires the Renovate GitHub App (or self-hosted) on the r
 
 apply-pack <zip|https-url> options:
   --site-url <url>     running site base URL (default: http://localhost:3000)
-  --tokens <json>      {{token}} substitutions, e.g. '{"siteName":"BigData CyberCloud"}'
+  --tokens <json>      {{token}} substitutions, e.g. '{"siteName":"Acme Inc"}'
   (file upload works during first-run; a remote URL pack requires admin login)
 `);
 }
