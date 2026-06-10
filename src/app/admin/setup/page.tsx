@@ -57,16 +57,31 @@ export default function SetupWizard() {
         setFormData((f) => (f.email ? f : { ...f, email: identity.contactEmail }));
       }
       setTimeout(() => setStep(2), 900);
-    } catch (e: any) {
-      setError(`Design pack failed: ${e.message}`);
+    } catch (e) {
+      const error = e instanceof Error ? e : new Error(String(e));
+      setError(`Design pack failed: ${error.message}`);
     } finally {
       setApplyingPack(false);
     }
   };
 
   // Provisioning (configure) step state.
+  interface ValidationResult {
+    [key: string]: unknown;
+  }
+
+  interface DnsResult {
+    [key: string]: unknown;
+  }
+
+  interface ProvisionResult {
+    validation: ValidationResult[];
+    dns: DnsResult[];
+    restartRequired: boolean;
+  }
+
   const [provisioning, setProvisioning] = useState(false);
-  const [provisionResult, setProvisionResult] = useState<{ validation: any[]; dns: any[]; restartRequired: boolean } | null>(null);
+  const [provisionResult, setProvisionResult] = useState<ProvisionResult | null>(null);
   const [provision, setProvision] = useState({
     emailProvider: 'none' as 'none' | 'brevo' | 'smtp',
     brevoApiKey: '', brevoSenderEmail: '', brevoSenderName: '',
@@ -331,7 +346,9 @@ export default function SetupWizard() {
           <div className="space-y-5 transition-slide-up transition-delay-5">
             {error && <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded">{error}</div>}
             <p className="text-gray-400 text-sm">
-              Set your domain and connect the services you&apos;ll launch with. All optional — you can do this later in <span className="font-mono">/admin</span>. Domain changes require an application restart to reload startup configuration/environment variables.
+              Set your domain and connect the services you&apos;ll launch with.
+              {' '}All optional — you can do this later in <span className="font-mono">/admin</span>.
+              {' '}Note: Domain changes require an application restart to reload startup configuration/environment variables.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -387,12 +404,12 @@ export default function SetupWizard() {
             {provisionResult && (
               <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-3 space-y-1 text-sm">
                 {provisionResult.validation.length === 0 && provisionResult.dns.length === 0 && <div className="text-gray-300">Saved.</div>}
-                {provisionResult.validation.map((v: any, i: number) => (
+                {provisionResult.validation.map((v: { ok: boolean; service: string; message: string }, i: number) => (
                   <div key={`v${i}`} className={v.ok ? 'text-green-300' : 'text-yellow-300'}>
                     {v.ok ? '✓' : '⚠'} {v.service}: {v.message}
                   </div>
                 ))}
-                {provisionResult.dns.map((d: any, i: number) => (
+                {provisionResult.dns.map((d: { ok: boolean; type: string; name: string; action?: string; message?: string }, i: number) => (
                   <div key={`d${i}`} className={d.ok ? 'text-green-300' : 'text-yellow-300'}>
                     {d.ok ? '✓' : '⚠'} DNS {d.type} {d.name}: {d.ok ? d.action : d.message}
                   </div>
