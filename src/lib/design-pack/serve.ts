@@ -11,3 +11,22 @@ export async function getStaticPageHtml(slug: string): Promise<string | null> {
   const html = block?.props?.html;
   return typeof html === 'string' && html.length > 0 ? html : null;
 }
+
+// Build the HTTP Response for a static-pack page (verbatim HTML), or a 404 when the
+// slug isn't a static page. Shared by the panel preview route and the host catch-all
+// route scaffolded by install-into-site.mjs, so both serve identically.
+export async function staticPageResponse(slug: string): Promise<Response> {
+  const html = await getStaticPageHtml(slug);
+  if (html == null) {
+    return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
+  }
+  return new Response(html, {
+    status: 200,
+    headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
+  });
+}
+
+// Normalize an optional-catch-all `slug` segment array into a leading-slash path.
+export function slugFromSegments(slug: string[] | undefined): string {
+  return `/${Array.isArray(slug) ? slug.join('/') : ''}`;
+}

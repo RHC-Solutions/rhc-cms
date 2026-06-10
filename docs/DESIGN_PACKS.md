@@ -30,8 +30,13 @@ The `apply` endpoint auto-detects which kind of pack it received:
    - **Trust:** static packs execute their own JS — apply them only from a trusted
      source (the Claude Design pipeline; admin or first-run only). `extract.ts` still
      rejects `secrets.json`/`users.json`/`.env`/`cms.db`.
-   - Served by a route handler (panel preview: `/pack-preview/<slug>`; host: a root
-     catch-all scaffolded by `install-into-site.mjs`). Editing = re-apply a pack.
+   - **Served verbatim** by a route handler. In the panel itself: `/pack-preview/<slug>`.
+     On a host whose public site IS the pack: run
+     `node vendor/admin-panel/scripts/install-into-site.mjs --static-site` to scaffold a
+     root catch-all (`app/[[...slug]]/route.ts`) that serves ingested pages at clean
+     routes (`/`, `/big-data`, …); `/admin` + `/api/*` resolve first, unknown slugs 404.
+     (Skip `--static-site` on hosts that have their own Next public pages — it would
+     shadow them.) Editing = re-apply a pack.
 
 The sections below describe the **CMS-block** format.
 
