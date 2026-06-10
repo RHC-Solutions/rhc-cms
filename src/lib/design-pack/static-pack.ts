@@ -73,7 +73,8 @@ function rewriteHtml(html: string, packSlug: string): string {
   // and protocol-relative links are skipped in the callback.
   out = out.replace(
     INTERNAL_HREF_HTML_RE,
-    (m, pre, q, name, tail) => (name.startsWith('/') ? m : `${pre}${q}${htmlNameToSlug(name)}${tail}${q}`),
+    (m, pre, q, name, tail) =>
+      (name.startsWith('//') || name.startsWith('/') ? m : `${pre}${q}${htmlNameToSlug(name)}${tail}${q}`),
   );
   return out;
 }
@@ -110,7 +111,7 @@ function extractNavigation(html: string): Array<Record<string, unknown>> {
       const htmlM = url.match(/^([A-Za-z0-9._\/-]+?)\.html((?:\?[^#]*)?(?:#.*)?)$/i);
       if (htmlM) url = htmlNameToSlug(htmlM[1]) + (htmlM[2] || '');
     }
-    items.push({ id: String(order), label, url, visible: true, order, external: isExternal || undefined });
+    items.push({ id: String(order), label, url, visible: true, order, external: isExternal ? true : undefined });
     order++;
   }
   return items;
