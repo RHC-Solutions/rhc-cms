@@ -1,0 +1,13 @@
+{
+  "brand": {
+    "valueProp": "{{tagline}}"
+  },
+  "homeContent": {
+    "hero": {
+      "heading": "{{siteName}}",
+      "subheading": "{{tagline}}",
+      "ctaLabel": "Get in touch",
+      "ctaUrl": "/contact"
+    }
+  }
+}

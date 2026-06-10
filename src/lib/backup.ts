@@ -43,14 +43,14 @@ const CONFIG_FILES = [
 ];
 
 // Ensure backups directory exists
-function ensureBackupsDir() {
+export function ensureBackupsDir() {
   if (!fs.existsSync(BACKUPS_DIR)) {
     fs.mkdirSync(BACKUPS_DIR, { recursive: true });
   }
 }
 
 // Read siteName from settings.json and turn it into a filename-safe slug
-function getSiteSlug(): string {
+export function getSiteSlug(): string {
   try {
     const raw = fs.readFileSync(path.join((process.env.SHARED_ROOT || ROOT_DIR), 'cms-data', 'settings.json'), 'utf-8');
     const name = JSON.parse(raw)?.siteName;
@@ -67,7 +67,7 @@ function getSiteSlug(): string {
 }
 
 // Create FULL backup zip - identical to manual backup from /admin/backups
-async function createBackupZip(targetPath: string): Promise<boolean> {
+export async function createBackupZip(targetPath: string): Promise<boolean> {
   // CRITICAL: Checkpoint SQLite WAL before backup
   try {
     const Database = require('better-sqlite3');
