@@ -3,6 +3,10 @@ import { getToken } from 'next-auth/jwt';
 import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import { runOodaCycle } from '@adminpanel/lib/ooda/cycle';
+import { DEFAULT_OODA_POLICY, SAFE_ACTION_TYPES, type ActionType } from '@adminpanel/lib/ooda/types';
+
+export const runtime = 'nodejs';
 
 // /api/admin/* is NOT covered by middleware — every handler authenticates itself.
 async function requireAdmin(request: NextRequest) {
@@ -24,9 +28,16 @@ const LOCKS: Record<'daily' | 'weekly', string> = {
 const DEFAULT_CONFIG = {
   daily: { enabled: true, autofix: 'pr' as 'pr' | 'off' },
   weekly: { enabled: true },
+  ooda: { ...DEFAULT_OODA_POLICY },
   recipientEmail: '',
   updatedAt: null as string | null,
 };
+
+// Keep an allow-listed autoApply set; never persist a non-safe action type.
+function sanitizeAutoApply(v: unknown): ActionType[] {
+  const arr = Array.isArray(v) ? v : DEFAULT_OODA_POLICY.autoApply;
+  return arr.filter((a): a is ActionType => SAFE_ACTION_TYPES.includes(a as ActionType));
+}
 
 function readJson<T>(file: string, fallback: T): T {
   try {
@@ -44,9 +55,28 @@ function loadConfig() {
       autofix: raw?.daily?.autofix === 'off' ? 'off' : 'pr',
     },
     weekly: { enabled: raw?.weekly?.enabled !== false },
+    ooda: {
+      enabled: raw?.ooda?.enabled === true,
+      autoApply: sanitizeAutoApply(raw?.ooda?.autoApply),
+      dryRun: raw?.ooda?.dryRun !== false, // default dry-run unless explicitly disabled
+    },
     recipientEmail: typeof raw?.recipientEmail === 'string' ? raw.recipientEmail : '',
     updatedAt: raw?.updatedAt ?? null,
   };
+}
+
+// Most recent logs/audit/<date>/ooda.json (last OODA cycle), for the admin card.
+function latestOodaReport() {
+  try {
+    const dates = fs.readdirSync(AUDIT_DIR, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(d.name))
+      .map((d) => d.name).sort().reverse();
+    for (const d of dates) {
+      const p = path.join(AUDIT_DIR, d, 'ooda.json');
+      if (fs.existsSync(p)) return readJson<any>(p, null);
+    }
+  } catch { /* none */ }
+  return null;
 }
 
 function listRecentReports(limit = 7) {
@@ -86,7 +116,7 @@ export async function GET(request: NextRequest) {
     weekly: fs.existsSync(LOCKS.weekly),
   };
   return NextResponse.json(
-    { config: loadConfig(), status, recentReports: listRecentReports(), running, report },
+    { config: loadConfig(), status, recentReports: listRecentReports(), running, report, oodaReport: latestOodaReport() },
     { headers: { 'Cache-Control': 'private, no-store' } },
   );
 }
@@ -111,6 +141,11 @@ export async function POST(request: NextRequest) {
         autofix: c?.daily?.autofix === 'off' ? 'off' : 'pr',
       },
       weekly: { enabled: c?.weekly?.enabled !== false },
+      ooda: {
+        enabled: c?.ooda?.enabled === true,
+        autoApply: sanitizeAutoApply(c?.ooda?.autoApply),
+        dryRun: c?.ooda?.dryRun !== false,
+      },
       recipientEmail:
         typeof c?.recipientEmail === 'string' ? c.recipientEmail.trim() : '',
       updatedAt: new Date().toISOString(),
@@ -159,6 +194,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Spawn failed: ${e.message}` }, { status: 500 });
     }
     return NextResponse.json({ ok: true, started: job });
+  }
+
+  // ---- Run an OODA self-improvement cycle (in-process) ----
+  if (body?.action === 'ooda') {
+    const cfg = loadConfig();
+    try {
+      const report = await runOodaCycle({
+        policy: {
+          enabled: cfg.ooda.enabled,
+          autoApply: cfg.ooda.autoApply,
+          // A manual trigger may force a dry-run preview, or run live; default to the saved setting.
+          dryRun: typeof body?.dryRun === 'boolean' ? body.dryRun : cfg.ooda.dryRun,
+        },
+      });
+      return NextResponse.json(report, { headers: { 'Cache-Control': 'private, no-store' } });
+    } catch (e: any) {
+      return NextResponse.json({ error: `OODA cycle failed: ${e.message}` }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 });

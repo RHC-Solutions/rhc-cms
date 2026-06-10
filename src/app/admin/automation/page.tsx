@@ -8,12 +8,19 @@ import {
 } from 'react-icons/fa';
 
 type AutofixMode = 'pr' | 'off';
+interface OodaConfig { enabled: boolean; autoApply: string[]; dryRun: boolean }
 interface Config {
   daily: { enabled: boolean; autofix: AutofixMode };
   weekly: { enabled: boolean };
+  ooda: OodaConfig;
   recipientEmail: string;
   updatedAt: string | null;
 }
+const OODA_ACTIONS: { key: string; label: string }[] = [
+  { key: 'revalidate', label: 'Revalidate public cache' },
+  { key: 'sync-seo', label: 'Sync SEO (pages.json → DB)' },
+  { key: 'scan-media', label: 'Index orphan uploads' },
+];
 interface Status {
   date: string; mode: string; subject: string; recipient: string; prUrl: string | null;
   finishedAt: string; seoIssues: number | null; aiFindings: number | null;
@@ -24,6 +31,7 @@ interface ApiResponse {
   recentReports: { date: string; hasReport: boolean }[];
   running: { daily: boolean; weekly: boolean };
   report?: string | null;
+  oodaReport?: any | null;
 }
 type Message = { type: 'success' | 'error'; text: string };
 
@@ -91,6 +99,30 @@ export default function AutomationPage() {
       setTimeout(load, 1500);
     } catch (e: any) {
       setMsg({ type: 'error', text: e.message });
+    }
+  };
+
+  const [oodaRunning, setOodaRunning] = useState(false);
+  const [oodaResult, setOodaResult] = useState<any | null>(null);
+
+  const runOoda = async (dryRun: boolean) => {
+    setMsg(null); setOodaRunning(true); setOodaResult(null);
+    try {
+      const res = await fetch('/api/admin/automation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'ooda', dryRun }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      setOodaResult(json);
+      if (!json.ok) setMsg({ type: 'error', text: json.message || 'OODA: nothing to observe yet.' });
+      else setMsg({ type: 'success', text: dryRun ? 'OODA dry-run complete — proposals below.' : 'OODA cycle complete — safe actions applied.' });
+      setTimeout(load, 800);
+    } catch (e: any) {
+      setMsg({ type: 'error', text: e.message });
+    } finally {
+      setOodaRunning(false);
     }
   };
 
@@ -240,6 +272,100 @@ export default function AutomationPage() {
               {saving ? <FaSpinner className="animate-spin" /> : <FaSave />} Save settings
             </button>
           </div>
+        </div>
+
+        {/* ---- OODA self-improvement ---- */}
+        <div className="card-cyber p-5 space-y-4">
+          <div>
+            <h2 className="heading-md text-text-primary">OODA self-improvement</h2>
+            <p className="text-text-muted text-xs mt-1">
+              Observe (audit) → Orient (diagnose) → Decide (policy) → Act. Safe, reversible actions
+              auto-apply; everything else is proposed for review. Toggles save with “Save settings”.
+            </p>
+          </div>
+
+          <Toggle
+            label="Enable OODA loop"
+            desc="Allow the cycle to run (manual now; scheduled later)."
+            checked={cfg.ooda.enabled}
+            onChange={(v) => setCfg({ ...cfg, ooda: { ...cfg.ooda, enabled: v } })}
+          />
+          <Toggle
+            label="Dry-run"
+            desc="Propose only — never actually apply. Recommended until you trust the allow-list."
+            checked={cfg.ooda.dryRun}
+            onChange={(v) => setCfg({ ...cfg, ooda: { ...cfg.ooda, dryRun: v } })}
+          />
+
+          <div className="pl-1">
+            <div className="text-sm text-text-secondary mb-2">Auto-apply allow-list (safe, reversible)</div>
+            <div className="space-y-1">
+              {OODA_ACTIONS.map((a) => (
+                <label key={a.key} className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={cfg.ooda.autoApply.includes(a.key)}
+                    onChange={(e) => {
+                      const set = new Set(cfg.ooda.autoApply);
+                      if (e.target.checked) set.add(a.key); else set.delete(a.key);
+                      setCfg({ ...cfg, ooda: { ...cfg.ooda, autoApply: [...set] } });
+                    }}
+                  />
+                  <span className="font-mono text-xs">{a.key}</span> — {a.label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <button onClick={() => runOoda(true)} disabled={oodaRunning}
+              className="btn flex items-center gap-2 disabled:opacity-50">
+              {oodaRunning ? <FaSpinner className="animate-spin" /> : <FaRobot />} Preview (dry-run)
+            </button>
+            <button onClick={() => runOoda(false)} disabled={oodaRunning}
+              className="btn-primary flex items-center gap-2 disabled:opacity-50">
+              {oodaRunning ? <FaSpinner className="animate-spin" /> : <FaPlay />} Run cycle now
+            </button>
+          </div>
+
+          {(() => {
+            const o = oodaResult || data?.oodaReport;
+            if (!o) return null;
+            if (!o.ok) return <p className="text-text-muted text-sm">{o.message || 'No audit data yet — run a daily audit first.'}</p>;
+            return (
+              <div className="border-t border-dark-border pt-3 text-sm space-y-2">
+                <div className="text-text-muted text-xs">
+                  Last cycle {o.date} · {o.dryRun ? 'dry-run' : 'applied'} · observed: {Object.entries(o.observed || {}).filter(([, v]) => v).map(([k]) => k).join(', ') || 'none'}
+                </div>
+                {o.acted?.length > 0 && (
+                  <div>
+                    <div className="text-text-secondary font-medium">Auto-apply ({o.acted.length})</div>
+                    {o.acted.map((a: any, i: number) => (
+                      <div key={i} className={a.ok ? 'text-cyber-green' : 'text-yellow-400'}>
+                        {a.applied ? '✓' : '·'} {a.actionType}: {a.message}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {o.decided?.propose?.length > 0 && (
+                  <div>
+                    <div className="text-text-secondary font-medium">Proposed for review ({o.decided.propose.length})</div>
+                    {o.decided.propose.map((p: any, i: number) => (
+                      <div key={i} className="text-text-muted">• [{p.severity}] {p.title}</div>
+                    ))}
+                  </div>
+                )}
+                {o.decided?.notify?.length > 0 && (
+                  <div>
+                    <div className="text-text-secondary font-medium">Notify ({o.decided.notify.length})</div>
+                    {o.decided.notify.map((n: any, i: number) => (
+                      <div key={i} className="text-text-muted">• [{n.severity}] {n.title}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* ---- Recent reports ---- */}
