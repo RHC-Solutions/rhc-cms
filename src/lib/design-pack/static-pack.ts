@@ -81,7 +81,7 @@ function extractNavigation(html: string, packSlug: string): Array<Record<string,
   let order = 2;
   while ((m = linkRe.exec(navBlock)) !== null) {
     const attrs = m[1];
-    const label = m[2].replace(/<[^>]+>/g, '').trim();
+    const label = m[2].replace(/[<>]/g, '').trim();
     const hrefM = attrs.match(/href=["']([^"']+)["']/i);
     if (!label || !hrefM) continue;
     let url = hrefM[1];
