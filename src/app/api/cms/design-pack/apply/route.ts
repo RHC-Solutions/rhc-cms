@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { extractPack } from '@adminpanel/lib/design-pack/extract';
 import { applyDesignPack } from '@adminpanel/lib/design-pack/apply';
+import { isStaticPack, importStaticPack } from '@adminpanel/lib/design-pack/static-pack';
 import type { DesignTokens } from '@adminpanel/lib/design-pack/types';
 
 export const runtime = 'nodejs';
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
   let packBuffer: Buffer | null = null;
   let tokens: DesignTokens = {};
   let extractedDir: string | null = null;
+  let packName = 'site'; // used to namespace a static pack's assets (pack-<slug>)
 
   try {
     if (contentType.includes('multipart/form-data')) {
@@ -51,6 +53,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Pack exceeds 100 MB limit.' }, { status: 413 });
       }
       packBuffer = Buffer.from(ab);
+      if ((file as File).name) packName = (file as File).name;
       const rawTokens = form.get('tokens');
       if (typeof rawTokens === 'string' && rawTokens.trim()) {
         try { tokens = JSON.parse(rawTokens); } catch { /* ignore malformed tokens */ }
@@ -69,11 +72,14 @@ export async function POST(request: NextRequest) {
         const ab = await res.arrayBuffer();
         if (ab.byteLength > MAX_PACK_BYTES) return NextResponse.json({ error: 'Pack exceeds 100 MB limit.' }, { status: 413 });
         packBuffer = Buffer.from(ab);
+        packName = path.basename(u.pathname) || packName;
       } else if (body?.path) {
         if (!isAdmin) return NextResponse.json({ error: 'Applying a pack by path requires admin login.' }, { status: 403 });
         if (!fs.existsSync(body.path)) return NextResponse.json({ error: 'Pack path not found.' }, { status: 400 });
         packBuffer = fs.readFileSync(body.path);
+        packName = path.basename(body.path) || packName;
       }
+      if (typeof body?.packName === 'string' && body.packName.trim()) packName = body.packName;
     }
 
     if (!packBuffer) {
@@ -81,8 +87,20 @@ export async function POST(request: NextRequest) {
     }
 
     extractedDir = extractPack(packBuffer);
-    // First-run has no prior content worth a (slow, full) backup; admin re-apply does.
-    const result = await applyDesignPack(extractedDir, { tokens, backup: !firstRun });
+    // Two pack types: a CMS-block pack (has pack.json) vs a finished static-HTML
+    // site (no pack.json, has .html files). Route to the matching importer.
+    let result: unknown;
+    if (fs.existsSync(path.join(extractedDir, 'pack.json'))) {
+      // First-run has no prior content worth a (slow, full) backup; admin re-apply does.
+      result = await applyDesignPack(extractedDir, { tokens, backup: !firstRun });
+    } else if (isStaticPack(extractedDir)) {
+      result = await importStaticPack(extractedDir, { tokens, packName });
+    } else {
+      return NextResponse.json(
+        { error: 'Unrecognized pack: no pack.json (CMS-block pack) and no .html files (static-site pack).' },
+        { status: 400 },
+      );
+    }
     return NextResponse.json(result, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (e) {
     return NextResponse.json({ error: `Apply failed: ${(e as Error).message}` }, { status: 400 });
