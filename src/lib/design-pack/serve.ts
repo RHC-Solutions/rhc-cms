@@ -1,4 +1,33 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { cmsDb } from '@adminpanel/lib/cms/database';
+
+const SEO_FILE = path.join(process.env.SHARED_ROOT || process.cwd(), 'cms-data', 'seo.json');
+
+// Build the GA4 snippet with Consent Mode v2 *denied* defaults — matching the panel's
+// GoogleAnalytics component. Static pages are served outside React (no consent-upgrade
+// UI), so consent stays denied: cookieless pings only, privacy-safe.
+function ga4Snippet(id: string): string {
+  return `<!-- analytics injected by admin-panel (static pack) -->
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',wait_for_update:500});</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=${id}"></script>
+<script>gtag('js',new Date());gtag('config','${id}',{anonymize_ip:true});</script>
+`;
+}
+
+// Opt-in (seo.json.injectAnalyticsIntoStaticPages). Injects before </head> only when
+// enabled AND a syntactically-safe GA4 id is configured (guards script-context injection).
+function maybeInjectAnalytics(html: string): string {
+  try {
+    const seo = JSON.parse(fs.readFileSync(SEO_FILE, 'utf-8'));
+    const id = seo?.googleAnalytics4Id;
+    if (!seo?.injectAnalyticsIntoStaticPages || typeof id !== 'string' || !/^[A-Za-z0-9-]+$/.test(id)) return html;
+    const m = html.search(/<\/head>/i);
+    return m === -1 ? html : html.slice(0, m) + ga4Snippet(id) + html.slice(m);
+  } catch {
+    return html;
+  }
+}
 
 // Return the verbatim HTML for a static-pack page, or null if the slug isn't a
 // static page. Used by the serving/preview route handlers to emit the page exactly
@@ -20,7 +49,7 @@ export async function staticPageResponse(slug: string): Promise<Response> {
   if (html == null) {
     return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
   }
-  return new Response(html, {
+  return new Response(maybeInjectAnalytics(html), {
     status: 200,
     headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
   });
