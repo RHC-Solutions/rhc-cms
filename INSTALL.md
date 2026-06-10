@@ -314,14 +314,39 @@ defaults and no edits; override via the `AUDIT_*` env vars above.
 
 ## 8. Updating the panel later
 
+### One command (recommended)
+
+```bash
+cd your-site
+npx github:RHC-Solutions/admin_panel update
+npm run build && pm2 restart your-app
+```
+
+`update` pulls the newest panel source, regenerates the route wrappers, and **syncs
+your `package.json` deps to the versions the panel declares** — so source and deps
+move in lockstep (e.g. a panel build that needs `archiver` 8 won't land on a host
+still resolving `archiver` 7). It also warns if any host dep is below the panel's
+declared `peerDependencies` minimum. Your `cms-data/` is untouched.
+
+### Hands-off (recommended for fleets)
+
+`init`/`update` drop a `renovate.json` that enables Renovate's **git-submodules** +
+**npm** managers, so each site auto-opens PRs that bump `vendor/admin-panel` and the
+panel's deps. Enable the [Renovate GitHub App](https://github.com/apps/renovate) (or
+self-hosted) on the repo and you get reviewable update PRs on a weekly schedule —
+nothing auto-merges by default. Skip with `--no-renovate`; tune `automerge` per
+`packageRule` to make safe bumps fully hands-off. (Dependabot works too but its
+submodule support is weaker.)
+
+### Manual path (if you don't use the CLI)
+
 ```bash
 cd your-site
 git submodule update --remote vendor/admin-panel
 node vendor/admin-panel/scripts/install-into-site.mjs --force   # refresh wrappers if routes changed
+# then bump the panel's deps in your package.json to match vendor/admin-panel/package.json
 npm run build && pm2 restart your-app
 ```
-
-Your `cms-data/` is untouched by updates.
 
 ---
 

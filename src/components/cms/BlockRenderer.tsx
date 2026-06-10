@@ -466,7 +466,6 @@ function renderBlock(block: ContentBlock, opts: { priority?: boolean } = {}) {
             // External URLs need to be allow-listed in next.config remotePatterns;
             // fall back to a plain <img> for unknown origins so the CMS doesn't
             // crash when a content editor pastes an outside URL.
-            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={src}
               {...(isDecorative ? { 'aria-hidden': true, role: 'presentation', alt: '' } : { alt: altText || "Decorative graphic" })}
