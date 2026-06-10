@@ -186,7 +186,7 @@ export async function importStaticPack(
 
     const existing = await cmsDb.getPage(slug);
     if (existing) {
-      const { id: _id, ...updates } = page;
+      const { id: existingPageId, ...updates } = page; // Exclude `id`: updatePage receives the target id separately.
       await cmsDb.updatePage(existing.id, updates);
       result.updated++;
     } else {
