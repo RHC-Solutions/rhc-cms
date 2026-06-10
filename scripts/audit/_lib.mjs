@@ -106,8 +106,12 @@ export async function fetchText(url, { timeoutMs = 20000, headers } = {}) {
 
 /** Open cms.db read-only and return published page rows with parsed seo. */
 export async function loadPages() {
+  // Postgres mode (or before first run) has no cms.db file — degrade to empty so the
+  // SEO/AI collectors don't crash. (A PG-aware reader is a follow-up.)
+  const dbFile = path.join(REPO_ROOT, 'cms-data', 'cms.db');
+  if (!fs.existsSync(dbFile)) return [];
   const { default: Database } = await import('better-sqlite3');
-  const db = new Database(path.join(REPO_ROOT, 'cms-data', 'cms.db'), { readonly: true });
+  const db = new Database(dbFile, { readonly: true });
   try {
     const rows = db.prepare('SELECT id, title, slug, status, description, seo FROM pages').all();
     return rows.map((r) => {

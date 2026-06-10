@@ -4,6 +4,7 @@ import * as path from 'path';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { getToken } from 'next-auth/jwt';
+import { isSqlite } from '@adminpanel/lib/cms/db';
 
 // execFile (no shell) — arguments are passed as an argv array, so a crafted
 // backup name can never be interpreted as a shell command (js/command-line-injection).
@@ -92,7 +93,11 @@ async function restoreFromBackup(backupName: string): Promise<{ success: boolean
     const backupDbPath = path.join(restoreDir, 'cms-data', 'cms.db');
     const targetDbPath = path.join(CMS_DATA_DIR, 'cms.db');
     
-    if (fs.existsSync(backupDbPath)) {
+    if (!isSqlite()) {
+      // Postgres mode: the zipped SQLite cms.db cannot be restored into Postgres.
+      // Restore the JSON files (already extracted above); DB restore uses pg_restore.
+      console.warn('[restore] Postgres mode — skipping SQLite cms.db restore (use pg_restore for the DB).');
+    } else if (fs.existsSync(backupDbPath)) {
       // Close any existing database connections
       try {
         const Database = require('better-sqlite3');

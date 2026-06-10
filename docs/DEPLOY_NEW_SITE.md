@@ -74,7 +74,11 @@ Either let the wizard create the A records (Cloudflare), or manually point `@` (
 - `npx github:RHC-Solutions/admin_panel update` (pulls panel source, syncs deps, warns on skew) → rebuild + restart.
 - Or enable the **Renovate** GitHub App on the host repo (the scaffolded `renovate.json` bumps the submodule + deps via PRs).
 
+## Database (SQLite default, Postgres optional)
+- **SQLite** (`cms-data/cms.db`) is the zero-config default — nothing to set.
+- **Postgres:** set `DATABASE_URL=postgres://user:pass@host:5432/db` (append `?sslmode=require` for managed PG) — the panel auto-selects it. `DB_DRIVER=postgres|sqlite` forces a backend. Schema + seed are created on first run. The CMS API is identical on both.
+- **Backups:** the file-based backup/restore (and the daily-audit WAL checkpoint) are SQLite-only and **skip automatically** under Postgres. For PG, back up with `pg_dump` (a panel-native pg_dump flow is a planned follow-up). JSON-file backups (`cms-data/*.json`) still run on both.
+
 ## Notes / current limits
-- **DB:** SQLite (`cms-data/cms.db`) — zero-config, proven. Postgres is a planned abstraction (the `cmsDb` layer is async-ready); not required to deploy.
 - **Design generator** is external (Claude Design); this panel is the consumer.
 - Re-applying a pack updates the design; pack pages aren't block-editable (by design).

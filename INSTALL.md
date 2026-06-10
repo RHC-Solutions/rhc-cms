@@ -236,6 +236,8 @@ because they're needed at build/boot.
 | Var | Purpose |
 |---|---|
 | `SHARED_ROOT` | Override the base dir for `cms-data/` (default: `process.cwd()`). Useful when the server runs from a different working directory. |
+| `DATABASE_URL` | Use **Postgres** instead of SQLite, e.g. `postgres://user:pass@host:5432/db` (`?sslmode=require` for managed PG). Unset → SQLite (`cms-data/cms.db`, the default). Schema + seed auto-create on first run. PG backups use `pg_dump` (file-based backup/restore is SQLite-only). |
+| `DB_DRIVER` | Force the backend: `sqlite` or `postgres` (overrides the `DATABASE_URL` heuristic). |
 
 ---
 

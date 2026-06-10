@@ -4,6 +4,7 @@ import * as path from 'path';
 import { ZipArchive } from 'archiver';
 import { getToken } from 'next-auth/jwt';
 import { getBackupTelegramConfig } from '@adminpanel/lib/backup-telegram';
+import { isSqlite } from '@adminpanel/lib/cms/db';
 
 const BACKUPS_DIR = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'backups');
 const CMS_DATA_DIR = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data');
@@ -219,18 +220,20 @@ async function sendToTelegram(filePath: string, fileName: string, fileSize: numb
 // Create zip archive of entire site (cms-data, src, public, config files)
 // This is a full disaster recovery backup
 async function createBackupZip(targetPath: string): Promise<boolean> {
-  // CRITICAL: Checkpoint SQLite WAL before backup
-  // This ensures all data from .db-wal file is written to .db file
-  try {
-    const Database = require('better-sqlite3');
-    const dbPath = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'cms.db');
-    const db = new Database(dbPath);
-    db.pragma('wal_checkpoint(TRUNCATE)'); // Force checkpoint and truncate WAL
-    db.close();
-    console.log('✓ SQLite WAL checkpointed before backup');
-  } catch (error) {
-    console.error('Warning: Could not checkpoint WAL:', error);
-    // Continue anyway - backup will still work but may miss recent changes
+  // CRITICAL: Checkpoint SQLite WAL before backup. Skipped under Postgres (no cms.db
+  // file; full PG backups use pg_dump — see docs/DEPLOY_NEW_SITE.md).
+  if (isSqlite()) {
+    try {
+      const Database = require('better-sqlite3');
+      const dbPath = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'cms.db');
+      const db = new Database(dbPath);
+      db.pragma('wal_checkpoint(TRUNCATE)'); // Force checkpoint and truncate WAL
+      db.close();
+      console.log('✓ SQLite WAL checkpointed before backup');
+    } catch (error) {
+      console.error('Warning: Could not checkpoint WAL:', error);
+      // Continue anyway - backup will still work but may miss recent changes
+    }
   }
 
   return new Promise((resolve) => {
