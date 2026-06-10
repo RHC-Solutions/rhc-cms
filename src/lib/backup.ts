@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import * as fs from 'fs';
 import * as path from 'path';
-import archiver from 'archiver';
+import { ZipArchive } from 'archiver';
 import { getBackupTelegramConfig } from './backup-telegram';
 
 const BACKUPS_DIR = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'backups');
@@ -82,7 +82,7 @@ async function createBackupZip(targetPath: string): Promise<boolean> {
 
   return new Promise((resolve) => {
     const output = fs.createWriteStream(targetPath);
-    const archive = archiver('zip', { zlib: { level: 9 } });
+    const archive = new ZipArchive({ zlib: { level: 9 } });
 
     output.on('close', () => {
       console.log(`[BACKUP] Created FULL backup: ${(archive.pointer() / 1024 / 1024).toFixed(2)} MB`);
