@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ZipArchive } from 'archiver';
 import { getBackupTelegramConfig } from './backup-telegram';
+import { isSqlite } from '@adminpanel/lib/cms/db';
 
 const BACKUPS_DIR = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'backups');
 const ROOT_DIR = process.cwd();
@@ -68,16 +69,19 @@ export function getSiteSlug(): string {
 
 // Create FULL backup zip - identical to manual backup from /admin/backups
 export async function createBackupZip(targetPath: string): Promise<boolean> {
-  // CRITICAL: Checkpoint SQLite WAL before backup
-  try {
-    const Database = require('better-sqlite3');
-    const dbPath = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'cms.db');
-    const db = new Database(dbPath);
-    db.pragma('wal_checkpoint(TRUNCATE)');
-    db.close();
-    console.log('[BACKUP] ✓ SQLite WAL checkpointed');
-  } catch (error) {
-    console.error('[BACKUP] Warning: Could not checkpoint WAL:', error);
+  // CRITICAL: Checkpoint SQLite WAL before backup. Skip under Postgres (no cms.db
+  // file; full PG backups use pg_dump — see docs/DEPLOY_NEW_SITE.md).
+  if (isSqlite()) {
+    try {
+      const Database = require('better-sqlite3');
+      const dbPath = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'cms.db');
+      const db = new Database(dbPath);
+      db.pragma('wal_checkpoint(TRUNCATE)');
+      db.close();
+      console.log('[BACKUP] ✓ SQLite WAL checkpointed');
+    } catch (error) {
+      console.error('[BACKUP] Warning: Could not checkpoint WAL:', error);
+    }
   }
 
   return new Promise((resolve) => {
