@@ -83,6 +83,28 @@ export function getEnvValue(key: string): string {
 }
 
 /**
+ * Write a single KEY=value into .env.local (replace the line if present, else
+ * append). Shared by the environment admin route and the first-run provisioning
+ * endpoint. NOTE: NEXT_PUBLIC_* and auth URLs only take effect after a restart.
+ */
+export function setEnvValue(key: string, value: string): void {
+  let content = '';
+  try {
+    content = fs.readFileSync(ENV_PATH, 'utf-8');
+  } catch {
+    // new .env.local
+  }
+  const line = `${key}=${value}`;
+  const re = new RegExp(`^${escapeRegex(key)}=.*$`, 'm');
+  content = re.test(content)
+    ? content.replace(re, line)
+    : `${content}${content && !content.endsWith('\n') ? '\n' : ''}${line}\n`;
+  fs.mkdirSync(path.dirname(ENV_PATH), { recursive: true });
+  fs.writeFileSync(ENV_PATH, content, 'utf-8');
+  cache.delete(`env:${key}`);
+}
+
+/**
  * Get multiple environment variables at once
  */
 export function getEnvValues(keys: string[]): Record<string, string> {
