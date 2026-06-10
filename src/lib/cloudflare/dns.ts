@@ -3,6 +3,8 @@
 // module adds *write* (upsert) so the provisioning wizard can point a freshly-set
 // domain at the server using the token/zone the operator just typed.
 
+import { domainToHost } from '@adminpanel/lib/url-path';
+
 const CF = 'https://api.cloudflare.com/client/v4';
 const TIMEOUT_MS = 6_000;
 const CF_ZONE_ID_RE = /^[a-f0-9]{32}$/i;
@@ -84,7 +86,10 @@ export async function upsertDnsRecord(opts: {
 export async function pointDomainToServer(opts: {
   zoneId: string; token: string; domain: string; serverIp: string; proxied?: boolean; www?: boolean;
 }): Promise<DnsResult[]> {
-  const host = opts.domain.replace(/^https?:\/\//i, '').replace(/\/+$/, '').trim();
+  // Defensive normalization only. This function performs NO hostname *validation* of its
+  // own — callers must pass a host they have already validated (the provisioning route
+  // checks HOSTNAME_RE before calling). domainToHost just strips scheme/trailing slashes.
+  const host = domainToHost(opts.domain);
   const results: DnsResult[] = [];
   results.push(await upsertDnsRecord({ zoneId: opts.zoneId, token: opts.token, type: 'A', name: host, content: opts.serverIp, proxied: opts.proxied }));
   if (opts.www) {

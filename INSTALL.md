@@ -31,7 +31,19 @@ with brute-force IP blocking, mandatory TOTP MFA, and a first-run setup wizard.
 | A build toolchain (`build-essential`/`python3`) | `better-sqlite3` compiles a native addon |
 | Linux host, a process manager (PM2/systemd) for production | long-running Next server |
 
-The host can be brand-new: `npx create-next-app@latest your-site --typescript --app`.
+The host can be brand-new — but it must be a Next.js app **before** you embed the
+panel. Scaffold one first, then `init` (the CLI checks these prerequisites and stops
+with guidance if a `package.json`, Node 20.9+, git, or npm is missing):
+
+```bash
+npx create-next-app@latest your-site --typescript --app
+cd your-site
+npx github:RHC-Solutions/admin_panel init            # add --static-site if the pack IS the whole site
+```
+
+> **`init` vs `update`:** `init` sets up a fresh site; `update` only upgrades a site
+> that has **already** run `init`. Running `update` in an empty folder does nothing —
+> there's no embed to update yet.
 
 ---
 
@@ -56,9 +68,10 @@ does **all** of steps 2–4 and 6 for you, idempotently:
 - installs the runtime deps (`--no-install` to skip)
 - scaffolds `.env.local` with a fresh `NEXTAUTH_SECRET` and updates `.gitignore`
 
-Flags: `--no-install` · `--submodule <path>` (default `vendor/admin-panel`) ·
-`--url <git-url>` · `--help`. Then jump to **step 4** to fill in the 3 required
-env vars, and **step 6** to run.
+Flags: `--no-install` · `--static-site` (scaffold the root catch-all that serves a
+design pack at clean routes — single-purpose pack hosts only) · `--submodule <path>`
+(default `vendor/admin-panel`) · `--url <git-url>` · `--no-renovate` · `--help`. Then
+jump to **step 4** to fill in the 3 required env vars, and **step 6** to run.
 
 > The first `npx` run clones the panel once to execute the CLI; that's expected.
 
@@ -324,7 +337,10 @@ npx github:RHC-Solutions/admin_panel update
 npm run build && pm2 restart your-app
 ```
 
-`update` pulls the newest panel source, regenerates the route wrappers, and **syncs
+`update` only upgrades a site that has **already** embedded the panel via `init` — it
+needs the `vendor/admin-panel` submodule and a `package.json` to be present, and stops
+with guidance if they aren't (for a brand-new folder, run `init`, not `update`). It
+pulls the newest panel source, regenerates the route wrappers, and **syncs
 your `package.json` deps to the versions the panel declares** — so source and deps
 move in lockstep (e.g. a panel build that needs `archiver` 8 won't land on a host
 still resolving `archiver` 7). It also warns if any host dep is below the panel's
