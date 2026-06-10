@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { cmsDb } from '@adminpanel/lib/cms/database';
+import { cmsDb, type CMSPage } from '@adminpanel/lib/cms/database';
 import { revalidateAllPublic } from '@adminpanel/lib/revalidate';
 import { slugToId, freeId, interpolate } from './apply';
 import type { DesignTokens } from './types';
@@ -19,7 +19,12 @@ export interface StaticImportResult {
 }
 
 function slugify(s: string): string {
-  return String(s).toLowerCase().replace(/\.zip$/i, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'site';
+  const normalized = String(s);
+  const lower = normalized.toLowerCase();
+  const withoutZipSuffix = lower.replace(/\.zip$/i, '');
+  const dashed = withoutZipSuffix.replace(/[^a-z0-9]+/g, '-');
+  const trimmed = dashed.replace(/^-+|-+$/g, '');
+  return trimmed || 'site';
 }
 
 // A static pack has NO pack.json (that's the CMS-block format) but DOES have .html files.
@@ -43,6 +48,13 @@ function htmlNameToSlug(name: string): string {
   return base === 'index' || base === '' ? '/' : `/${base}`;
 }
 
+// Matches relative href values that end with `.html`, preserving optional query/hash:
+//   href="about.html", href='docs/page.html?x=1#top'
+// Excludes data-href / xlink:href via leading negative lookbehind, and excludes values
+// containing ':' so protocol-based links are not matched.
+const INTERNAL_HREF_HTML_RE =
+  /(?<![\w:-])(href=)(["'])([^"':?#]+?)\.html((?:\?[^"'#]*)?(?:#[^"']*)?)\2/gi;
+
 // Rewrite a page's HTML for serving from this site:
 //  - assets/x  -> /uploads/pack-<slug>/x   (any quote/paren/comma/space-prefixed ref:
 //    href/src/srcset/poster/CSS url(); srcset holds comma-separated candidates)
@@ -59,7 +71,7 @@ function rewriteHtml(html: string, packSlug: string): string {
   // matched; the value char class excludes ':' so https:// links don't match; absolute
   // and protocol-relative links are skipped in the callback.
   out = out.replace(
-    /(?<![\w:-])(href=)(["'])([^"':?#]+?)\.html((?:\?[^"'#]*)?(?:#[^"']*)?)\2/gi,
+    INTERNAL_HREF_HTML_RE,
     (m, pre, q, name, tail) => (name.startsWith('/') ? m : `${pre}${q}${htmlNameToSlug(name)}${tail}${q}`),
   );
   return out;
@@ -70,10 +82,17 @@ function extractBetween(html: string, re: RegExp): string {
   return m ? m[1].trim() : '';
 }
 
+// Match a <nav> block whose class attribute contains "nav-links".
+// Captures the inner HTML so link extraction can run on that subset.
+const NAV_WITH_NAV_LINKS_RE = /<nav[^>]*class=["'][^"']*nav-links[^"']*["'][^>]*>([\s\S]*?)<\/nav>/i;
+
+// Fallback: match any <nav> block and capture its inner HTML.
+const NAV_ANY_RE = /<nav[^>]*>([\s\S]*?)<\/nav>/i;
+
 // Best-effort: pull the top nav links into a CMS navigation array (links rewritten).
 function extractNavigation(html: string, packSlug: string): Array<Record<string, unknown>> {
-  const navBlock = extractBetween(html, /<nav[^>]*class=["'][^"']*nav-links[^"']*["'][^>]*>([\s\S]*?)<\/nav>/i)
-    || extractBetween(html, /<nav[^>]*>([\s\S]*?)<\/nav>/i);
+  const navBlock = extractBetween(html, NAV_WITH_NAV_LINKS_RE)
+    || extractBetween(html, NAV_ANY_RE);
   if (!navBlock) return [];
   const items: Array<Record<string, unknown>> = [{ id: '1', label: 'Home', url: '/', visible: true, order: 1 }];
   const linkRe = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
@@ -151,7 +170,7 @@ export async function importStaticPack(
     const dataTopic = extractBetween(raw, /<body[^>]*data-topic=["']([^"']*)["']/i);
     const html = interpolate(rewriteHtml(raw, packSlug), tokens);
 
-    const page = {
+    const page: Omit<CMSPage, 'createdAt' | 'updatedAt'> = {
       id: slugToId(slug),
       title: interpolate(title, tokens),
       slug,
@@ -166,11 +185,11 @@ export async function importStaticPack(
     const existing = await cmsDb.getPage(slug);
     if (existing) {
       const { id: _id, ...updates } = page;
-      await cmsDb.updatePage(existing.id, updates as any);
+      await cmsDb.updatePage(existing.id, updates);
       result.updated++;
     } else {
       page.id = await freeId(page.id);
-      await cmsDb.createPage(page as any);
+      await cmsDb.createPage(page);
       result.created++;
     }
     result.slugs.push(slug);
