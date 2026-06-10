@@ -219,7 +219,7 @@ because they're needed at build/boot.
 | `TELEGRAM_CONTACT_BOT_TOKEN` / `TELEGRAM_CONTACT_CHAT_ID` | Contact route + login-attempt alerts. |
 | `WHATSAPP_TOKEN` / `WHATSAPP_PHONE_ID` / `WHATSAPP_DESTINATION` | WhatsApp Cloud API fallback (E.164 destination). |
 | `TURNSTILE_SECRET_KEY` | Server-side Turnstile verification. |
-| `AIKIDO_API_TOKEN` (`AIKIDO_IDE_TOKEN`) | Aikido security panel. |
+| `AIKIDO_API_TOKEN` (preferred; alias: `AIKIDO_IDE_TOKEN`) | Aikido security panel. |
 | `IPINFO_TOKEN` | Visitor geolocation. |
 | `BREVO_API_KEY` / `BREVO_SENDER_EMAIL` | Brevo email integration (optional). |
 | `CLOUDFLARE_API_TOKEN` / `NEXT_PUBLIC_CLOUDFLARE_ZONE_ID` / `CLOUDFLARE_ACCOUNT_ID` | Cloudflare panel (cache/DNS/analytics). |
