@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { FaUser, FaLock, FaShieldAlt, FaCheckCircle, FaPalette, FaCog } from 'react-icons/fa';
@@ -53,8 +53,8 @@ export default function SetupWizard() {
         `Applied "${data.packName}" — ${p ? `${p.created + p.updated} page(s), ` : ''}theme & styles set.`,
       );
       // Prefill the account email from the contact email if given.
-      if (identity.contactEmail && !formData.email) {
-        setFormData((f) => ({ ...f, email: identity.contactEmail }));
+      if (identity.contactEmail) {
+        setFormData((f) => (f.email ? f : { ...f, email: identity.contactEmail }));
       }
       setTimeout(() => setStep(2), 900);
     } catch (e: any) {
@@ -91,7 +91,7 @@ export default function SetupWizard() {
         if (provision.smtpUser) secrets.SMTP_USER = provision.smtpUser;
         if (provision.smtpPass) secrets.SMTP_PASS = provision.smtpPass;
         // Persist implicit-TLS flag so runtime send matches what was tested (465 -> secure).
-        if (provision.smtpHost) secrets.SMTP_SECURE = String(Number(provision.smtpPort) === 465);
+        if (provision.smtpHost) secrets.SMTP_SECURE = (provision.smtpPort === '465').toString();
       }
       const res = await fetch('/api/cms/setup/provision', {
         method: 'POST',
@@ -120,12 +120,7 @@ export default function SetupWizard() {
     qrCodeDataURL: string;
   } | null>(null);
 
-  // Check if setup is needed
-  useEffect(() => {
-    checkSetupStatus();
-  }, []);
-
-  const checkSetupStatus = async () => {
+  const checkSetupStatus = useCallback(async () => {
     try {
       const response = await fetch('/api/cms/setup/check');
       const data = await response.json();
@@ -141,7 +136,12 @@ export default function SetupWizard() {
       console.error('Error checking setup status:', error);
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  // Check if setup is needed
+  useEffect(() => {
+    checkSetupStatus();
+  }, [checkSetupStatus]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -331,7 +331,7 @@ export default function SetupWizard() {
           <div className="space-y-5 transition-slide-up transition-delay-5">
             {error && <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded">{error}</div>}
             <p className="text-gray-400 text-sm">
-              Set your domain and connect the services you&apos;ll launch with. All optional — you can do this later in <span className="font-mono">/admin</span>. Domain changes apply after a restart.
+              Set your domain and connect the services you&apos;ll launch with. All optional — you can do this later in <span className="font-mono">/admin</span>. Domain changes require an application restart to take effect.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -379,7 +379,7 @@ export default function SetupWizard() {
                 <input value={provision.dnsServerIp} onChange={(e) => setProvision({ ...provision, dnsServerIp: e.target.value })} placeholder="Point DNS to server IP (optional, e.g. 203.0.113.10)" className="w-full bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
                 <label className="mt-2 flex items-center gap-2 text-xs text-text-muted cursor-pointer">
                   <input type="checkbox" checked={provision.dnsWww} onChange={(e) => setProvision({ ...provision, dnsWww: e.target.checked })} />
-                  <span>Also create a <span className="font-mono">www</span> record. Requires the API token to have DNS-edit permission on the zone.</span>
+                  <span>Also create a <span className="font-mono">www</span> record. Requires the API token to have DNS edit permission on the zone.</span>
                 </label>
               </div>
             </div>

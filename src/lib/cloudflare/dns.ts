@@ -9,6 +9,29 @@ const CF_ZONE_ID_RE = /^[a-f0-9]{32}$/i;
 const CF_RECORD_ID_RE = /^[A-Za-z0-9_-]+$/;
 const ALLOWED_DNS_TYPES = new Set(['A', 'AAAA', 'CNAME', 'TXT', 'MX', 'NS', 'SRV', 'CAA', 'PTR', 'NAPTR', 'TLSA', 'URI']);
 
+function normalizeDomainHost(domain: string): string {
+  const host = domain.replace(/^https?:\/\//i, '').replace(/\/+$/, '').trim().toLowerCase();
+  if (!host || host.length > 253) throw new Error('Invalid domain format');
+  const labels = host.split('.');
+  if (labels.length < 2) throw new Error('Invalid domain format');
+  for (const label of labels) {
+    if (!label || label.length > 63) throw new Error('Invalid domain format');
+    if (!/^[a-z0-9-]+$/i.test(label)) throw new Error('Invalid domain format');
+    if (label.startsWith('-') || label.endsWith('-')) throw new Error('Invalid domain format');
+  }
+  return host;
+}
+
+interface CloudflareApiError {
+  message?: string;
+}
+
+interface CloudflareApiResponse<T = unknown> {
+  success?: boolean;
+  result?: T;
+  errors?: CloudflareApiError[];
+}
+
 function normalizeZoneId(zoneId: string): string {
   const v = zoneId.trim();
   if (!CF_ZONE_ID_RE.test(v)) throw new Error('Invalid Cloudflare zone ID format');
@@ -35,7 +58,7 @@ export interface DnsResult {
   message: string;
 }
 
-async function cf(pathname: string, token: string, init?: RequestInit) {
+async function cf<T = unknown>(pathname: string, token: string, init?: RequestInit) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
@@ -44,7 +67,7 @@ async function cf(pathname: string, token: string, init?: RequestInit) {
       signal: ctrl.signal,
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...(init?.headers || {}) },
     });
-    const data: any = await res.json().catch(() => ({}));
+    const data: CloudflareApiResponse<T> = await res.json().catch(() => ({}));
     return { res, data };
   } finally {
     clearTimeout(t);
@@ -62,17 +85,22 @@ export async function upsertDnsRecord(opts: {
     const safeZoneId = normalizeZoneId(zoneId);
     const safeType = normalizeDnsType(type);
     const safeName = name.trim();
-    const { data: list } = await cf(
+    const { data: list } = await cf<Array<{ id?: string }>>(
       `/zones/${safeZoneId}/dns_records?type=${encodeURIComponent(safeType)}&name=${encodeURIComponent(safeName)}`,
       token,
     );
-    const existing = Array.isArray(list?.result) ? list.result[0] : null;
+    const matches = Array.isArray(list?.result) ? list.result : [];
+    if (matches.length > 1) {
+      console.warn(`[cloudflare:dns] Multiple DNS records matched type="${safeType}" name="${safeName}" in zone "${safeZoneId}". Using the first match (id="${String(matches[0]?.id || '')}").`);
+    }
+    const existing = matches.length > 0 ? matches[0] : null;
+    const existingRecordId = existing?.id ? normalizeRecordId(String(existing.id)) : null;
     const payload = JSON.stringify({ type: safeType, name: safeName, content, proxied, ttl });
-    const { res, data } = existing
-      ? await cf(`/zones/${safeZoneId}/dns_records/${normalizeRecordId(String(existing.id || ''))}`, token, { method: 'PUT', body: payload })
+    const { res, data } = existingRecordId
+      ? await cf(`/zones/${safeZoneId}/dns_records/${existingRecordId}`, token, { method: 'PUT', body: payload })
       : await cf(`/zones/${safeZoneId}/dns_records`, token, { method: 'POST', body: payload });
     if (res.ok && data?.success) {
-      return { name, type, ok: true, action: existing ? 'updated' : 'created', message: `${name} → ${content}` };
+      return { name, type, ok: true, action: existingRecordId ? 'updated' : 'created', message: `${name} → ${content}` };
     }
     return { name, type, ok: false, action: 'failed', message: data?.errors?.[0]?.message || `HTTP ${res.status}` };
   } catch (e) {
@@ -84,7 +112,7 @@ export async function upsertDnsRecord(opts: {
 export async function pointDomainToServer(opts: {
   zoneId: string; token: string; domain: string; serverIp: string; proxied?: boolean; www?: boolean;
 }): Promise<DnsResult[]> {
-  const host = opts.domain.replace(/^https?:\/\//i, '').replace(/\/+$/, '').trim();
+  const host = normalizeDomainHost(opts.domain);
   const results: DnsResult[] = [];
   results.push(await upsertDnsRecord({ zoneId: opts.zoneId, token: opts.token, type: 'A', name: host, content: opts.serverIp, proxied: opts.proxied }));
   if (opts.www) {
