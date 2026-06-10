@@ -231,8 +231,34 @@ function generateWrappers(abs, force) {
 // that calls the archiver-8 API also pulls archiver ^8 into the host. Caret ranges
 // mean a host already on a compatible-or-newer version is left untouched; only a
 // host below the range is upgraded. Run on both `init` and `update`.
+// Propagate the panel's *literal* dependency overrides into the host package.json so
+// host installs resolve the same non-deprecated / security-patched transitive versions
+// the panel pins. Example: next-auth (v4) pulls a deprecated uuid@8 transitively; the
+// panel pins uuid forward, but npm does NOT carry a dependency's `overrides` into the
+// consumer — only the ROOT package.json's overrides apply — so without this the host
+// re-resolves the old transitive. `$`-referencing overrides (e.g. "postcss": "$postcss")
+// are panel-internal and skipped; existing host overrides are never clobbered.
+function propagateOverrides(abs) {
+  let panelOverrides = {};
+  try { panelOverrides = JSON.parse(fs.readFileSync(path.join(abs, 'package.json'), 'utf8')).overrides || {}; } catch { return; }
+  const literal = Object.entries(panelOverrides).filter(([, v]) => typeof v === 'string' && !v.includes('$'));
+  if (!literal.length) return;
+  const pkgPath = path.join(SITE, 'package.json');
+  let pkg;
+  try { pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')); } catch { return; }
+  pkg.overrides = pkg.overrides || {};
+  const added = [];
+  for (const [name, range] of literal) {
+    if (!(name in pkg.overrides)) { pkg.overrides[name] = range; added.push(`${name}@${range}`); }
+  }
+  if (!added.length) { skip('dependency overrides'); return; }
+  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+  ok(`overrides: pinned ${added.join(', ')} (avoids deprecated/insecure transitives)`);
+}
+
 function installDeps(abs) {
   if (NO_INSTALL) { warn('Skipping dependency install (--no-install). Run install-into-site.mjs --print-deps to see them.'); return; }
+  propagateOverrides(abs); // pin transitives (e.g. uuid) BEFORE install so npm resolves them
   let deps = {};
   try { deps = JSON.parse(fs.readFileSync(path.join(abs, 'package.json'), 'utf8')).dependencies || {}; } catch { /* */ }
   const spec = (n) => `${n}@${deps[n]}`;
