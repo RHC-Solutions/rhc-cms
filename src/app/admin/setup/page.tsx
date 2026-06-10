@@ -65,8 +65,22 @@ export default function SetupWizard() {
   };
 
   // Provisioning (configure) step state.
+  interface ValidationResult {
+    [key: string]: unknown;
+  }
+
+  interface DnsResult {
+    [key: string]: unknown;
+  }
+
+  interface ProvisionResult {
+    validation: ValidationResult[];
+    dns: DnsResult[];
+    restartRequired: boolean;
+  }
+
   const [provisioning, setProvisioning] = useState(false);
-  const [provisionResult, setProvisionResult] = useState<{ validation: any[]; dns: any[]; restartRequired: boolean } | null>(null);
+  const [provisionResult, setProvisionResult] = useState<ProvisionResult | null>(null);
   const [provision, setProvision] = useState({
     emailProvider: 'none' as 'none' | 'brevo' | 'smtp',
     brevoApiKey: '', brevoSenderEmail: '', brevoSenderName: '',
