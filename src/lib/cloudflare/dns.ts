@@ -5,6 +5,27 @@
 
 const CF = 'https://api.cloudflare.com/client/v4';
 const TIMEOUT_MS = 6_000;
+const CF_ZONE_ID_RE = /^[a-f0-9]{32}$/i;
+const CF_RECORD_ID_RE = /^[A-Za-z0-9_-]+$/;
+const ALLOWED_DNS_TYPES = new Set(['A', 'AAAA', 'CNAME', 'TXT', 'MX', 'NS', 'SRV', 'CAA', 'PTR', 'NAPTR', 'TLSA', 'URI']);
+
+function normalizeZoneId(zoneId: string): string {
+  const v = zoneId.trim();
+  if (!CF_ZONE_ID_RE.test(v)) throw new Error('Invalid Cloudflare zone ID format');
+  return v;
+}
+
+function normalizeDnsType(type: string): string {
+  const v = type.trim().toUpperCase();
+  if (!ALLOWED_DNS_TYPES.has(v)) throw new Error('Invalid DNS record type');
+  return v;
+}
+
+function normalizeRecordId(id: string): string {
+  const v = id.trim();
+  if (!CF_RECORD_ID_RE.test(v)) throw new Error('Invalid DNS record ID format');
+  return v;
+}
 
 export interface DnsResult {
   name: string;
@@ -38,12 +59,18 @@ export async function upsertDnsRecord(opts: {
   const proxied = opts.proxied ?? true;
   const ttl = opts.ttl ?? 1; // 1 = "automatic"
   try {
-    const { data: list } = await cf(`/zones/${zoneId}/dns_records?type=${type}&name=${encodeURIComponent(name)}`, token);
+    const safeZoneId = normalizeZoneId(zoneId);
+    const safeType = normalizeDnsType(type);
+    const safeName = name.trim();
+    const { data: list } = await cf(
+      `/zones/${safeZoneId}/dns_records?type=${encodeURIComponent(safeType)}&name=${encodeURIComponent(safeName)}`,
+      token,
+    );
     const existing = Array.isArray(list?.result) ? list.result[0] : null;
-    const payload = JSON.stringify({ type, name, content, proxied, ttl });
+    const payload = JSON.stringify({ type: safeType, name: safeName, content, proxied, ttl });
     const { res, data } = existing
-      ? await cf(`/zones/${zoneId}/dns_records/${existing.id}`, token, { method: 'PUT', body: payload })
-      : await cf(`/zones/${zoneId}/dns_records`, token, { method: 'POST', body: payload });
+      ? await cf(`/zones/${safeZoneId}/dns_records/${normalizeRecordId(String(existing.id || ''))}`, token, { method: 'PUT', body: payload })
+      : await cf(`/zones/${safeZoneId}/dns_records`, token, { method: 'POST', body: payload });
     if (res.ok && data?.success) {
       return { name, type, ok: true, action: existing ? 'updated' : 'created', message: `${name} → ${content}` };
     }
