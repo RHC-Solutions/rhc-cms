@@ -59,7 +59,7 @@ export function formatEnvValue(v) {
   const s = String(v).replace(/[\r\n]+/g, ''); // never let a newline split the .env line
   if (s === '') return '';
   if (!/[\s$#"'\\`]/.test(s)) return s; // no special chars → safe bare
-  return '"' + s.replace(/([$"`])/g, '\\$1') + '"';
+  return '"' + s.replace(/([\\$"`])/g, '\\$1') + '"';
 }
 
 // Prompt the operator for .env.local settings. `input`/`output` default to the process
