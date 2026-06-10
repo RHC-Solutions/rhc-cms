@@ -17,7 +17,9 @@
 //   3. creates middleware.ts wired to adminAuthGate (or prints the snippet if one exists)
 //   4. generates the Next route wrappers (install-into-site.mjs)
 //   5. installs the runtime deps           (skip with --no-install)
-//   6. scaffolds .env.local + a fresh NEXTAUTH_SECRET, and updates .gitignore
+//   6. runs an interactive .env.local wizard (asks for the admin/site URLs, secret,
+//      Postgres URL, and optionally every other setting); --yes skips it for automation
+//      and writes defaults + a generated NEXTAUTH_SECRET. Also updates .gitignore.
 //   7. drops a renovate.json so the site auto-updates the panel + deps (--no-renovate)
 //
 // Flags: --submodule <path> (default vendor/admin-panel) · --url <git-url>
@@ -30,6 +32,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { runEnvWizard, renderEnv } from './lib/env-wizard.mjs';
 
 const DEFAULT_URL = 'https://github.com/RHC-Solutions/admin_panel.git';
 const SITE = process.cwd();
@@ -50,6 +53,7 @@ const BRANCH = opt('branch', 'main');
 const NO_INSTALL = flag('no-install');
 const NO_RENOVATE = flag('no-renovate');
 const STATIC_SITE = flag('static-site'); // scaffold the root catch-all that serves design packs
+const YES = flag('yes'); // non-interactive: skip the .env.local wizard, write defaults + generated secret
 
 // ---------- tiny logger ----------
 const c = (n, s) => (process.stdout.isTTY ? `\x1b[${n}m${s}\x1b[0m` : s);
@@ -300,21 +304,60 @@ function checkPeers(abs) {
   }
 }
 
-function scaffoldEnv(abs) {
+// Catch the cryptic "Configuring Next.js via 'next.config.ts' is not supported" build
+// failure early: create-next-app emits next.config.ts (a Next 15+ format), but if the
+// host somehow resolves an older next (<15, e.g. a stale node_modules or a skipped
+// install) the build dies. Surface the exact fix instead.
+function checkNextConfig() {
+  const hasTsConfig = ['next.config.ts', 'next.config.mts'].some((f) => fs.existsSync(path.join(SITE, f)));
+  if (!hasTsConfig) return;
+  const major = installedMajor('next');
+  if (major !== null && major < 15) {
+    warn(`Installed next is v${major}.x but a next.config.ts is present — TS config needs Next >= 15, so \`next build\` will fail with "Configuring Next.js via 'next.config.ts' is not supported".\n      Fix: npm install next@latest react@latest react-dom@latest && rm -rf .next && npm run build   (or rename next.config.ts -> next.config.js)`);
+  }
+}
+
+// Interactive .env.local wizard. In a TTY (and without --yes) it asks for the core
+// settings (admin/site URL, secret, Postgres URL) and, optionally, every other var in
+// .env.local.example. Non-interactive (piped/CI or --yes) it writes the template with a
+// generated secret — same as before — so automation keeps working.
+async function scaffoldEnv(abs) {
   const envPath = path.join(SITE, '.env.local');
-  const examplePath = path.join(abs, '.env.local.example');
   if (fs.existsSync(envPath)) {
-    skip('.env.local (present — verify NEXTAUTH_SECRET / NEXTAUTH_URL / NEXT_PUBLIC_SITE_URL)');
+    skip('.env.local (present — verify NEXTAUTH_URL / NEXTAUTH_SECRET / NEXT_PUBLIC_SITE_URL)');
     return;
   }
-  let body = fs.existsSync(examplePath) ? fs.readFileSync(examplePath, 'utf8')
-    : 'NEXTAUTH_SECRET=\nNEXTAUTH_URL=https://your-domain.com\nNEXT_PUBLIC_SITE_URL=https://your-domain.com\n';
+  const examplePath = path.join(abs, '.env.local.example');
+  const template = fs.existsSync(examplePath)
+    ? fs.readFileSync(examplePath, 'utf8')
+    : 'NEXTAUTH_URL=https://your-domain.com\nNEXTAUTH_SECRET=\nNEXT_PUBLIC_SITE_URL=https://your-domain.com\n';
   const secret = crypto.randomBytes(32).toString('base64');
-  body = body.replace(/^NEXTAUTH_SECRET=.*$/m, `NEXTAUTH_SECRET=${secret}`);
-  if (!/^NEXTAUTH_SECRET=/m.test(body)) body = `NEXTAUTH_SECRET=${secret}\n` + body;
-  fs.writeFileSync(envPath, body);
+  const interactive = process.stdin.isTTY && process.stdout.isTTY && !YES;
+  let answers = {};
+  if (interactive) {
+    answers = await runEnvWizard({
+      template, secret, input: process.stdin, output: process.stdout,
+      banner: () => console.log('\n' + c(1, 'Configure .env.local') + ' — Enter accepts the [default]; a blank skips an optional. Edit it anytime.\n'),
+    });
+    // readline doesn't release the TTY on close, which can keep the event loop alive and
+    // hang the CLI after init finishes — unref stdin so the process can exit normally.
+    if (process.stdin.isTTY) process.stdin.unref();
+  } else if (YES) {
+    info('--yes: writing .env.local with template defaults + a generated NEXTAUTH_SECRET (edit before building).');
+  }
+  // Create with 0o600 from the start (no group-readable window for the secret), then
+  // chmod as a belt-and-suspenders in case the platform widened the create mode.
+  fs.writeFileSync(envPath, renderEnv(template, answers, secret), { mode: 0o600 });
   fs.chmodSync(envPath, 0o600);
-  ok('.env.local scaffolded with a fresh NEXTAUTH_SECRET (fill in NEXTAUTH_URL / NEXT_PUBLIC_SITE_URL)');
+  ok(interactive
+    ? '.env.local written from your answers (chmod 600).'
+    : '.env.local scaffolded with a fresh NEXTAUTH_SECRET.');
+  // The app won't work until the domain URLs are real — warn if they're still placeholders
+  // (covers --yes/CI and an interactive run where the user accepted the example default).
+  const written = fs.readFileSync(envPath, 'utf8');
+  if (/^(?:NEXTAUTH_URL|NEXT_PUBLIC_SITE_URL)=.*your-domain\.com/m.test(written)) {
+    warn('.env.local still has placeholder URL(s) — set NEXTAUTH_URL and NEXT_PUBLIC_SITE_URL to your real domain before `npm run build`.');
+  }
 }
 
 function updateGitignore() {
@@ -381,7 +424,7 @@ function writeRenovateConfig() {
 }
 
 // ---------- commands ----------
-function runInit() {
+async function runInit() {
   console.log(c(1, '\nadmin-panel init') + ` → ${SITE}\n`);
   checkPrerequisites();
   assertHostSite('init');
@@ -392,13 +435,14 @@ function runInit() {
   generateWrappers(abs, false);
   installDeps(abs);
   checkPeers(abs);
-  scaffoldEnv(abs);
+  checkNextConfig();
+  await scaffoldEnv(abs);
   updateGitignore();
   writeRenovateConfig();
   console.log(`
 ${c(32, '✔ Admin panel installed.')} Next:
 
-  1) Edit ${c(1, '.env.local')} — set NEXTAUTH_URL and NEXT_PUBLIC_SITE_URL to your domain.
+  1) Review ${c(1, '.env.local')} — the wizard asked for the core values; fill any you skipped (NEXTAUTH_URL / NEXT_PUBLIC_SITE_URL).
   2) ${c(1, 'npm run build && npm start')}   (or pm2/systemd in production)
   3) Open ${c(1, '/admin')} → the setup wizard creates your admin account, then enroll MFA.
   4) Enable the ${c(1, 'Renovate')} app on this repo so renovate.json keeps the panel + deps current.
@@ -509,10 +553,16 @@ apply-pack <zip|https-url> options:
 `);
 }
 
-switch (cmd) {
-  case 'init': runInit(); break;
-  case 'update': runUpdate(); break;
-  case 'apply-pack': await runApplyPack(); break;
-  case 'help': case '--help': runHelp(); break;
-  default: warn(`Unknown command "${cmd}".`); runHelp(); process.exit(1);
+try {
+  switch (cmd) {
+    case 'init': await runInit(); break;
+    case 'update': runUpdate(); break;
+    case 'apply-pack': await runApplyPack(); break;
+    case 'help': case '--help': runHelp(); break;
+    default: warn(`Unknown command "${cmd}".`); runHelp(); process.exit(1);
+  }
+} catch (e) {
+  // Turn an unexpected failure (readline/file/network) into a clear message instead of
+  // an unhandled-rejection stack trace.
+  die(`"${cmd}" failed: ${(e && e.message) || e}`);
 }
