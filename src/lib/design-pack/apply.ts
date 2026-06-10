@@ -3,6 +3,7 @@ import * as path from 'path';
 import { cmsDb } from '@adminpanel/lib/cms/database';
 import { revalidateAllPublic } from '@adminpanel/lib/revalidate';
 import { createBackupZip, ensureBackupsDir, getSiteSlug } from '@adminpanel/lib/backup';
+import { trimSlashes } from '@adminpanel/lib/url-path';
 import {
   PACK_FORMAT,
   DESIGN_SETTINGS_KEYS,
@@ -73,7 +74,7 @@ function guessMime(file: string): string {
 
 // Derive a stable page id from a slug ('/', '/about-us', '/services/x' -> 'home', 'about-us', 'services-x').
 export function slugToId(slug: string): string {
-  const id = slug.replace(/^\/+|\/+$/g, '').replace(/\//g, '-');
+  const id = trimSlashes(slug).replace(/\//g, '-');
   return id || 'home';
 }
 
