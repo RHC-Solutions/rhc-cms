@@ -73,7 +73,8 @@ function rewriteHtml(html: string, packSlug: string): string {
   // and protocol-relative links are skipped in the callback.
   out = out.replace(
     INTERNAL_HREF_HTML_RE,
-    (m, pre, q, name, tail) => (name.startsWith('/') ? m : `${pre}${q}${htmlNameToSlug(name)}${tail}${q}`),
+    (m, pre, q, name, tail) =>
+      (name.startsWith('//') || name.startsWith('/') ? m : `${pre}${q}${htmlNameToSlug(name)}${tail}${q}`),
   );
   return out;
 }
