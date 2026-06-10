@@ -71,8 +71,8 @@ Everything except `pack.json` is optional — include only what the pack provide
 ```json
 {
   "packFormat": 1,
-  "name": "BigData CyberCloud",
-  "slug": "bigdata-cybercloud",
+  "name": "Acme Inc",
+  "slug": "acme-inc",
   "version": "1.0.0",
   "description": "…",
   "author": "Claude Design",
