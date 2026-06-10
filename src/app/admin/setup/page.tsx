@@ -91,7 +91,7 @@ export default function SetupWizard() {
         if (provision.smtpUser) secrets.SMTP_USER = provision.smtpUser;
         if (provision.smtpPass) secrets.SMTP_PASS = provision.smtpPass;
         // Persist implicit-TLS flag so runtime send matches what was tested (465 -> secure).
-        if (provision.smtpHost) secrets.SMTP_SECURE = (provision.smtpPort === '465').toString();
+        if (provision.smtpHost && provision.smtpPort) secrets.SMTP_SECURE = (provision.smtpPort === '465').toString();
       }
       const res = await fetch('/api/cms/setup/provision', {
         method: 'POST',

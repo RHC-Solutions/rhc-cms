@@ -91,7 +91,7 @@ export async function upsertDnsRecord(opts: {
     );
     const matches = Array.isArray(list?.result) ? list.result : [];
     if (matches.length > 1) {
-      console.warn(`[cloudflare:dns] Multiple DNS records matched type="${safeType}" name="${safeName}" in zone "${safeZoneId}". Using the first match (id="${String(matches[0]?.id || '')}").`);
+      console.warn(`[cloudflare:dns] Multiple DNS records matched type="${safeType}" name="${safeName}" in zone "${safeZoneId}". Using the first match (id="${String(matches[0].id || 'unknown')}").`);
     }
     const existing = matches.length > 0 ? matches[0] : null;
     const existingRecordId = existing?.id ? normalizeRecordId(String(existing.id)) : null;
