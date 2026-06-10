@@ -57,8 +57,9 @@ export default function SetupWizard() {
         setFormData((f) => (f.email ? f : { ...f, email: identity.contactEmail }));
       }
       setTimeout(() => setStep(2), 900);
-    } catch (e: any) {
-      setError(`Design pack failed: ${e.message}`);
+    } catch (e) {
+      const error = e instanceof Error ? e : new Error(String(e));
+      setError(`Design pack failed: ${error.message}`);
     } finally {
       setApplyingPack(false);
     }
