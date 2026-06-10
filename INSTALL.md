@@ -377,6 +377,7 @@ npm run build && pm2 restart your-app
 | Redirected to `/admin/setup` forever | finish the wizard — it sets a `setup-complete` cookie; clear cookies to retry. |
 | Can't log in after setup | the account uses bcrypt `passwordHash`; if you hand-edited `users.json`, hash with `scripts/hash-password.ts`. |
 | `better-sqlite3` build fails | install build tools (`build-essential`, `python3`) and reinstall. |
+| `npm warn deprecated` during install (`prebuild-install`, `node-domexception`, `glob`) | Harmless. These are **transitive** deps of `better-sqlite3` / `node-fetch` / `googleapis`, each already the latest version its parent allows (`npm audit` = 0). They clear only when those upstreams update — not panel-controllable. `init` already pins `uuid` forward (next-auth ships a deprecated `uuid@8`) via a propagated `overrides` entry, so that one won't appear. |
 | Automation "Script not found" | set `AUDIT_SCRIPTS_DIR` to `vendor/admin-panel/scripts/audit`. |
 | Secrets not taking effect | `getSecret` caches ~1 min; admin-UI saves win over `.env.local`. |
 | GA dashboard empty | set `NEXT_PUBLIC_GA_SERVICE_ACCOUNT_EMAIL` / `GA_PRIVATE_KEY` and `NEXT_PUBLIC_GA_PROPERTY_ID`. |
