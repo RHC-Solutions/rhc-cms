@@ -111,7 +111,7 @@ function extractNavigation(html: string): Array<Record<string, unknown>> {
       const htmlM = url.match(/^([A-Za-z0-9._\/-]+?)\.html((?:\?[^#]*)?(?:#.*)?)$/i);
       if (htmlM) url = htmlNameToSlug(htmlM[1]) + (htmlM[2] || '');
     }
-    items.push({ id: String(order), label, url, visible: true, order, external: isExternal ? true : undefined });
+    items.push({ id: String(order), label, url, visible: true, order, external: isExternal });
     order++;
   }
   return items;
@@ -186,7 +186,7 @@ export async function importStaticPack(
 
     const existing = await cmsDb.getPage(slug);
     if (existing) {
-      const { id: _id, ...updates } = page;
+      const { id: existingPageId, ...updates } = page; // Exclude `id`: updatePage receives the target id separately.
       await cmsDb.updatePage(existing.id, updates);
       result.updated++;
     } else {
