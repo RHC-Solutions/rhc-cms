@@ -11,7 +11,7 @@ db.pragma('journal_mode = WAL');
 // Content Block Types
 export interface ContentBlock {
   id: string;
-  type: 'hero' | 'features' | 'services' | 'stats' | 'cta' | 'text' | 'heading' | 'benefits' | 'process' | 'pricing' | 'testimonials' | 'faq' | 'team' | 'clients' | 'contact_cta' | 'image' | 'spacer' | 'paragraph' | 'cards' | 'columns' | 'testimonial' | 'list' | 'button' | 'worldmap' | 'contactform' | 'servicescarousel' | 'aboutpreview' | 'testimonialscarousel' | 'clientsteaser' | 'ctasection' | 'richtext';
+  type: 'hero' | 'features' | 'services' | 'stats' | 'cta' | 'text' | 'heading' | 'benefits' | 'process' | 'pricing' | 'testimonials' | 'faq' | 'team' | 'clients' | 'contact_cta' | 'image' | 'spacer' | 'paragraph' | 'cards' | 'columns' | 'testimonial' | 'list' | 'button' | 'worldmap' | 'contactform' | 'servicescarousel' | 'aboutpreview' | 'testimonialscarousel' | 'clientsteaser' | 'ctasection' | 'richtext' | 'staticpage';
   props: Record<string, any>;
   order: number;
 }

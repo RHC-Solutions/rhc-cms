@@ -594,6 +594,28 @@ function renderBlock(block: ContentBlock, opts: { priority?: boolean } = {}) {
       );
     }
 
+    case 'staticpage': {
+      // Imported from a static-site design pack. The real page is served verbatim
+      // (its own head/nav/footer/CSS/JS) via the static route — NOT through this
+      // block renderer (a full HTML doc can't render inside the admin layout). Show
+      // a placeholder in admin/preview with the page's size and where to view it.
+      const html = typeof props?.html === 'string' ? props.html : '';
+      const kb = Math.round((html.length / 1024) * 10) / 10;
+      const slug = typeof props?.slug === 'string' ? props.slug : '';
+      return (
+        <section key={block.id} className="py-10">
+          <div className="container-custom max-w-3xl">
+            <div className="rounded-lg border border-dark-border bg-dark-lighter p-6 text-text-secondary">
+              <div className="text-sm font-medium text-text-primary">Static page (imported design pack)</div>
+              <div className="mt-1 text-xs text-text-muted">
+                {kb} KB of imported HTML{props?.dataTopic ? ` · theme: ${String(props.dataTopic)}` : ''}. Served verbatim at its route{slug ? ` (${slug})` : ''} — edit by re-applying a pack.
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     case 'faq': {
       const items: { question?: string; answer?: string }[] = Array.isArray(props?.items) ? props.items : [];
       const visible = items.filter((it) => it && it.question && it.answer);

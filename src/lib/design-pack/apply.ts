@@ -72,7 +72,7 @@ function guessMime(file: string): string {
 }
 
 // Derive a stable page id from a slug ('/', '/about-us', '/services/x' -> 'home', 'about-us', 'services-x').
-function slugToId(slug: string): string {
+export function slugToId(slug: string): string {
   const id = slug.replace(/^\/+|\/+$/g, '').replace(/\//g, '-');
   return id || 'home';
 }
@@ -80,7 +80,7 @@ function slugToId(slug: string): string {
 // Find an id not already taken by a DIFFERENT page. getPage() matches id OR slug,
 // so a non-null hit here means the preferred id collides (e.g. seed data already
 // uses it under another slug) — bump a suffix until free.
-async function freeId(preferred: string): Promise<string> {
+export async function freeId(preferred: string): Promise<string> {
   const base = preferred || 'page';
   let candidate = base;
   let n = 1;

@@ -9,6 +9,37 @@ wizard and filled into `{{token}}` placeholders).
 
 This is the "WordPress theme + starter content" of the Node/Next platform.
 
+## Two pack types
+
+The `apply` endpoint auto-detects which kind of pack it received:
+
+1. **CMS-block pack** — has a `pack.json` manifest; decomposed into the panel's block
+   model (theme + typography + pages-as-blocks + menu/footer). Editable block-by-block.
+   This is the format the rest of this doc specifies, plus the exporter.
+
+2. **Static-site pack** — **no `pack.json`**, just finished `.html` pages + a shared
+   `assets/` folder (e.g. `styles.css`, `site.js`). This is what an HTML-first designer
+   ("Claude Design") emits. Each page is ingested as a managed CMS page holding a single
+   `staticpage` block with the page's **full, path-rewritten HTML**, and is **served
+   verbatim** — its own `<head>`, nav/footer, inline `<style>`/`<script>`, and external
+   `site.js` run natively, so the design is pixel-perfect and interactivity works.
+   - Slugs: `index.html` → `/`, `big-data.html` → `/big-data`, …
+   - Assets are copied to `public/uploads/pack-<slug>/` and references rewritten
+     (`assets/x` → `/uploads/pack-<slug>/x`); internal `.html` links → clean routes.
+   - The top `<nav>` is parsed into `settings.navigation`.
+   - **Trust:** static packs execute their own JS — apply them only from a trusted
+     source (the Claude Design pipeline; admin or first-run only). `extract.ts` still
+     rejects `secrets.json`/`users.json`/`.env`/`cms.db`.
+   - **Served verbatim** by a route handler. In the panel itself: `/pack-preview/<slug>`.
+     On a host whose public site IS the pack: run
+     `node vendor/admin-panel/scripts/install-into-site.mjs --static-site` to scaffold a
+     root catch-all (`app/[[...slug]]/route.ts`) that serves ingested pages at clean
+     routes (`/`, `/big-data`, …); `/admin` + `/api/*` resolve first, unknown slugs 404.
+     (Skip `--static-site` on hosts that have their own Next public pages — it would
+     shadow them.) Editing = re-apply a pack.
+
+The sections below describe the **CMS-block** format.
+
 ## Lifecycle
 
 1. **Claude Design** generates a pack conforming to this spec (or export an existing
