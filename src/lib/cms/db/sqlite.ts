@@ -13,10 +13,10 @@ export function createSqliteDriver(): Driver {
   return {
     dialect: 'sqlite',
     async query<T = any>(sql: string, params: unknown[] = []): Promise<T[]> {
-      return db.prepare(sql).all(...(params as any[])) as T[];
+      return db.prepare(sql).all(params) as T[];
     },
     async run(sql: string, params: unknown[] = []): Promise<{ changes: number }> {
-      const info = db.prepare(sql).run(...(params as any[]));
+      const info = db.prepare(sql).run(params);
       return { changes: info.changes };
     },
     async exec(sql: string): Promise<void> {
