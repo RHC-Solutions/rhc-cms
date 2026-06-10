@@ -1,27 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import * as fs from 'fs';
-import * as path from 'path';
 import { setSecrets, setEnvValue } from '@adminpanel/lib/env';
 import { MANAGED_SECRET_KEYS } from '@adminpanel/lib/integrations';
 import { cmsDb } from '@adminpanel/lib/cms/database';
+import { adminExists } from '@adminpanel/lib/auth/setup-gate';
 import { validateBrevo, validateCloudflareToken, validateSmtp, type ValidationResult } from '@adminpanel/lib/integrations/test';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const USERS_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'users.json');
-
-// As with design-pack apply: allow during genuine first-run (no admin yet) — the
-// only sound first-run signal — or for a logged-in admin. Closes once setup is done.
-function adminExists(): boolean {
-  try {
-    const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
-    return Array.isArray(users) && users.some((u: any) => String(u?.role).toLowerCase() === 'admin');
-  } catch {
-    return false;
-  }
-}
+// Hostname guard (defense-in-depth against env/CRLF injection via the domain field).
+const HOSTNAME_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
 
 export async function POST(request: NextRequest) {
   const token = await getToken({ req: request as any, secret: process.env.NEXTAUTH_SECRET });
@@ -45,8 +34,10 @@ export async function POST(request: NextRequest) {
 
   // --- Site identity -> settings (merged) ---
   const identity = body?.identity || {};
-  const host = identity.domain ? String(identity.domain).replace(/^https?:\/\//i, '').replace(/\/+$/, '').trim() : '';
-  const siteUrl = host ? `https://${host}` : (typeof identity.siteUrl === 'string' ? identity.siteUrl : '');
+  const rawHost = identity.domain ? String(identity.domain).replace(/^https?:\/\//i, '').replace(/\/+$/, '').trim() : '';
+  const host = rawHost && HOSTNAME_RE.test(rawHost) ? rawHost : '';
+  if (rawHost && !host) warnings.push(`Ignored invalid domain "${rawHost}".`);
+  const siteUrl = host ? `https://${host}` : '';
   const settingsPatch: Record<string, any> = {};
   if (typeof identity.siteName === 'string' && identity.siteName.trim()) settingsPatch.siteName = identity.siteName.trim();
   if (typeof identity.contactEmail === 'string' && identity.contactEmail.trim()) settingsPatch.contactEmail = identity.contactEmail.trim();
@@ -60,12 +51,13 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // --- Domain URLs -> .env.local (restart to apply) ---
+  // --- Public site URL -> .env.local (restart to apply). NOTE: we intentionally do
+  // NOT touch NEXTAUTH_URL — the admin panel often runs on a separate subdomain
+  // (e.g. admin.example.com) and overwriting it would break admin auth callbacks.
   if (siteUrl) {
     try {
       setEnvValue('NEXT_PUBLIC_SITE_URL', siteUrl);
-      setEnvValue('NEXTAUTH_URL', siteUrl);
-      saved.env.push('NEXT_PUBLIC_SITE_URL', 'NEXTAUTH_URL');
+      saved.env.push('NEXT_PUBLIC_SITE_URL');
       restartRequired = true;
     } catch (e) {
       warnings.push(`Could not write domain to .env.local: ${(e as Error).message}`);
@@ -101,18 +93,30 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // --- Validation (non-blocking) ---
-  const validation: ValidationResult[] = [];
+  // --- DNS + validation run CONCURRENTLY (each network op is capped at 6s; the
+  // overall response is bounded rather than serialized into a ~30s wait). ---
+  const dnsReq = body?.dns || {};
+  const dnsPromise: Promise<any[]> =
+    (typeof dnsReq.serverIp === 'string' && dnsReq.serverIp.trim() && typeof cf.apiToken === 'string' && cf.apiToken.trim() && typeof cf.zoneId === 'string' && cf.zoneId.trim() && host)
+      ? import('@adminpanel/lib/cloudflare/dns')
+          .then((m) => m.pointDomainToServer({
+            zoneId: cf.zoneId.trim(), token: cf.apiToken.trim(), domain: host,
+            serverIp: dnsReq.serverIp.trim(), proxied: dnsReq.proxied !== false, www: !!dnsReq.www,
+          }))
+          .catch((e) => { warnings.push(`DNS update failed: ${(e as Error).message}`); return []; })
+      : Promise.resolve([]);
+
+  const checks: Promise<ValidationResult>[] = [];
   if (body?.validate) {
-    const checks: Promise<ValidationResult>[] = [];
     if (filtered.BREVO_API_KEY) checks.push(validateBrevo(filtered.BREVO_API_KEY));
     if (typeof cf.apiToken === 'string' && cf.apiToken.trim()) checks.push(validateCloudflareToken(cf.apiToken.trim()));
     if (filtered.SMTP_HOST) checks.push(validateSmtp({ host: filtered.SMTP_HOST, port: filtered.SMTP_PORT, user: filtered.SMTP_USER, pass: filtered.SMTP_PASS, secure: filtered.SMTP_SECURE === 'true' }));
-    if (checks.length) validation.push(...await Promise.all(checks));
   }
 
+  const [dns, validation] = await Promise.all([dnsPromise, Promise.all(checks)]);
+
   return NextResponse.json(
-    { ok: true, saved, rejected, validation, restartRequired, warnings },
+    { ok: true, saved, rejected, validation, dns, restartRequired, warnings },
     { headers: { 'Cache-Control': 'private, no-store' } },
   );
 }

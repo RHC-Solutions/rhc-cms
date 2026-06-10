@@ -14,6 +14,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const args = process.argv.slice(2);
 const getArg = (name, def) => {
@@ -38,7 +39,7 @@ const hostSrcApp = path.join(siteRoot, 'src', 'app');
 // admin_panel repo itself) so it works as a discovery tool before the host
 // site has wired up the submodule.
 if (args.includes('--print-deps')) {
-  const selfPkgPath = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', 'package.json');
+  const selfPkgPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'package.json');
   const pkgPath = fs.existsSync(path.join(submoduleRoot, 'package.json'))
     ? path.join(submoduleRoot, 'package.json')
     : selfPkgPath;
@@ -117,6 +118,14 @@ if (created <= 40) summary.forEach((s) => console.log('  + ' + s));
 
 // --static-site: root catch-all that serves ingested static-pack pages verbatim.
 if (staticSite) {
+  // A root optional-catch-all route handler owns '/'. A fresh create-next-app host
+  // ships src/app/page.tsx (and maybe an (app)/(public) home) that ALSO claims '/',
+  // which is a hard Next build conflict. Warn clearly — the operator must remove the
+  // host's own root page so the static-pack catch-all can serve the pack's home.
+  const rootPage = ['page.tsx', 'page.jsx', 'page.js', 'page.ts'].map((f) => path.join(hostSrcApp, f)).find(fs.existsSync);
+  if (rootPage) {
+    console.log(`\n! Static-site mode owns '/': remove ${path.relative(siteRoot, rootPage)} (and any other root page) — it conflicts with the catch-all route below and will break the build.`);
+  }
   const target = path.join(hostSrcApp, '[[...slug]]', 'route.ts');
   if (fs.existsSync(target) && !force) {
     console.log(`\n· static-site route exists (use --force to overwrite): ${path.relative(siteRoot, target)}`);

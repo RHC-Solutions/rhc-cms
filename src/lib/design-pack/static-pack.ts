@@ -32,29 +32,35 @@ export function isStaticPack(dir: string): boolean {
   }
 }
 
-// index.html -> '/', big-data.html -> '/big-data'
+// index.html -> '/', About.html -> '/about' (lowercased so links and slugs match).
 function fileToSlug(file: string): string {
-  const base = path.basename(file).replace(/\.html$/i, '');
-  return base.toLowerCase() === 'index' ? '/' : `/${base}`;
+  return htmlNameToSlug(path.basename(file));
 }
+// Normalize a relative *.html name to a clean route. Strips leading slashes (so an
+// accidental match never yields '//x') and lowercases (slugs are stored lowercased).
 function htmlNameToSlug(name: string): string {
-  const base = name.replace(/\.html$/i, '');
-  return base.toLowerCase() === 'index' ? '/' : `/${base}`;
+  const base = name.replace(/\.html$/i, '').replace(/^\/+/, '').toLowerCase();
+  return base === 'index' || base === '' ? '/' : `/${base}`;
 }
 
 // Rewrite a page's HTML for serving from this site:
-//  - assets/x  -> /uploads/pack-<slug>/x   (same-origin, served by Next + cached)
-//  - foo.html  -> /foo  (clean route; index.html -> /), preserving #anchors
+//  - assets/x  -> /uploads/pack-<slug>/x   (any quote/paren/comma/space-prefixed ref:
+//    href/src/srcset/poster/CSS url(); srcset holds comma-separated candidates)
+//  - relative foo.html  -> /foo  (clean route; index.html -> /), preserving ?query#anchor.
+//    Absolute (/x.html) and protocol-relative (//cdn/x.html) and external (https://…)
+//    links are left untouched.
 function rewriteHtml(html: string, packSlug: string): string {
   let out = html;
-  // asset references in href/src attributes
-  out = out.replace(/(href|src)=(["'])assets\//gi, `$1=$2/uploads/pack-${packSlug}/`);
-  // CSS url(assets/...) just in case
-  out = out.replace(/url\((['"]?)assets\//gi, `url($1/uploads/pack-${packSlug}/`);
-  // internal .html links -> clean routes (keep optional #anchor)
+  // Asset references: anything that points into the pack's assets/ dir, regardless of
+  // attribute (href/src/srcset/poster/data-*) or CSS url(). Preceded by a quote, paren,
+  // comma (srcset), or whitespace (srcset candidates).
+  out = out.replace(/(["'(,\s])assets\//gi, `$1/uploads/pack-${packSlug}/`);
+  // Internal .html links -> clean routes. (?<![\w:-]) so data-href / xlink:href aren't
+  // matched; the value char class excludes ':' so https:// links don't match; absolute
+  // and protocol-relative links are skipped in the callback.
   out = out.replace(
-    /(href=)(["'])([A-Za-z0-9._\/-]+?)\.html((?:#[^"']*)?)\2/gi,
-    (_m, pre, q, name, anchor) => `${pre}${q}${htmlNameToSlug(name)}${anchor}${q}`,
+    /(?<![\w:-])(href=)(["'])([^"':?#]+?)\.html((?:\?[^"'#]*)?(?:#[^"']*)?)\2/gi,
+    (m, pre, q, name, tail) => (name.startsWith('/') ? m : `${pre}${q}${htmlNameToSlug(name)}${tail}${q}`),
   );
   return out;
 }
@@ -79,9 +85,9 @@ function extractNavigation(html: string, packSlug: string): Array<Record<string,
     const hrefM = attrs.match(/href=["']([^"']+)["']/i);
     if (!label || !hrefM) continue;
     let url = hrefM[1];
-    const isExternal = /^https?:\/\//i.test(url);
+    const isExternal = /^(https?:)?\/\//i.test(url); // http(s):// or protocol-relative //
     if (!isExternal) {
-      const htmlM = url.match(/^([A-Za-z0-9._\/-]+?)\.html(#.*)?$/i);
+      const htmlM = url.match(/^([A-Za-z0-9._\/-]+?)\.html((?:\?[^#]*)?(?:#.*)?)$/i);
       if (htmlM) url = htmlNameToSlug(htmlM[1]) + (htmlM[2] || '');
     }
     items.push({ id: String(order), label, url, visible: true, order, external: isExternal || undefined });

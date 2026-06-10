@@ -22,7 +22,9 @@ function maybeInjectAnalytics(html: string): string {
     const seo = JSON.parse(fs.readFileSync(SEO_FILE, 'utf-8'));
     const id = seo?.googleAnalytics4Id;
     if (!seo?.injectAnalyticsIntoStaticPages || typeof id !== 'string' || !/^[A-Za-z0-9-]+$/.test(id)) return html;
-    const m = html.search(/<\/head>/i);
+    // Inject before the LAST </head> (a literal "</head>" can appear earlier inside a
+    // script string or comment); the real document head close is the final one.
+    const m = html.toLowerCase().lastIndexOf('</head>');
     return m === -1 ? html : html.slice(0, m) + ga4Snippet(id) + html.slice(m);
   } catch {
     return html;

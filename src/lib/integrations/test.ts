@@ -9,7 +9,7 @@ export interface ValidationResult {
   message: string;
 }
 
-const TIMEOUT_MS = 10_000;
+const TIMEOUT_MS = 6_000;
 
 async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
   const ctrl = new AbortController();
