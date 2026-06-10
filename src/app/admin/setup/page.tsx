@@ -331,7 +331,7 @@ export default function SetupWizard() {
           <div className="space-y-5 transition-slide-up transition-delay-5">
             {error && <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded">{error}</div>}
             <p className="text-gray-400 text-sm">
-              Set your domain and connect the services you&apos;ll launch with. All optional — you can do this later in <span className="font-mono">/admin</span>. Domain changes require an application restart to take effect.
+              Set your domain and connect the services you&apos;ll launch with. All optional — you can do this later in <span className="font-mono">/admin</span>. Domain changes require an application restart to reload startup configuration/environment variables.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
