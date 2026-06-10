@@ -110,7 +110,7 @@ function extractNavigation(html: string): Array<Record<string, unknown>> {
       const htmlM = url.match(/^([A-Za-z0-9._\/-]+?)\.html((?:\?[^#]*)?(?:#.*)?)$/i);
       if (htmlM) url = htmlNameToSlug(htmlM[1]) + (htmlM[2] || '');
     }
-    items.push({ id: String(order), label, url, visible: true, order, external: isExternal || undefined });
+    items.push({ id: String(order), label, url, visible: true, order, external: isExternal ? true : undefined });
     order++;
   }
   return items;
