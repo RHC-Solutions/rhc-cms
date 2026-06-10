@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { FaUser, FaLock, FaShieldAlt, FaCheckCircle, FaPalette } from 'react-icons/fa';
+import { FaUser, FaLock, FaShieldAlt, FaCheckCircle, FaPalette, FaCog } from 'react-icons/fa';
 import QRCode from 'qrcode';
 
 // Wizard steps: 1) apply a design pack (runs while no admin exists, so the
@@ -61,6 +61,52 @@ export default function SetupWizard() {
       setError(`Design pack failed: ${e.message}`);
     } finally {
       setApplyingPack(false);
+    }
+  };
+
+  // Provisioning (configure) step state.
+  const [provisioning, setProvisioning] = useState(false);
+  const [provisionResult, setProvisionResult] = useState<{ validation: any[]; restartRequired: boolean } | null>(null);
+  const [provision, setProvision] = useState({
+    emailProvider: 'none' as 'none' | 'brevo' | 'smtp',
+    brevoApiKey: '', brevoSenderEmail: '', brevoSenderName: '',
+    smtpHost: '', smtpPort: '587', smtpUser: '', smtpPass: '',
+    cloudflareToken: '', cloudflareZoneId: '', cloudflareAccountId: '',
+  });
+
+  const submitProvision = async () => {
+    setError('');
+    setProvisioning(true);
+    setProvisionResult(null);
+    try {
+      const secrets: Record<string, string> = {};
+      if (provision.emailProvider === 'brevo') {
+        if (provision.brevoApiKey) secrets.BREVO_API_KEY = provision.brevoApiKey;
+        if (provision.brevoSenderEmail) secrets.BREVO_SENDER_EMAIL = provision.brevoSenderEmail;
+        if (provision.brevoSenderName) secrets.BREVO_SENDER_NAME = provision.brevoSenderName;
+      } else if (provision.emailProvider === 'smtp') {
+        if (provision.smtpHost) secrets.SMTP_HOST = provision.smtpHost;
+        if (provision.smtpPort) secrets.SMTP_PORT = provision.smtpPort;
+        if (provision.smtpUser) secrets.SMTP_USER = provision.smtpUser;
+        if (provision.smtpPass) secrets.SMTP_PASS = provision.smtpPass;
+      }
+      const res = await fetch('/api/cms/setup/provision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          identity: { siteName: identity.siteName, contactEmail: identity.contactEmail, domain: identity.domain },
+          secrets,
+          cloudflare: { apiToken: provision.cloudflareToken, zoneId: provision.cloudflareZoneId, accountId: provision.cloudflareAccountId },
+          validate: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      setProvisionResult({ validation: data.validation || [], restartRequired: !!data.restartRequired });
+    } catch (e: any) {
+      setError(`Configuration failed: ${e.message}`);
+    } finally {
+      setProvisioning(false);
     }
   };
 
@@ -138,7 +184,7 @@ export default function SetupWizard() {
           qrCodeDataURL,
         });
 
-        setStep(3);
+        setStep(4);
       } else {
         setError(data.error || 'Failed to create admin user');
       }
@@ -186,8 +232,10 @@ export default function SetupWizard() {
             {step === 1
               ? 'Apply a design pack to your new site'
               : step === 2
-                ? 'Let\'s set up your administrator account'
-                : 'Set up Two-Factor Authentication'}
+                ? 'Configure your site — domain & integrations'
+                : step === 3
+                  ? 'Let\'s set up your administrator account'
+                  : 'Set up Two-Factor Authentication'}
           </p>
         </div>
 
@@ -197,12 +245,16 @@ export default function SetupWizard() {
             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
               <FaPalette />
             </div>
-            <div className={`w-12 h-1 ${step >= 2 ? 'bg-blue-500' : 'bg-gray-700'}`} />
+            <div className={`w-10 h-1 ${step >= 2 ? 'bg-blue-500' : 'bg-gray-700'}`} />
             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
+              <FaCog />
+            </div>
+            <div className={`w-10 h-1 ${step >= 3 ? 'bg-blue-500' : 'bg-gray-700'}`} />
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 3 ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
               <FaUser />
             </div>
-            <div className={`w-12 h-1 ${step >= 3 ? 'bg-blue-500' : 'bg-gray-700'}`} />
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 3 ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
+            <div className={`w-10 h-1 ${step >= 4 ? 'bg-blue-500' : 'bg-gray-700'}`} />
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 4 ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
               <FaShieldAlt />
             </div>
           </div>
@@ -270,8 +322,84 @@ export default function SetupWizard() {
           </div>
         )}
 
-        {/* Step 2: Admin Account */}
+        {/* Step 2: Configure (domain + integrations) */}
         {step === 2 && (
+          <div className="space-y-5 transition-slide-up transition-delay-5">
+            {error && <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded">{error}</div>}
+            <p className="text-gray-400 text-sm">
+              Set your domain and connect the services you&apos;ll launch with. All optional — you can do this later in <span className="font-mono">/admin</span>. Domain changes apply after a restart.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <input value={identity.siteName} onChange={(e) => setIdentity({ ...identity, siteName: e.target.value })}
+                placeholder="Site name" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+              <input value={identity.domain} onChange={(e) => setIdentity({ ...identity, domain: e.target.value })}
+                placeholder="Primary domain (e.g. bigdatacybercloud.com)" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+              <input value={identity.contactEmail} onChange={(e) => setIdentity({ ...identity, contactEmail: e.target.value })}
+                placeholder="Contact email" className="sm:col-span-2 bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+            </div>
+
+            <div className="border-t border-gray-700 pt-4">
+              <label className="block text-gray-300 font-semibold mb-2 text-sm">Email delivery</label>
+              <select value={provision.emailProvider} onChange={(e) => setProvision({ ...provision, emailProvider: e.target.value as any })}
+                className="w-full bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none">
+                <option value="none">None for now</option>
+                <option value="brevo">Brevo (API)</option>
+                <option value="smtp">SMTP</option>
+              </select>
+              {provision.emailProvider === 'brevo' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                  <input value={provision.brevoApiKey} onChange={(e) => setProvision({ ...provision, brevoApiKey: e.target.value })} placeholder="Brevo API key" type="password" className="sm:col-span-2 bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+                  <input value={provision.brevoSenderEmail} onChange={(e) => setProvision({ ...provision, brevoSenderEmail: e.target.value })} placeholder="Sender email" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+                  <input value={provision.brevoSenderName} onChange={(e) => setProvision({ ...provision, brevoSenderName: e.target.value })} placeholder="Sender name" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+                </div>
+              )}
+              {provision.emailProvider === 'smtp' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                  <input value={provision.smtpHost} onChange={(e) => setProvision({ ...provision, smtpHost: e.target.value })} placeholder="SMTP host" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+                  <input value={provision.smtpPort} onChange={(e) => setProvision({ ...provision, smtpPort: e.target.value })} placeholder="Port (587)" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+                  <input value={provision.smtpUser} onChange={(e) => setProvision({ ...provision, smtpUser: e.target.value })} placeholder="Username" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+                  <input value={provision.smtpPass} onChange={(e) => setProvision({ ...provision, smtpPass: e.target.value })} placeholder="Password" type="password" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-gray-700 pt-4">
+              <label className="block text-gray-300 font-semibold mb-2 text-sm">Cloudflare (optional)</label>
+              <input value={provision.cloudflareToken} onChange={(e) => setProvision({ ...provision, cloudflareToken: e.target.value })} placeholder="API token" type="password" className="w-full bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                <input value={provision.cloudflareZoneId} onChange={(e) => setProvision({ ...provision, cloudflareZoneId: e.target.value })} placeholder="Zone ID" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+                <input value={provision.cloudflareAccountId} onChange={(e) => setProvision({ ...provision, cloudflareAccountId: e.target.value })} placeholder="Account ID" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+              </div>
+            </div>
+
+            {provisionResult && (
+              <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-3 space-y-1 text-sm">
+                {provisionResult.validation.length === 0 && <div className="text-gray-300">Saved.</div>}
+                {provisionResult.validation.map((v: any, i: number) => (
+                  <div key={i} className={v.ok ? 'text-green-300' : 'text-yellow-300'}>
+                    {v.ok ? '✓' : '⚠'} {v.service}: {v.message}
+                  </div>
+                ))}
+                {provisionResult.restartRequired && <div className="text-yellow-200 text-xs">⚠ Domain/Cloudflare changes apply after restarting the app.</div>}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button onClick={() => (provisionResult ? setStep(3) : submitProvision())} disabled={provisioning}
+                className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition flex items-center justify-center gap-2">
+                {provisioning ? 'Saving…' : (provisionResult ? <>Continue <FaUser /></> : <><FaCog /> Save &amp; continue</>)}
+              </button>
+              <button onClick={() => { setError(''); setStep(3); }} disabled={provisioning}
+                className="bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-3 px-6 rounded-lg transition">
+                Skip
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Admin Account */}
+        {step === 3 && (
           <form onSubmit={handleSubmit} className="space-y-6 transition-slide-up transition-delay-5">
             {error && (
               <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded">
@@ -360,8 +488,8 @@ export default function SetupWizard() {
           </form>
         )}
 
-        {/* Step 3: 2FA Setup */}
-        {step === 3 && mfaData && (
+        {/* Step 4: 2FA Setup */}
+        {step === 4 && mfaData && (
           <div className="space-y-6 transition-slide-up transition-delay-5">
             <div className="bg-green-900 bg-opacity-30 border border-green-700 text-green-200 px-4 py-3 rounded flex items-center gap-2">
               <FaCheckCircle />
