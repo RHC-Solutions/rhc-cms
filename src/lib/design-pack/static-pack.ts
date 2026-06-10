@@ -153,7 +153,7 @@ export async function importStaticPack(
       category: 'main',
       status: 'published' as const,
       showInFooter: false,
-      blocks: [{ id: '1', type: 'staticpage', order: 1, props: { html, dataTopic, packSlug } }],
+      blocks: [{ id: '1', type: 'staticpage', order: 1, props: { html, dataTopic, packSlug, slug } }],
       seo: { metaTitle: interpolate(title, tokens), metaDescription: interpolate(metaDesc, tokens) },
     };
 
