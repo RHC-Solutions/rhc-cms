@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import { FaUser, FaLock, FaShieldAlt, FaCheckCircle, FaPalette, FaCog } from 'react-icons/fa';
 import QRCode from 'qrcode';
 
-// Wizard steps: 1) apply a design pack (runs while no admin exists, so the
-// unauthenticated first-run can call the apply API), 2) admin account, 3) MFA.
+// Wizard steps (all pre-login, while no admin exists yet): 1) apply a design pack,
+// 2) configure (domain & integrations), 3) admin account, 4) MFA.
 export default function SetupWizard() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -66,12 +66,13 @@ export default function SetupWizard() {
 
   // Provisioning (configure) step state.
   const [provisioning, setProvisioning] = useState(false);
-  const [provisionResult, setProvisionResult] = useState<{ validation: any[]; restartRequired: boolean } | null>(null);
+  const [provisionResult, setProvisionResult] = useState<{ validation: any[]; dns: any[]; restartRequired: boolean } | null>(null);
   const [provision, setProvision] = useState({
     emailProvider: 'none' as 'none' | 'brevo' | 'smtp',
     brevoApiKey: '', brevoSenderEmail: '', brevoSenderName: '',
     smtpHost: '', smtpPort: '587', smtpUser: '', smtpPass: '',
     cloudflareToken: '', cloudflareZoneId: '', cloudflareAccountId: '',
+    dnsServerIp: '', dnsWww: true,
   });
 
   const submitProvision = async () => {
@@ -89,6 +90,8 @@ export default function SetupWizard() {
         if (provision.smtpPort) secrets.SMTP_PORT = provision.smtpPort;
         if (provision.smtpUser) secrets.SMTP_USER = provision.smtpUser;
         if (provision.smtpPass) secrets.SMTP_PASS = provision.smtpPass;
+        // Persist implicit-TLS flag so runtime send matches what was tested (465 -> secure).
+        if (provision.smtpHost) secrets.SMTP_SECURE = String(Number(provision.smtpPort) === 465);
       }
       const res = await fetch('/api/cms/setup/provision', {
         method: 'POST',
@@ -97,12 +100,13 @@ export default function SetupWizard() {
           identity: { siteName: identity.siteName, contactEmail: identity.contactEmail, domain: identity.domain },
           secrets,
           cloudflare: { apiToken: provision.cloudflareToken, zoneId: provision.cloudflareZoneId, accountId: provision.cloudflareAccountId },
+          dns: provision.dnsServerIp ? { serverIp: provision.dnsServerIp, www: provision.dnsWww, proxied: true } : undefined,
           validate: true,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      setProvisionResult({ validation: data.validation || [], restartRequired: !!data.restartRequired });
+      setProvisionResult({ validation: data.validation || [], dns: data.dns || [], restartRequired: !!data.restartRequired });
     } catch (e: any) {
       setError(`Configuration failed: ${e.message}`);
     } finally {
@@ -371,14 +375,26 @@ export default function SetupWizard() {
                 <input value={provision.cloudflareZoneId} onChange={(e) => setProvision({ ...provision, cloudflareZoneId: e.target.value })} placeholder="Zone ID" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
                 <input value={provision.cloudflareAccountId} onChange={(e) => setProvision({ ...provision, cloudflareAccountId: e.target.value })} placeholder="Account ID" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
               </div>
+              <div className="mt-3">
+                <input value={provision.dnsServerIp} onChange={(e) => setProvision({ ...provision, dnsServerIp: e.target.value })} placeholder="Point DNS to server IP (optional, e.g. 203.0.113.10)" className="w-full bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+                <label className="mt-2 flex items-center gap-2 text-xs text-text-muted cursor-pointer">
+                  <input type="checkbox" checked={provision.dnsWww} onChange={(e) => setProvision({ ...provision, dnsWww: e.target.checked })} />
+                  <span>Also create a <span className="font-mono">www</span> record. Requires the API token to have DNS-edit permission on the zone.</span>
+                </label>
+              </div>
             </div>
 
             {provisionResult && (
               <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-3 space-y-1 text-sm">
-                {provisionResult.validation.length === 0 && <div className="text-gray-300">Saved.</div>}
+                {provisionResult.validation.length === 0 && provisionResult.dns.length === 0 && <div className="text-gray-300">Saved.</div>}
                 {provisionResult.validation.map((v: any, i: number) => (
-                  <div key={i} className={v.ok ? 'text-green-300' : 'text-yellow-300'}>
+                  <div key={`v${i}`} className={v.ok ? 'text-green-300' : 'text-yellow-300'}>
                     {v.ok ? '✓' : '⚠'} {v.service}: {v.message}
+                  </div>
+                ))}
+                {provisionResult.dns.map((d: any, i: number) => (
+                  <div key={`d${i}`} className={d.ok ? 'text-green-300' : 'text-yellow-300'}>
+                    {d.ok ? '✓' : '⚠'} DNS {d.type} {d.name}: {d.ok ? d.action : d.message}
                   </div>
                 ))}
                 {provisionResult.restartRequired && <div className="text-yellow-200 text-xs">⚠ Domain/Cloudflare changes apply after restarting the app.</div>}
@@ -386,10 +402,18 @@ export default function SetupWizard() {
             )}
 
             <div className="flex gap-3">
-              <button onClick={() => (provisionResult ? setStep(3) : submitProvision())} disabled={provisioning}
+              {/* Primary ALWAYS re-submits the latest values (so edits after a first
+                  save aren't silently dropped); a separate Continue advances. */}
+              <button onClick={submitProvision} disabled={provisioning}
                 className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition flex items-center justify-center gap-2">
-                {provisioning ? 'Saving…' : (provisionResult ? <>Continue <FaUser /></> : <><FaCog /> Save &amp; continue</>)}
+                {provisioning ? 'Saving…' : (<><FaCog /> {provisionResult ? 'Re-save & validate' : 'Save & validate'}</>)}
               </button>
+              {provisionResult && (
+                <button onClick={() => setStep(3)} disabled={provisioning}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition flex items-center gap-2">
+                  Continue <FaUser />
+                </button>
+              )}
               <button onClick={() => { setError(''); setStep(3); }} disabled={provisioning}
                 className="bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-3 px-6 rounded-lg transition">
                 Skip

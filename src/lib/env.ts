@@ -88,6 +88,11 @@ export function getEnvValue(key: string): string {
  * endpoint. NOTE: NEXT_PUBLIC_* and auth URLs only take effect after a restart.
  */
 export function setEnvValue(key: string, value: string): void {
+  // Reject control chars: a newline in `value` would inject a second KEY=VALUE line
+  // (e.g. overwrite NEXTAUTH_SECRET); a newline/`=` in `key` is nonsense. Fail loudly.
+  if (/[\r\n]/.test(value) || /[\r\n=]/.test(key)) {
+    throw new Error('Invalid characters in environment key/value (newline or "=" not allowed).');
+  }
   let content = '';
   try {
     content = fs.readFileSync(ENV_PATH, 'utf-8');
@@ -97,7 +102,7 @@ export function setEnvValue(key: string, value: string): void {
   const line = `${key}=${value}`;
   const re = new RegExp(`^${escapeRegex(key)}=.*$`, 'm');
   content = re.test(content)
-    ? content.replace(re, line)
+    ? content.replace(re, () => line) // function replacer: avoids $&/$1/$` interpretation in `value`
     : `${content}${content && !content.endsWith('\n') ? '\n' : ''}${line}\n`;
   fs.mkdirSync(path.dirname(ENV_PATH), { recursive: true });
   fs.writeFileSync(ENV_PATH, content, 'utf-8');

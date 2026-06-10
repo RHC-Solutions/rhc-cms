@@ -5,24 +5,45 @@ import * as path from 'path';
 import { extractPack } from '@adminpanel/lib/design-pack/extract';
 import { applyDesignPack } from '@adminpanel/lib/design-pack/apply';
 import { isStaticPack, importStaticPack } from '@adminpanel/lib/design-pack/static-pack';
+import { adminExists } from '@adminpanel/lib/auth/setup-gate';
 import type { DesignTokens } from '@adminpanel/lib/design-pack/types';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const USERS_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'users.json');
 const MAX_PACK_BYTES = 100 * 1024 * 1024; // 100 MB
 
-// A real admin exists once setup is complete. Before that (`!adminExists`), the
-// first-run wizard is allowed to apply a pack — the only sound first-run signal,
-// since the user isn't logged in yet and a cookie would be forgeable.
-function adminExists(): boolean {
-  try {
-    const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
-    return Array.isArray(users) && users.some((u: any) => String(u?.role).toLowerCase() === 'admin');
-  } catch {
-    return false;
+// Block fetching a pack from a private/loopback/link-local/metadata address (SSRF).
+function isBlockedHost(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  if (h === 'localhost' || h.endsWith('.localhost') || h === '[::1]' || h === '0.0.0.0') return true;
+  const m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (m) {
+    const [a, b] = [Number(m[1]), Number(m[2])];
+    if (a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127)) return true;
   }
+  return false;
+}
+
+// Fetch a remote pack, re-validating every redirect hop (https + non-private host).
+async function fetchPack(initialUrl: URL): Promise<Buffer> {
+  let url = initialUrl;
+  for (let hop = 0; hop < 5; hop++) {
+    if (url.protocol !== 'https:') throw new Error('Pack URL must be https.');
+    if (isBlockedHost(url.hostname)) throw new Error('Pack URL host is not allowed.');
+    const res = await fetch(url, { redirect: 'manual' });
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get('location');
+      if (!loc) throw new Error('Redirect without a Location.');
+      url = new URL(loc, url);
+      continue;
+    }
+    if (!res.ok) throw new Error(`Failed to fetch pack: HTTP ${res.status}`);
+    const ab = await res.arrayBuffer();
+    if (ab.byteLength > MAX_PACK_BYTES) throw new Error('Pack exceeds 100 MB limit.');
+    return Buffer.from(ab);
+  }
+  throw new Error('Too many redirects fetching the pack.');
 }
 
 export async function POST(request: NextRequest) {
@@ -66,12 +87,7 @@ export async function POST(request: NextRequest) {
       if (body?.url) {
         if (!isAdmin) return NextResponse.json({ error: 'Applying a pack by URL requires admin login.' }, { status: 403 });
         const u = new URL(String(body.url));
-        if (u.protocol !== 'https:') return NextResponse.json({ error: 'Pack URL must be https.' }, { status: 400 });
-        const res = await fetch(u, { redirect: 'follow' });
-        if (!res.ok) return NextResponse.json({ error: `Failed to fetch pack: HTTP ${res.status}` }, { status: 400 });
-        const ab = await res.arrayBuffer();
-        if (ab.byteLength > MAX_PACK_BYTES) return NextResponse.json({ error: 'Pack exceeds 100 MB limit.' }, { status: 413 });
-        packBuffer = Buffer.from(ab);
+        packBuffer = await fetchPack(u);
         packName = path.basename(u.pathname) || packName;
       } else if (body?.path) {
         if (!isAdmin) return NextResponse.json({ error: 'Applying a pack by path requires admin login.' }, { status: 403 });

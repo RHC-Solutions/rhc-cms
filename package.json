@@ -2,6 +2,9 @@
   "name": "rhcsolutions-admin",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "bin": {
     "admin-panel": "bin/admin-panel.mjs"
   },

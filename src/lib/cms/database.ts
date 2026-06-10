@@ -1,8 +1,14 @@
 import Database from 'better-sqlite3';
+import fs from 'fs';
 import path from 'path';
 import { cache } from '@adminpanel/lib/cache';
 
-const dbPath = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'cms.db');
+const dataDir = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data');
+// better-sqlite3 creates the .db file but NOT its parent dir — on a fresh host
+// cms-data/ may not exist yet, and opening would throw at import time (white screen
+// before setup). Create it first.
+fs.mkdirSync(dataDir, { recursive: true });
+const dbPath = path.join(dataDir, 'cms.db');
 const db = new Database(dbPath);
 
 // Enable WAL mode for better concurrent access

@@ -3,6 +3,7 @@
 //
 //   npx github:RHC-Solutions/admin_panel init     # bootstrap into the current site
 //   npx github:RHC-Solutions/admin_panel update   # pull a newer panel + refresh wrappers + sync deps
+//   npx github:RHC-Solutions/admin_panel apply-pack <zip|url>   # apply a design pack to the running site
 //
 // `init` is idempotent — safe to re-run. It:
 //   1. adds the panel as a git submodule at vendor/admin-panel
@@ -42,6 +43,7 @@ const URL = opt('url', DEFAULT_URL);
 const BRANCH = opt('branch', 'main');
 const NO_INSTALL = flag('no-install');
 const NO_RENOVATE = flag('no-renovate');
+const STATIC_SITE = flag('static-site'); // scaffold the root catch-all that serves design packs
 
 // ---------- tiny logger ----------
 const c = (n, s) => (process.stdout.isTTY ? `\x1b[${n}m${s}\x1b[0m` : s);
@@ -165,6 +167,7 @@ function generateWrappers(abs, force) {
   info('Generating route wrappers…');
   const args = [script, '--submodule', SUBMODULE, '--site', '.'];
   if (force) args.push('--force');
+  if (STATIC_SITE) args.push('--static-site'); // serve ingested packs at clean routes
   sh('node', args, { stdio: 'inherit' });
 }
 
@@ -340,6 +343,40 @@ function runUpdate() {
   ok('Panel updated. Rebuild: npm run build && restart your server.');
 }
 
+// Apply a design pack to the RUNNING site via its HTTP API. Works during first-run
+// (no admin yet) for a local file upload; a remote {url} pack requires admin login.
+// Uses Node 18+ global fetch/FormData/Blob — still no dependencies.
+async function runApplyPack() {
+  const packArg = argv.find((a) => !a.startsWith('-') && a !== 'apply-pack');
+  if (!packArg) die("Usage: admin-panel apply-pack <pack.zip | https-url> [--site-url http://localhost:3000] [--tokens '{\"siteName\":\"…\"}']");
+  const siteUrl = opt('site-url', 'http://localhost:3000').replace(/\/+$/, '');
+  const tokens = opt('tokens', '');
+  const endpoint = `${siteUrl}/api/cms/design-pack/apply`;
+  info(`Applying pack → ${endpoint}`);
+  let res;
+  try {
+    if (/^https?:\/\//i.test(packArg)) {
+      res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: packArg, tokens: tokens ? JSON.parse(tokens) : undefined }),
+      });
+    } else {
+      if (!fs.existsSync(packArg)) die(`Pack not found: ${packArg}`);
+      const fd = new FormData();
+      fd.append('pack', new Blob([fs.readFileSync(packArg)]), path.basename(packArg));
+      if (tokens) fd.append('tokens', tokens);
+      res = await fetch(endpoint, { method: 'POST', body: fd });
+    }
+  } catch (e) {
+    die(`Could not reach the site at ${siteUrl} — is it running? (${e.message})`);
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) die(`Apply failed (HTTP ${res.status}): ${data.error || ''}`);
+  ok(`Pack applied${data.packName ? `: ${data.packName}` : data.type ? ` (${data.type})` : ''}.`);
+  console.log(JSON.stringify(data.applied || data.pages || data, null, 2));
+}
+
 function runHelp() {
   console.log(`admin-panel — embeddable CMS admin installer
 
@@ -357,18 +394,26 @@ init options:
   --branch <name>      submodule tracking branch (default: main)
   --no-install         don't run npm install for the panel's deps
   --no-renovate        don't write a renovate.json
+  --static-site        scaffold a root catch-all that serves design packs at clean
+                       routes (for single-purpose pack hosts; remove your own / page)
   --yes                assume defaults, no prompts
   --help               this help
 
 renovate.json (written on init/update unless --no-renovate) enables Renovate's
 git-submodules + npm managers so each site auto-opens PRs that bump vendor/admin-panel
 and the panel's deps. Requires the Renovate GitHub App (or self-hosted) on the repo.
+
+apply-pack <zip|https-url> options:
+  --site-url <url>     running site base URL (default: http://localhost:3000)
+  --tokens <json>      {{token}} substitutions, e.g. '{"siteName":"BigData CyberCloud"}'
+  (file upload works during first-run; a remote URL pack requires admin login)
 `);
 }
 
 switch (cmd) {
   case 'init': runInit(); break;
   case 'update': runUpdate(); break;
+  case 'apply-pack': await runApplyPack(); break;
   case 'help': case '--help': runHelp(); break;
   default: warn(`Unknown command "${cmd}".`); runHelp(); process.exit(1);
 }
