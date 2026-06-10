@@ -15,7 +15,7 @@ const db = new Database(path.join(root, 'cms-data', 'cms.db'));
 
 // Bump updatedAt alongside seo so the sitemap's <lastmod> reflects the
 // change. Without this, sync-only edits never emit a recrawl signal to
-// Google (see docs/AUDIT_SEO_2026-05-25.md §B2).
+// Google (see docs/audits/AUDIT_SEO_2026-05-25.md §B2).
 const update = db.prepare('UPDATE pages SET seo = ?, updatedAt = ? WHERE id = ?');
 const findBySlug = db.prepare('SELECT id FROM pages WHERE slug = ?');
 const now = new Date().toISOString();

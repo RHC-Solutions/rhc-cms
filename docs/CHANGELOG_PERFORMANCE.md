@@ -2,7 +2,7 @@
 
 ## Version 2.7.0 - May 11, 2026
 
-### 🎨 Brand consistency (per [docs/AUDIT_BRAND_2026-05-11.md](./AUDIT_BRAND_2026-05-11.md))
+### 🎨 Brand consistency (per [AUDIT_BRAND_2026-05-11.md](./audits/AUDIT_BRAND_2026-05-11.md))
 - **B1**: Replaced `cms-data/theme.json` "Google Dark" (Google's literal brand colors) with the project's cyber palette (`#00FF41` primary, `#00F0FF` secondary, `#00AAFF` accent). `ThemeProvider`'s runtime overrides now match the build‑time `globals.css` defaults instead of overwriting them with Material.
 - **B2**: `theme.fonts.mono` now references **JetBrains Mono** (was "Inter", which is a sans‑serif). Body/display fonts aligned to Space Grotesk across `theme.json`, `layout.tsx`, and `globals.css`.
 - **B3**: Deleted the 218 KB original logo backups under `public/`. Replaced the programmatic `icon.tsx` / `apple-icon.tsx` (which rendered the text "RHC") with `src/app/icon.png` (32×32) and `src/app/apple-icon.png` (180×180) generated from the actual brand mark via `sharp`.

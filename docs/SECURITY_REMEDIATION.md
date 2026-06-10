@@ -60,7 +60,7 @@ After rotating each value, paste the new value into `.env.local` and run `pm2 re
 
 ## 2026‑05‑11 — Committed secrets (prior audit)
 
-**Source:** [QA_AUDIT_2026-04-21.md § 5.1](./QA_AUDIT_2026-04-21.md#51--critical--secrets-committed-in-cms-data)
+**Source:** [QA_AUDIT_2026-04-21.md § 5.1](./audits/QA_AUDIT_2026-04-21.md#51--critical--secrets-committed-in-cms-data)
 **Status as of 2026-05-11:**
 
 | Step | Status |
