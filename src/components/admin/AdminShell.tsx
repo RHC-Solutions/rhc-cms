@@ -9,7 +9,7 @@ import {
   FaHome, FaFileAlt, FaImages, FaUsers, FaCog, FaChartLine,
   FaBars, FaTimes, FaSignOutAlt, FaEdit, FaCookie, FaSearch, FaBriefcase, FaList, FaDatabase,
   FaPalette, FaListAlt, FaCloud, FaChevronDown, FaChevronRight, FaTrash, FaSpinner, FaShieldAlt,
-  FaPlug, FaBullhorn, FaRobot,
+  FaPlug, FaBullhorn, FaRobot, FaSyncAlt,
 } from 'react-icons/fa';
 
 interface NavItem {
@@ -80,6 +80,7 @@ export default function AdminShell({ children, title }: AdminShellProps) {
       { name: 'Integrations', href: '/admin/integrations', icon: FaPlug, roles: ['admin'] },
       { name: 'Backups', href: '/admin/backups', icon: FaDatabase, roles: ['admin'] },
       { name: 'Automation', href: '/admin/automation', icon: FaRobot, roles: ['admin'] },
+      { name: 'OODA', href: '/admin/ooda', icon: FaSyncAlt, roles: ['admin'] },
       { name: 'Security (Aikido)', href: '/admin/aikido', icon: FaShieldAlt, roles: ['admin'] },
       { 
         name: 'Settings', 
