@@ -5,6 +5,12 @@
 //   npx github:RHC-Solutions/admin_panel update   # pull a newer panel + refresh wrappers + sync deps
 //   npx github:RHC-Solutions/admin_panel apply-pack <zip|url>   # apply a design pack to the running site
 //
+// Prerequisites (checked at runtime by checkPrerequisites): Node >= 20.9 (init/update/
+// apply-pack), git + npm (init/update). `init`/`update` must run from the root of a
+// Next.js app (a package.json) — for a brand-new site, scaffold one first
+// (`npx create-next-app@latest .`) THEN run init. `update` is NOT for fresh folders: it
+// only upgrades a site that has already embedded the panel via `init`.
+//
 // `init` is idempotent — safe to re-run. It:
 //   1. adds the panel as a git submodule at vendor/admin-panel
 //   2. adds the @adminpanel/* path to tsconfig.json
@@ -56,11 +62,54 @@ const sh = (file, args, o = {}) =>
   execFileSync(file, args, { cwd: SITE, stdio: 'pipe', encoding: 'utf8', ...o });
 const shQuiet = (file, args) => { try { return sh(file, args); } catch { return null; } };
 
+// ---------- prerequisites ----------
+const MIN_NODE = '20.9.0'; // global fetch/FormData/Blob + the create-next-app the host needs
+const toSemver = (v) => { const m = String(v).replace(/^v/, '').match(/(\d+)\.(\d+)\.(\d+)/); return m ? [+m[1], +m[2], +m[3]] : [0, 0, 0]; };
+const semverLt = (a, b) => { const x = toSemver(a), y = toSemver(b); for (let i = 0; i < 3; i++) { if (x[i] !== y[i]) return x[i] < y[i]; } return false; };
+
+// Fail fast with ALL missing prerequisites at once (not one-at-a-time). `init`/`update`
+// need Node, git, and npm; `apply-pack` only needs Node (it just talks HTTP to a running site).
+function checkPrerequisites({ needGit = true, needNpm = true } = {}) {
+  const problems = [];
+  if (semverLt(process.versions.node, MIN_NODE)) {
+    problems.push(`Node ${process.versions.node} is too old — admin-panel needs Node >= ${MIN_NODE} (it relies on global fetch/FormData/Blob). Upgrade Node (e.g. \`nvm install --lts\`) and retry.`);
+  }
+  if (needGit && !shQuiet('git', ['--version'])) {
+    problems.push('git was not found on PATH — required to add/track the vendor/admin-panel submodule. Install git, then retry.');
+  }
+  if (needNpm && !NO_INSTALL && !shQuiet('npm', ['--version'])) {
+    problems.push('npm was not found on PATH — required to install the panel deps (or pass --no-install to skip).');
+  }
+  if (problems.length) die(`Prerequisite check failed:\n      - ${problems.join('\n      - ')}`);
+  const have = ['Node ' + process.versions.node];
+  if (needGit) have.push('git');
+  if (needNpm && !NO_INSTALL) have.push('npm');
+  info(`Prerequisites OK — ${have.join(', ')} present.`);
+}
+
 // ---------- guards ----------
-function assertHostSite() {
+// The scaffolding hint shown when there is no package.json: a host must be a Next.js
+// app before the panel can embed into it.
+const SCAFFOLD_HINT =
+  `      npx create-next-app@latest . --ts --app\n` +
+  `      npx github:RHC-Solutions/admin_panel init${STATIC_SITE ? ' --static-site' : ' --static-site   # for a single-purpose design-pack site'}`;
+
+function assertHostSite(context = 'init') {
   const pkgPath = path.join(SITE, 'package.json');
   if (!fs.existsSync(pkgPath)) {
-    die(`No package.json in ${SITE}.\n  Run this from the root of the site you want to add the admin to.`);
+    if (context === 'update') {
+      die(`No package.json in ${SITE} — there is nothing to update here.\n` +
+          `  \`update\` upgrades a site that has ALREADY embedded the panel (it pulls a newer\n` +
+          `  vendor/admin-panel + re-syncs deps). A brand-new/empty folder has not been set up yet.\n` +
+          `  • New site? Scaffold a Next.js app, then run \`init\` (not \`update\`):\n` +
+          SCAFFOLD_HINT + `\n` +
+          `  • Existing site? cd into its root (the folder that contains package.json) and retry.`);
+    }
+    die(`No package.json in ${SITE}.\n` +
+        `  \`init\` embeds the admin INTO a Next.js app, so it must run inside one.\n` +
+        `  • Brand-new site? Scaffold the app first, then re-run init:\n` +
+        SCAFFOLD_HINT + `\n` +
+        `  • Existing site? cd into its root (the folder that contains package.json) and retry.`);
   }
   try {
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
@@ -156,7 +205,12 @@ function wireMiddleware() {
       // and merge ...ADMIN_MATCHER into your config.matcher`);
     return;
   }
-  const target = fs.existsSync(path.join(SITE, 'src')) ? path.join(SITE, 'middleware.ts') : path.join(SITE, 'middleware.ts');
+  // Next.js only detects middleware at the project root OR inside src/ — and when a
+  // src/ dir exists it must live at src/middleware.ts (a root-level one is ignored).
+  // Place it next to the app dir so the auth gate is actually applied.
+  const target = fs.existsSync(path.join(SITE, 'src'))
+    ? path.join(SITE, 'src', 'middleware.ts')
+    : path.join(SITE, 'middleware.ts');
   fs.writeFileSync(target, MIDDLEWARE_TEMPLATE);
   ok(`created ${path.relative(SITE, target)} (adminAuthGate wired)`);
 }
@@ -303,7 +357,8 @@ function writeRenovateConfig() {
 // ---------- commands ----------
 function runInit() {
   console.log(c(1, '\nadmin-panel init') + ` → ${SITE}\n`);
-  assertHostSite();
+  checkPrerequisites();
+  assertHostSite('init');
   ensureGit();
   const abs = ensureSubmodule();
   patchTsconfig();
@@ -327,9 +382,14 @@ Full reference: ${SUBMODULE}/INSTALL.md
 }
 
 function runUpdate() {
-  assertHostSite();
+  checkPrerequisites();
+  assertHostSite('update');
   const abs = path.join(SITE, SUBMODULE);
-  if (!fs.existsSync(path.join(abs, 'src', 'app'))) die(`No submodule at ${SUBMODULE}. Run \`init\` first.`);
+  if (!fs.existsSync(path.join(abs, 'src', 'app'))) {
+    die(`No panel submodule at ${SUBMODULE} — this site has not been set up yet.\n` +
+        `  \`update\` only upgrades an existing embed. Run \`init\` first:\n` +
+        `      npx github:RHC-Solutions/admin_panel init${STATIC_SITE ? ' --static-site' : ''}`);
+  }
   setSubmoduleBranch(); // backfill the tracking branch for hosts created before this existed
   info('Pulling latest panel…');
   sh('git', ['submodule', 'update', '--remote', SUBMODULE], { stdio: 'inherit' });
@@ -347,9 +407,12 @@ function runUpdate() {
 // (no admin yet) for a local file upload; a remote {url} pack requires admin login.
 // Uses Node 18+ global fetch/FormData/Blob — still no dependencies.
 async function runApplyPack() {
+  checkPrerequisites({ needGit: false, needNpm: false }); // only needs Node's global fetch
   const packArg = argv.find((a) => !a.startsWith('-') && a !== 'apply-pack');
   if (!packArg) die("Usage: admin-panel apply-pack <pack.zip | https-url> [--site-url http://localhost:3000] [--tokens '{\"siteName\":\"…\"}']");
-  const siteUrl = opt('site-url', 'http://localhost:3000').replace(/\/+$/, '');
+  // strip trailing slashes linearly (no regex — avoids the polynomial-backtracking class)
+  const stripTrailingSlashes = (s) => { let e = s.length; while (e > 0 && s.charCodeAt(e - 1) === 47) e--; return s.slice(0, e); };
+  const siteUrl = stripTrailingSlashes(opt('site-url', 'http://localhost:3000'));
   const tokens = opt('tokens', '');
   const endpoint = `${siteUrl}/api/cms/design-pack/apply`;
   info(`Applying pack → ${endpoint}`);
@@ -380,13 +443,23 @@ async function runApplyPack() {
 function runHelp() {
   console.log(`admin-panel — embeddable CMS admin installer
 
+Prerequisites:
+  • Node >= ${MIN_NODE}        (uses global fetch/FormData/Blob)
+  • git + npm on PATH      (init/update)
+  • a Next.js app to embed into — init/update run from the app's root (where
+    package.json lives). Brand-new site? Scaffold the app first, THEN init:
+      npx create-next-app@latest .
+      npx github:RHC-Solutions/admin_panel init --static-site   # --static-site = pack IS the site
+
 Usage (from your site's root):
   npx github:RHC-Solutions/admin_panel init [options]
   npx github:RHC-Solutions/admin_panel update
 
-update pulls the newest panel source, regenerates the route wrappers, syncs the
-host's deps to the versions the panel declares, and warns if any host dep is below
-the panel's required minimum. Rebuild + restart afterwards.
+init bootstraps the panel into the CURRENT Next.js app. update upgrades a site that
+ALREADY embedded the panel — it pulls the newest panel source, regenerates the route
+wrappers, syncs the host's deps to the versions the panel declares, and warns if any
+host dep is below the panel's required minimum. (Running update in an empty folder does
+nothing — there's no embed yet; run init first.) Rebuild + restart afterwards.
 
 init options:
   --submodule <path>   submodule location (default: vendor/admin-panel)

@@ -5,12 +5,17 @@ import { MANAGED_SECRET_KEYS } from '@adminpanel/lib/integrations';
 import { cmsDb } from '@adminpanel/lib/cms/database';
 import { adminExists } from '@adminpanel/lib/auth/setup-gate';
 import { validateBrevo, validateCloudflareToken, validateSmtp, type ValidationResult } from '@adminpanel/lib/integrations/test';
+import { domainToHost } from '@adminpanel/lib/url-path';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 // Hostname guard (defense-in-depth against env/CRLF injection via the domain field).
-const HOSTNAME_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
+// The leading negative lookahead rejects a bare dotted-quad IPv4 (e.g. 127.0.0.1,
+// 169.254.169.254, 192.168.1.1) — the "domain" field must be a real hostname, not an
+// IP/metadata endpoint that could land in NEXT_PUBLIC_SITE_URL during first-run setup.
+// Single-label inputs (e.g. "localhost") already fail: the trailing group requires a dot.
+const HOSTNAME_RE = /^(?!\d{1,3}(?:\.\d{1,3}){3}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
 
 export async function POST(request: NextRequest) {
   const token = await getToken({ req: request as any, secret: process.env.NEXTAUTH_SECRET });
@@ -34,7 +39,7 @@ export async function POST(request: NextRequest) {
 
   // --- Site identity -> settings (merged) ---
   const identity = body?.identity || {};
-  const rawHost = identity.domain ? String(identity.domain).replace(/^https?:\/\//i, '').replace(/\/+$/, '').trim() : '';
+  const rawHost = identity.domain ? domainToHost(identity.domain) : '';
   const host = rawHost && HOSTNAME_RE.test(rawHost) ? rawHost : '';
   if (rawHost && !host) warnings.push(`Ignored invalid domain "${rawHost}".`);
   const siteUrl = host ? `https://${host}` : '';

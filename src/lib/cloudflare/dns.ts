@@ -3,6 +3,8 @@
 // module adds *write* (upsert) so the provisioning wizard can point a freshly-set
 // domain at the server using the token/zone the operator just typed.
 
+import { domainToHost } from '@adminpanel/lib/url-path';
+
 const CF = 'https://api.cloudflare.com/client/v4';
 const TIMEOUT_MS = 6_000;
 const CF_ZONE_ID_RE = /^[a-f0-9]{32}$/i;
@@ -10,7 +12,10 @@ const CF_RECORD_ID_RE = /^[A-Za-z0-9_-]+$/;
 const ALLOWED_DNS_TYPES = new Set(['A', 'AAAA', 'CNAME', 'TXT', 'MX', 'NS', 'SRV', 'CAA', 'PTR', 'NAPTR', 'TLSA', 'URI']);
 
 function normalizeDomainHost(domain: string): string {
-  const host = domain.replace(/^https?:\/\//i, '').replace(/\/+$/, '').trim().toLowerCase();
+  // domainToHost strips an http(s):// scheme + trailing slashes in LINEAR time
+  // (ReDoS-safe — see lib/url-path; the old `.replace(/\/+$/, '')` here was the
+  // polynomial pattern of CodeQL #29). Then validate it's a real multi-label host.
+  const host = domainToHost(domain).toLowerCase();
   if (!host || host.length > 253) throw new Error('Invalid domain format');
   const labels = host.split('.');
   if (labels.length < 2) throw new Error('Invalid domain format');
@@ -112,6 +117,8 @@ export async function upsertDnsRecord(opts: {
 export async function pointDomainToServer(opts: {
   zoneId: string; token: string; domain: string; serverIp: string; proxied?: boolean; www?: boolean;
 }): Promise<DnsResult[]> {
+  // normalizeDomainHost strips scheme/slashes (ReDoS-safe) AND validates the hostname,
+  // so this no longer relies solely on the caller (the provisioning route) pre-validating.
   const host = normalizeDomainHost(opts.domain);
   const results: DnsResult[] = [];
   results.push(await upsertDnsRecord({ zoneId: opts.zoneId, token: opts.token, type: 'A', name: host, content: opts.serverIp, proxied: opts.proxied }));

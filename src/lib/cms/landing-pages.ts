@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { trimSlashes } from '@adminpanel/lib/url-path';
 
 export interface LandingPageBenefit {
   title: string;
@@ -96,7 +97,7 @@ export const saveLeads = (leads: LandingPageLead[]) => {
 };
 
 export const findBySlug = (slug: string): LandingPage | null => {
-  const normalized = slug.replace(/^\/+|\/+$/g, '');
+  const normalized = trimSlashes(slug);
   return loadLandingPages().find((p) => p.slug === normalized) || null;
 };
 
