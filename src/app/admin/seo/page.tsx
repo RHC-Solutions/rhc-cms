@@ -15,6 +15,7 @@ interface SEOSettings {
   googleTagManagerId: string;
   googleAnalytics4Id: string;
   googleSearchConsoleVerification: string;
+  injectAnalyticsIntoStaticPages?: boolean;
   // Ahrefs Integration
   ahrefsId: string;
   ahrefsApiKey: string;
@@ -385,6 +386,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                   className="w-full bg-dark-card border-2 border-dark-border rounded-lg py-3 px-4 text-text-primary font-mono focus:border-cyber-blue focus:outline-none transition-colors"
                 />
                 <p className="text-text-muted text-sm mt-2">Enter your GA4 ID (e.g., G-XXXXXXXXXX)</p>
+                <label className="mt-3 flex items-start gap-2 text-sm text-text-secondary cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!settings?.injectAnalyticsIntoStaticPages}
+                    onChange={(e) => setSettings(settings ? { ...settings, injectAnalyticsIntoStaticPages: e.target.checked } : null)}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    Inject analytics into imported static-pack pages
+                    <span className="block text-text-muted text-xs">Off by default. When on, GA4 is added (Consent Mode v2 <em>denied</em> — cookieless) to pages served from a design pack, so the analytics dashboard covers them.</span>
+                  </span>
+                </label>
               </div>
 
               <div>
