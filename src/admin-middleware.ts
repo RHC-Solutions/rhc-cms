@@ -36,6 +36,11 @@ export const ADMIN_PUBLIC_API_ENDPOINTS = [
   '/api/cms/google-integration/verify-meta',
   '/api/cms/pages',
   '/api/cms/footer',
+  // Design-pack apply must be reachable by the unauthenticated first-run wizard
+  // (before an admin exists). The handler self-authorizes: admin token OR first-run
+  // (`!adminExists()`); it 403s otherwise. NOTE: the exact path — not the
+  // '/api/cms/design-pack' prefix — so the export route stays gated to logged-in admins.
+  '/api/cms/design-pack/apply',
 ];
 
 const getBaseUrl = (req: NextRequest) => {

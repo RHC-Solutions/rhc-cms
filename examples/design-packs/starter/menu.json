@@ -1,0 +1,7 @@
+{
+  "navigation": [
+    { "id": "1", "label": "Home", "url": "/", "visible": true, "order": 1 },
+    { "id": "2", "label": "About", "url": "/about", "visible": true, "order": 2 },
+    { "id": "3", "label": "Contact", "url": "/contact", "visible": true, "order": 3 }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Starter Cyber",
+  "colors": {
+    "primary": "#00FF41",
+    "primaryDark": "#0A0E27",
+    "secondary": "#00F0FF",
+    "accent": "#00AAFF",
+    "success": "#00FF88",
+    "error": "#FF4458",
+    "warning": "#FFB800",
+    "info": "#00F0FF",
+    "background": "#0B1220"
+  },
+  "fonts": {
+    "primary": "Inter, system-ui, sans-serif",
+    "secondary": "Space Grotesk, system-ui, sans-serif",
+    "mono": "JetBrains Mono, Courier New, monospace"
+  },
+  "sizes": { "h1": "2.5rem", "h2": "2rem", "h3": "1.5rem", "body": "1rem", "button": "0.95rem" },
+  "borderRadius": "0.5rem",
+  "shadowIntensity": "medium",
+  "darkMode": true,
+  "animations": true
+}

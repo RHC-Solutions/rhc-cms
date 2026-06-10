@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { FaUser, FaLock, FaShieldAlt, FaCheckCircle } from 'react-icons/fa';
+import { FaUser, FaLock, FaShieldAlt, FaCheckCircle, FaPalette } from 'react-icons/fa';
 import QRCode from 'qrcode';
 
+// Wizard steps: 1) apply a design pack (runs while no admin exists, so the
+// unauthenticated first-run can call the apply API), 2) admin account, 3) MFA.
 export default function SetupWizard() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -19,6 +21,48 @@ export default function SetupWizard() {
     password: '',
     confirmPassword: '',
   });
+
+  // Design-pack step state.
+  const [packFile, setPackFile] = useState<File | null>(null);
+  const [applyingPack, setApplyingPack] = useState(false);
+  const [packResult, setPackResult] = useState<string>('');
+  const [identity, setIdentity] = useState({
+    siteName: '',
+    tagline: '',
+    contactEmail: '',
+    domain: '',
+  });
+
+  const applyDesignPack = async () => {
+    if (!packFile) return;
+    setError('');
+    setApplyingPack(true);
+    setPackResult('');
+    try {
+      const tokens = Object.fromEntries(
+        Object.entries(identity).filter(([, v]) => v.trim() !== ''),
+      );
+      const body = new FormData();
+      body.append('pack', packFile);
+      body.append('tokens', JSON.stringify(tokens));
+      const res = await fetch('/api/cms/design-pack/apply', { method: 'POST', body });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      const p = data.applied?.pages;
+      setPackResult(
+        `Applied "${data.packName}" — ${p ? `${p.created + p.updated} page(s), ` : ''}theme & styles set.`,
+      );
+      // Prefill the account email from the contact email if given.
+      if (identity.contactEmail && !formData.email) {
+        setFormData((f) => ({ ...f, email: identity.contactEmail }));
+      }
+      setTimeout(() => setStep(2), 900);
+    } catch (e: any) {
+      setError(`Design pack failed: ${e.message}`);
+    } finally {
+      setApplyingPack(false);
+    }
+  };
 
   const [mfaData, setMfaData] = useState<{
     secret: string;
@@ -94,7 +138,7 @@ export default function SetupWizard() {
           qrCodeDataURL,
         });
 
-        setStep(2);
+        setStep(3);
       } else {
         setError(data.error || 'Failed to create admin user');
       }
@@ -140,42 +184,94 @@ export default function SetupWizard() {
           </h1>
           <p className="text-gray-400">
             {step === 1
-              ? 'Let\'s set up your administrator account'
-              : 'Set up Two-Factor Authentication'}
+              ? 'Apply a design pack to your new site'
+              : step === 2
+                ? 'Let\'s set up your administrator account'
+                : 'Set up Two-Factor Authentication'}
           </p>
         </div>
 
         {/* Progress Indicator */}
         <div className="flex items-center justify-center mb-8 transition-slide-up transition-delay-4">
           <div className="flex items-center">
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                step >= 1
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-700 text-gray-400'
-              }`}
-            >
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
+              <FaPalette />
+            </div>
+            <div className={`w-12 h-1 ${step >= 2 ? 'bg-blue-500' : 'bg-gray-700'}`} />
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
               <FaUser />
             </div>
-            <div
-              className={`w-16 h-1 ${
-                step >= 2 ? 'bg-blue-500' : 'bg-gray-700'
-              }`}
-            />
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                step >= 2
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-700 text-gray-400'
-              }`}
-            >
+            <div className={`w-12 h-1 ${step >= 3 ? 'bg-blue-500' : 'bg-gray-700'}`} />
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 3 ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
               <FaShieldAlt />
             </div>
           </div>
         </div>
 
-        {/* Step 1: Admin Account */}
+        {/* Step 1: Design pack */}
         {step === 1 && (
+          <div className="space-y-5 transition-slide-up transition-delay-5">
+            {error && (
+              <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded">{error}</div>
+            )}
+            <p className="text-gray-400 text-sm">
+              If Claude Design produced a pack for this site, upload it here to apply the theme,
+              starter pages, menu and footer. You can skip this and design later.
+            </p>
+
+            <div>
+              <label className="block text-gray-300 font-semibold mb-2">Design pack (.zip)</label>
+              <input
+                type="file"
+                accept=".zip,application/zip"
+                onChange={(e) => setPackFile(e.target.files?.[0] || null)}
+                className="w-full text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-500 file:text-white hover:file:bg-blue-600 bg-gray-700 rounded-lg border border-gray-600 p-2"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <input value={identity.siteName} onChange={(e) => setIdentity({ ...identity, siteName: e.target.value })}
+                placeholder="Site name (e.g. BigData CyberCloud)"
+                className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+              <input value={identity.tagline} onChange={(e) => setIdentity({ ...identity, tagline: e.target.value })}
+                placeholder="Tagline"
+                className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+              <input value={identity.contactEmail} onChange={(e) => setIdentity({ ...identity, contactEmail: e.target.value })}
+                placeholder="Contact email"
+                className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+              <input value={identity.domain} onChange={(e) => setIdentity({ ...identity, domain: e.target.value })}
+                placeholder="Domain (e.g. bigdatacybercloud.com)"
+                className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+            </div>
+            <p className="text-gray-500 text-xs">These fill {'{{siteName}}'}, {'{{tagline}}'}, {'{{contactEmail}}'} and {'{{domain}}'} placeholders in the pack.</p>
+
+            {packResult && (
+              <div className="bg-green-900 bg-opacity-30 border border-green-700 text-green-200 px-4 py-3 rounded flex items-center gap-2">
+                <FaCheckCircle /> {packResult}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={applyDesignPack}
+                disabled={!packFile || applyingPack}
+                className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition flex items-center justify-center gap-2"
+              >
+                {applyingPack ? 'Applying…' : (<><FaPalette /> Apply design &amp; continue</>)}
+              </button>
+              <button
+                onClick={() => { setError(''); setStep(2); }}
+                disabled={applyingPack}
+                className="bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-3 px-6 rounded-lg transition"
+              >
+                Skip
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Admin Account */}
+        {step === 2 && (
           <form onSubmit={handleSubmit} className="space-y-6 transition-slide-up transition-delay-5">
             {error && (
               <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded">
@@ -264,8 +360,8 @@ export default function SetupWizard() {
           </form>
         )}
 
-        {/* Step 2: 2FA Setup */}
-        {step === 2 && mfaData && (
+        {/* Step 3: 2FA Setup */}
+        {step === 3 && mfaData && (
           <div className="space-y-6 transition-slide-up transition-delay-5">
             <div className="bg-green-900 bg-opacity-30 border border-green-700 text-green-200 px-4 py-3 rounded flex items-center gap-2">
               <FaCheckCircle />
