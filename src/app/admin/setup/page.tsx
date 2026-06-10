@@ -287,7 +287,7 @@ export default function SetupWizard() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input value={identity.siteName} onChange={(e) => setIdentity({ ...identity, siteName: e.target.value })}
-                placeholder="Site name (e.g. BigData CyberCloud)"
+                placeholder="Site name (e.g. Acme Inc)"
                 className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
               <input value={identity.tagline} onChange={(e) => setIdentity({ ...identity, tagline: e.target.value })}
                 placeholder="Tagline"
@@ -296,7 +296,7 @@ export default function SetupWizard() {
                 placeholder="Contact email"
                 className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
               <input value={identity.domain} onChange={(e) => setIdentity({ ...identity, domain: e.target.value })}
-                placeholder="Domain (e.g. bigdatacybercloud.com)"
+                placeholder="Domain (e.g. example.com)"
                 className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
             </div>
             <p className="text-gray-500 text-xs">These fill {'{{siteName}}'}, {'{{tagline}}'}, {'{{contactEmail}}'} and {'{{domain}}'} placeholders in the pack.</p>
@@ -338,7 +338,7 @@ export default function SetupWizard() {
               <input value={identity.siteName} onChange={(e) => setIdentity({ ...identity, siteName: e.target.value })}
                 placeholder="Site name" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
               <input value={identity.domain} onChange={(e) => setIdentity({ ...identity, domain: e.target.value })}
-                placeholder="Primary domain (e.g. bigdatacybercloud.com)" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+                placeholder="Primary domain (e.g. example.com)" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
               <input value={identity.contactEmail} onChange={(e) => setIdentity({ ...identity, contactEmail: e.target.value })}
                 placeholder="Contact email" className="sm:col-span-2 bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
             </div>
