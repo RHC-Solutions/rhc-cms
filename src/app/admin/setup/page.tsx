@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { FaUser, FaLock, FaShieldAlt, FaCheckCircle, FaPalette, FaCog } from 'react-icons/fa';
+import { FaUser, FaLock, FaShieldAlt, FaCheckCircle, FaPalette, FaCog, FaInfoCircle } from 'react-icons/fa';
 import QRCode from 'qrcode';
 
 // Wizard steps (all pre-login, while no admin exists yet): 1) apply a design pack,
@@ -67,11 +67,17 @@ export default function SetupWizard() {
 
   // Provisioning (configure) step state.
   interface ValidationResult {
-    [key: string]: unknown;
+    ok: boolean;
+    service: string;
+    message: string;
   }
 
   interface DnsResult {
-    [key: string]: unknown;
+    ok: boolean;
+    type: string;
+    name: string;
+    action?: string;
+    message?: string;
   }
 
   interface ProvisionResult {
@@ -229,6 +235,15 @@ export default function SetupWizard() {
     );
   }
 
+  // Branding for the header — prefer the site name the operator just typed in
+  // Step 1, fall back to the hostname they're visiting (e.g. "example.com"),
+  // and finally a generic label. This is computed during render (no SSR mismatch
+  // because the header only renders after `loading` flips to false on the client).
+  const deploymentName =
+    identity.siteName.trim() ||
+    (typeof window !== 'undefined' ? window.location.hostname : '') ||
+    'your new site';
+
   return (
     <div className="transition-stage">
       <div className="transition-overlay" />
@@ -238,14 +253,15 @@ export default function SetupWizard() {
         <div className="text-center mb-8 transition-slide-up transition-delay-3">
           <Image
             src="/logo.png"
-            alt="RHC Solutions"
+            alt={deploymentName}
             width={64}
             height={64}
             priority
+            unoptimized
             className="w-16 h-16 object-contain mx-auto mb-4"
           />
           <h1 className="heading-xl text-gradient mb-2">
-            Welcome to Admin by RHC Solutions
+            Welcome to Admin by {deploymentName}
           </h1>
           <p className="text-gray-400">
             {step === 1
@@ -285,10 +301,22 @@ export default function SetupWizard() {
             {error && (
               <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded">{error}</div>
             )}
-            <p className="text-gray-400 text-sm">
-              If Claude Design produced a pack for this site, upload it here to apply the theme,
-              starter pages, menu and footer. You can skip this and design later.
-            </p>
+
+            <div className="bg-blue-900/20 border border-blue-700/60 rounded-lg p-4 text-sm text-blue-100 space-y-2">
+              <div className="flex items-center gap-2 font-semibold text-blue-200">
+                <FaInfoCircle /> What is a design pack?
+              </div>
+              <p className="text-blue-100/90">
+                A portable <span className="font-mono">.zip</span> that bundles your theme,
+                starter pages, navigation menu and footer. Uploading one applies all of it
+                in a single click &mdash; no copy/paste, no manual page-building.
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-blue-100/80">
+                <li>The identity fields below fill <span className="font-mono">{'{{siteName}}'}</span>, <span className="font-mono">{'{{tagline}}'}</span>, <span className="font-mono">{'{{contactEmail}}'}</span> and <span className="font-mono">{'{{domain}}'}</span> placeholders inside the pack &mdash; leave any blank to keep the pack&apos;s default.</li>
+                <li>Packs only carry <em>design</em>. Secrets, users and the database are never imported.</li>
+                <li>No pack yet? Click <strong>Skip</strong> &mdash; you can apply one later from <span className="font-mono">/admin/themes</span> or build pages by hand.</li>
+              </ul>
+            </div>
 
             <div>
               <label className="block text-gray-300 font-semibold mb-2">Design pack (.zip)</label>
@@ -345,11 +373,20 @@ export default function SetupWizard() {
         {step === 2 && (
           <div className="space-y-5 transition-slide-up transition-delay-5">
             {error && <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded">{error}</div>}
-            <p className="text-gray-400 text-sm">
-              Set your domain and connect the services you&apos;ll launch with.
-              {' '}All optional — you can do this later in <span className="font-mono">/admin</span>.
-              {' '}Note: Domain changes require an application restart to reload startup configuration/environment variables.
-            </p>
+
+            <div className="bg-blue-900/20 border border-blue-700/60 rounded-lg p-4 text-sm text-blue-100 space-y-2">
+              <div className="flex items-center gap-2 font-semibold text-blue-200">
+                <FaInfoCircle /> Connect your services
+              </div>
+              <ul className="list-disc list-inside space-y-1 text-blue-100/85">
+                <li><strong>Domain</strong> &mdash; the public URL where the site is served (e.g.&nbsp;<span className="font-mono">example.com</span>). The admin URL (<span className="font-mono">NEXTAUTH_URL</span>) is set separately and is never overwritten by this step.</li>
+                <li><strong>Email delivery</strong> &mdash; powers the contact form, password resets and admin notifications. Pick <strong>Brevo</strong> (HTTP API, simplest) or <strong>SMTP</strong>. Skip if you don&apos;t need email yet.</li>
+                <li><strong>Cloudflare</strong> &mdash; optional. With an API token + zone ID the wizard validates access; add a server IP and it can also create the <span className="font-mono">A</span> (and optionally <span className="font-mono">www</span>) DNS records automatically.</li>
+              </ul>
+              <p className="text-blue-100/70 text-xs pt-1">
+                Every field is optional &mdash; you can configure or change any of this later under <span className="font-mono">/admin/settings</span>. <strong>Domain or Cloudflare changes write to <span className="font-mono">.env.local</span></strong>, so they only take effect after an application restart (e.g.&nbsp;<span className="font-mono">pm2 reload</span>).
+              </p>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input value={identity.siteName} onChange={(e) => setIdentity({ ...identity, siteName: e.target.value })}
@@ -404,12 +441,12 @@ export default function SetupWizard() {
             {provisionResult && (
               <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-3 space-y-1 text-sm">
                 {provisionResult.validation.length === 0 && provisionResult.dns.length === 0 && <div className="text-gray-300">Saved.</div>}
-                {provisionResult.validation.map((v: { ok: boolean; service: string; message: string }, i: number) => (
+                {provisionResult.validation.map((v, i) => (
                   <div key={`v${i}`} className={v.ok ? 'text-green-300' : 'text-yellow-300'}>
                     {v.ok ? '✓' : '⚠'} {v.service}: {v.message}
                   </div>
                 ))}
-                {provisionResult.dns.map((d: { ok: boolean; type: string; name: string; action?: string; message?: string }, i: number) => (
+                {provisionResult.dns.map((d, i) => (
                   <div key={`d${i}`} className={d.ok ? 'text-green-300' : 'text-yellow-300'}>
                     {d.ok ? '✓' : '⚠'} DNS {d.type} {d.name}: {d.ok ? d.action : d.message}
                   </div>
@@ -447,6 +484,17 @@ export default function SetupWizard() {
                 {error}
               </div>
             )}
+
+            <div className="bg-blue-900/20 border border-blue-700/60 rounded-lg p-4 text-sm text-blue-100 space-y-2">
+              <div className="flex items-center gap-2 font-semibold text-blue-200">
+                <FaInfoCircle /> Create the first admin
+              </div>
+              <ul className="list-disc list-inside space-y-1 text-blue-100/85">
+                <li>This becomes the <strong>only</strong> way back into the admin until you create more accounts from <span className="font-mono">/admin/users</span>.</li>
+                <li>Use a real, reachable email &mdash; it&apos;s also your login and where password-reset mail is sent.</li>
+                <li>Password must be <strong>at least 8 characters</strong>; a long, unique passphrase is strongly recommended. You&apos;ll add a 2FA code on the next step.</li>
+              </ul>
+            </div>
 
             <div>
               <label className="block text-gray-300 font-semibold mb-2">
@@ -537,6 +585,17 @@ export default function SetupWizard() {
               <span>Admin account created successfully!</span>
             </div>
 
+            <div className="bg-blue-900/20 border border-blue-700/60 rounded-lg p-4 text-sm text-blue-100 space-y-2">
+              <div className="flex items-center gap-2 font-semibold text-blue-200">
+                <FaInfoCircle /> Two-factor authentication is required
+              </div>
+              <ol className="list-decimal list-inside space-y-1 text-blue-100/85">
+                <li>Open Google Authenticator, Authy, 1Password or any TOTP app.</li>
+                <li>Scan the QR code below (or paste the secret key manually).</li>
+                <li>After clicking <strong>Complete Setup</strong>, sign in with your email/password &mdash; you&apos;ll be prompted for a 6-digit code from this same authenticator entry to finish enabling 2FA. <em>You won&apos;t need to scan a second QR.</em></li>
+              </ol>
+            </div>
+
             <div className="text-center">
               <h3 className="text-xl font-semibold text-white mb-4">
                 Scan this QR Code with your authenticator app
@@ -564,8 +623,10 @@ export default function SetupWizard() {
             </div>
 
             <div className="bg-yellow-900 bg-opacity-30 border border-yellow-700 text-yellow-200 px-4 py-3 rounded text-sm">
-              ⚠️ <strong>Important:</strong> Save this secret key in a safe
-              place. You'll need your authenticator app to log in.
+              ⚠️ <strong>Important:</strong> Save this secret key in a password
+              manager (1Password, Bitwarden, etc.). If you lose access to your
+              authenticator app and don&apos;t have the secret saved, you&apos;ll be
+              locked out and need server access to reset MFA.
             </div>
 
             <button

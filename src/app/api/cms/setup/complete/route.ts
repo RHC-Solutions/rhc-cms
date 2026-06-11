@@ -65,11 +65,18 @@ export async function POST(request: NextRequest) {
 
     // Create admin user. Shape MUST match lib/auth/users.ts (seed) and what
     // lib/auth/config.ts reads at login: bcrypt `passwordHash` (not a SHA-256
-    // `password` field) and `totpEnabled` (not `mfaEnabled`). MFA is left
-    // disabled here on purpose — this wizard shows a QR but never verifies a
-    // code, so enabling it now would lock out anyone who mis-scans. The
-    // middleware forces the verified /admin/mfa-setup flow (which generates
+    // `password` field) and `totpEnabled` (not `mfaEnabled`).
+    //
+    // MFA is left disabled here on purpose — this wizard shows a QR but never
+    // verifies a code, so enabling it now would lock out anyone who mis-scans.
+    // The middleware forces the verified /admin/mfa-setup flow (which generates
     // recovery codes) on first login instead.
+    //
+    // We DO persist the generated secret as `totpTempSecret` so that the
+    // mfa-setup page (which prefers an existing temp secret over generating a
+    // fresh one) reuses the *same* secret the user just scanned here. Without
+    // this, the user is shown a second, different QR on first login and has to
+    // re-enroll — the duplicate-2FA UX bug.
     const now = new Date().toISOString();
     const adminUser = {
       id: crypto.randomUUID(),
@@ -79,6 +86,7 @@ export async function POST(request: NextRequest) {
       role: 'admin',
       status: 'active',
       totpEnabled: false,
+      totpTempSecret: totpSecret,
       recoveryCodes: [],
       lastLogin: null,
       createdAt: now,
