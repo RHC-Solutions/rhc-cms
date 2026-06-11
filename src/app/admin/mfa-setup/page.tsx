@@ -122,9 +122,13 @@ export default function MfaSetupPage() {
     <AdminShell title="MFA Setup">
       <div className="max-w-3xl mx-auto">
         <div className="card-cyber p-6">
-          <h1 className="heading-xl text-gradient mb-2">Secure Your Account</h1>
+          <h1 className="heading-xl text-gradient mb-2">Confirm Two-Factor Authentication</h1>
           <p className="text-text-secondary mb-6">
-            Set up two-factor authentication with Google Authenticator or any TOTP app. This is required for admin access.
+            Enter the current 6-digit code from your authenticator app to enable
+            2FA on this account. If you scanned a QR during the install wizard,
+            the entry is already in your app &mdash; just type the code below; you
+            don&apos;t need to scan again. If you skipped that step (or your app
+            doesn&apos;t recognise this account), scan the QR on the left first.
           </p>
 
           {loading && <div className="text-text-secondary">Loading MFA setup...</div>}
