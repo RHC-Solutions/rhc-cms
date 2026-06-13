@@ -167,6 +167,15 @@ export async function listAppointments(
   return { appointments: rows.map(mapAppt), total };
 }
 
+export async function getAppointmentsForEmail(email: string): Promise<Appointment[]> {
+  await ensureSchema();
+  const rows = await driver.query<any>(
+    'SELECT * FROM appointments WHERE LOWER("customerEmail") = ? ORDER BY "startsAt" DESC LIMIT 200',
+    [email.trim().toLowerCase()],
+  );
+  return rows.map(mapAppt);
+}
+
 export async function updateAppointmentStatus(
   id: string,
   status: AppointmentStatus,

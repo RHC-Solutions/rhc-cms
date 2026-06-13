@@ -197,4 +197,43 @@ async function migrate(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_appointments_service ON appointments("serviceId");
     CREATE INDEX IF NOT EXISTS idx_appointments_email ON appointments("customerEmail");
   `);
+
+  // --- Gift cards -----------------------------------------------------------
+  await driver.exec(`
+    CREATE TABLE IF NOT EXISTS gift_cards (
+      id TEXT PRIMARY KEY,
+      code TEXT UNIQUE NOT NULL,
+      "initialBalanceCents" INTEGER NOT NULL,
+      "balanceCents" INTEGER NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'usd',
+      status TEXT NOT NULL DEFAULT 'active',
+      "purchaserEmail" TEXT,
+      "recipientEmail" TEXT,
+      "recipientName" TEXT,
+      message TEXT,
+      "expiresAt" TEXT,
+      "createdAt" TEXT NOT NULL,
+      "updatedAt" TEXT NOT NULL
+    )
+  `);
+  await driver.exec(`
+    CREATE INDEX IF NOT EXISTS idx_giftcards_code ON gift_cards(code);
+    CREATE INDEX IF NOT EXISTS idx_giftcards_status ON gift_cards(status);
+  `);
+
+  // --- Gift card ledger -----------------------------------------------------
+  await driver.exec(`
+    CREATE TABLE IF NOT EXISTS gift_card_transactions (
+      id TEXT PRIMARY KEY,
+      "giftCardId" TEXT NOT NULL,
+      type TEXT NOT NULL,
+      "amountCents" INTEGER NOT NULL,
+      "balanceAfterCents" INTEGER NOT NULL,
+      note TEXT,
+      "createdAt" TEXT NOT NULL
+    )
+  `);
+  await driver.exec(`
+    CREATE INDEX IF NOT EXISTS idx_giftcard_tx_card ON gift_card_transactions("giftCardId");
+  `);
 }

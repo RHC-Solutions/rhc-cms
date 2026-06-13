@@ -16,6 +16,7 @@ export const ADMIN_SEARCH_INDEX = [
   { id: 'store-products', title: 'Store — Products', description: 'Manage store products, prices, variants and stock', href: '/admin/store/products', keywords: ['store', 'shop', 'products', 'ecommerce', 'catalog', 'price', 'variants', 'stock', 'inventory'] },
   { id: 'store-orders', title: 'Store — Orders', description: 'View and fulfil store orders', href: '/admin/store/orders', keywords: ['store', 'orders', 'sales', 'fulfil', 'fulfill', 'payments', 'stripe', 'checkout'] },
   { id: 'store-customers', title: 'Store — Customers', description: 'Storefront customer accounts', href: '/admin/store/customers', keywords: ['store', 'customers', 'buyers', 'clients', 'accounts'] },
+  { id: 'store-giftcards', title: 'Store — Gift Cards', description: 'Issue, redeem and manage gift cards', href: '/admin/store/gift-cards', keywords: ['gift', 'cards', 'voucher', 'giftcard', 'qr', 'redeem', 'balance'] },
 
   // Booking
   { id: 'booking-appointments', title: 'Booking — Appointments', description: 'View and manage appointments', href: '/admin/booking/appointments', keywords: ['booking', 'appointments', 'calendar', 'schedule', 'reservations', 'bookings'] },

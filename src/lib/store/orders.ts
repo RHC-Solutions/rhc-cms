@@ -157,6 +157,15 @@ export async function listOrders(
   return { orders: rows.map(mapOrder), total };
 }
 
+export async function getOrdersForCustomer(customerId: string): Promise<Order[]> {
+  await ensureSchema();
+  const rows = await driver.query<any>(
+    'SELECT * FROM orders WHERE "customerId" = ? ORDER BY "createdAt" DESC LIMIT 200',
+    [customerId],
+  );
+  return rows.map(mapOrder);
+}
+
 export async function attachStripeSession(id: string, sessionId: string): Promise<void> {
   await ensureSchema();
   await driver.run('UPDATE orders SET "stripeSessionId" = ?, "updatedAt" = ? WHERE id = ?', [
