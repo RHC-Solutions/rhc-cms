@@ -146,6 +146,18 @@ export const INTEGRATIONS: Integration[] = [
     ],
   },
   {
+    id: 'google-calendar',
+    name: 'Google Calendar (booking sync)',
+    description: 'Optional: mirror confirmed appointments to a Google Calendar. Create an OAuth client, authorize the Calendar scope once, and paste the refresh token here. Leave blank to disable sync.',
+    dashboardLink: 'https://console.cloud.google.com/apis/credentials',
+    fields: [
+      { envVar: 'GOOGLE_CALENDAR_CLIENT_ID', label: 'OAuth client ID', type: 'text' },
+      { envVar: 'GOOGLE_CALENDAR_CLIENT_SECRET', label: 'OAuth client secret', type: 'secret' },
+      { envVar: 'GOOGLE_CALENDAR_REFRESH_TOKEN', label: 'Refresh token', type: 'secret' },
+      { envVar: 'GOOGLE_CALENDAR_ID', label: 'Calendar ID', type: 'text', example: 'primary', description: 'Defaults to "primary".' },
+    ],
+  },
+  {
     id: 'misc',
     name: 'Miscellaneous',
     description: 'Other server-side values that aren\'t tied to a specific third-party.',

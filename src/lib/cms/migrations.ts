@@ -135,4 +135,66 @@ async function migrate(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders("customerId");
     CREATE INDEX IF NOT EXISTS idx_orders_session ON orders("stripeSessionId");
   `);
+
+  // --- Generic per-module settings (key/value JSON) -------------------------
+  // Used by booking availability, i18n locale config, gift-card settings, etc.
+  await driver.exec(`
+    CREATE TABLE IF NOT EXISTS module_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      "updatedAt" TEXT NOT NULL
+    )
+  `);
+
+  // --- Booking: services ----------------------------------------------------
+  await driver.exec(`
+    CREATE TABLE IF NOT EXISTS services (
+      id TEXT PRIMARY KEY,
+      slug TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+      "durationMins" INTEGER NOT NULL DEFAULT 30,
+      "bufferMins" INTEGER NOT NULL DEFAULT 0,
+      "priceCents" INTEGER NOT NULL DEFAULT 0,
+      currency TEXT NOT NULL DEFAULT 'usd',
+      active INTEGER NOT NULL DEFAULT 1,
+      metadata TEXT,
+      "createdAt" TEXT NOT NULL,
+      "updatedAt" TEXT NOT NULL
+    )
+  `);
+  await driver.exec(`
+    CREATE INDEX IF NOT EXISTS idx_services_slug ON services(slug);
+    CREATE INDEX IF NOT EXISTS idx_services_active ON services(active);
+  `);
+
+  // --- Booking: appointments ------------------------------------------------
+  // Times stored as ISO-8601 UTC. serviceName is snapshotted so renaming a
+  // service doesn't rewrite past bookings.
+  await driver.exec(`
+    CREATE TABLE IF NOT EXISTS appointments (
+      id TEXT PRIMARY KEY,
+      "serviceId" TEXT,
+      "serviceName" TEXT,
+      "customerId" TEXT,
+      "customerName" TEXT,
+      "customerEmail" TEXT,
+      "customerPhone" TEXT,
+      "startsAt" TEXT NOT NULL,
+      "endsAt" TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'confirmed',
+      notes TEXT,
+      "priceCents" INTEGER,
+      currency TEXT,
+      "googleEventId" TEXT,
+      "createdAt" TEXT NOT NULL,
+      "updatedAt" TEXT NOT NULL
+    )
+  `);
+  await driver.exec(`
+    CREATE INDEX IF NOT EXISTS idx_appointments_start ON appointments("startsAt");
+    CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
+    CREATE INDEX IF NOT EXISTS idx_appointments_service ON appointments("serviceId");
+    CREATE INDEX IF NOT EXISTS idx_appointments_email ON appointments("customerEmail");
+  `);
 }

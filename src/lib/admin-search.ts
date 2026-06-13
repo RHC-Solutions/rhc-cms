@@ -16,6 +16,11 @@ export const ADMIN_SEARCH_INDEX = [
   { id: 'store-products', title: 'Store — Products', description: 'Manage store products, prices, variants and stock', href: '/admin/store/products', keywords: ['store', 'shop', 'products', 'ecommerce', 'catalog', 'price', 'variants', 'stock', 'inventory'] },
   { id: 'store-orders', title: 'Store — Orders', description: 'View and fulfil store orders', href: '/admin/store/orders', keywords: ['store', 'orders', 'sales', 'fulfil', 'fulfill', 'payments', 'stripe', 'checkout'] },
   { id: 'store-customers', title: 'Store — Customers', description: 'Storefront customer accounts', href: '/admin/store/customers', keywords: ['store', 'customers', 'buyers', 'clients', 'accounts'] },
+
+  // Booking
+  { id: 'booking-appointments', title: 'Booking — Appointments', description: 'View and manage appointments', href: '/admin/booking/appointments', keywords: ['booking', 'appointments', 'calendar', 'schedule', 'reservations', 'bookings'] },
+  { id: 'booking-services', title: 'Booking — Services', description: 'Manage bookable services, duration and price', href: '/admin/booking/services', keywords: ['booking', 'services', 'duration', 'price', 'offerings'] },
+  { id: 'booking-availability', title: 'Booking — Availability', description: 'Weekly opening hours and slot intervals', href: '/admin/booking/availability', keywords: ['booking', 'availability', 'hours', 'opening', 'schedule', 'slots', 'calendar'] },
   
   // Media
   { id: 'media', title: 'Media Library', description: 'Manage images and files', href: '/admin/media', keywords: ['media', 'images', 'files', 'upload', 'gallery'] },
