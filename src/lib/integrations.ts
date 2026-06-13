@@ -135,6 +135,17 @@ export const INTEGRATIONS: Integration[] = [
     ],
   },
   {
+    id: 'stripe',
+    name: 'Stripe (payments)',
+    description: 'Card payments for the Store and Gift Cards. Add the webhook endpoint /api/store/webhook in your Stripe dashboard and paste its signing secret here. With no keys set, the store runs in demo mode (orders auto-confirm).',
+    dashboardLink: 'https://dashboard.stripe.com/apikeys',
+    fields: [
+      { envVar: 'STRIPE_SECRET_KEY', label: 'Secret key', type: 'secret', example: 'sk_live_…' },
+      { envVar: 'STRIPE_PUBLISHABLE_KEY', label: 'Publishable key', type: 'text', example: 'pk_live_…' },
+      { envVar: 'STRIPE_WEBHOOK_SECRET', label: 'Webhook signing secret', type: 'secret', example: 'whsec_…' },
+    ],
+  },
+  {
     id: 'misc',
     name: 'Miscellaneous',
     description: 'Other server-side values that aren\'t tied to a specific third-party.',

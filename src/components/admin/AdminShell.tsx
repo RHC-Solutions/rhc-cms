@@ -9,7 +9,7 @@ import {
   FaHome, FaFileAlt, FaImages, FaUsers, FaCog, FaChartLine,
   FaBars, FaTimes, FaSignOutAlt, FaEdit, FaCookie, FaSearch, FaList, FaDatabase,
   FaPalette, FaListAlt, FaCloud, FaChevronDown, FaChevronRight, FaTrash, FaSpinner, FaShieldAlt,
-  FaPlug, FaBullhorn, FaRobot, FaHistory,
+  FaPlug, FaBullhorn, FaRobot, FaHistory, FaStore, FaBoxOpen, FaShoppingCart, FaUserFriends,
 } from 'react-icons/fa';
 
 interface NavItem {
@@ -51,6 +51,17 @@ export default function AdminShell({ children, title }: AdminShellProps) {
       },
       { name: 'Pages', href: '/admin/pages', icon: FaFileAlt, roles: ['admin', 'editor'] },
       { name: 'Landing Pages', href: '/admin/landing-pages', icon: FaBullhorn, roles: ['admin', 'editor'] },
+      {
+        name: 'Store',
+        href: '/admin/store/products',
+        icon: FaStore,
+        roles: ['admin', 'editor'],
+        children: [
+          { name: 'Products', href: '/admin/store/products', icon: FaBoxOpen, roles: ['admin', 'editor'] },
+          { name: 'Orders', href: '/admin/store/orders', icon: FaShoppingCart, roles: ['admin', 'editor'] },
+          { name: 'Customers', href: '/admin/store/customers', icon: FaUserFriends, roles: ['admin', 'editor'] },
+        ],
+      },
       { name: 'Media', href: '/admin/media', icon: FaImages, roles: ['admin', 'editor'] },
       { name: 'Forms', href: '/admin/forms', icon: FaEdit, roles: ['admin', 'editor'] },
       { name: 'Menu', href: '/admin/menu', icon: FaList, roles: ['admin', 'editor'] },

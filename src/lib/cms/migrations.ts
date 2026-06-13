@@ -64,4 +64,75 @@ async function migrate(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(email);
     CREATE INDEX IF NOT EXISTS idx_customers_status ON customers(status);
   `);
+
+  // --- E-commerce: products -------------------------------------------------
+  await driver.exec(`
+    CREATE TABLE IF NOT EXISTS products (
+      id TEXT PRIMARY KEY,
+      slug TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+      status TEXT NOT NULL DEFAULT 'active',
+      "priceCents" INTEGER NOT NULL DEFAULT 0,
+      currency TEXT NOT NULL DEFAULT 'usd',
+      images TEXT,
+      category TEXT,
+      "trackStock" INTEGER NOT NULL DEFAULT 0,
+      stock INTEGER,
+      metadata TEXT,
+      "createdAt" TEXT NOT NULL,
+      "updatedAt" TEXT NOT NULL
+    )
+  `);
+  await driver.exec(`
+    CREATE INDEX IF NOT EXISTS idx_products_slug ON products(slug);
+    CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);
+    CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
+  `);
+
+  // --- E-commerce: product variants (optional per product) ------------------
+  await driver.exec(`
+    CREATE TABLE IF NOT EXISTS product_variants (
+      id TEXT PRIMARY KEY,
+      "productId" TEXT NOT NULL,
+      label TEXT NOT NULL,
+      sku TEXT,
+      "priceCents" INTEGER,
+      stock INTEGER,
+      position INTEGER NOT NULL DEFAULT 0,
+      "createdAt" TEXT NOT NULL
+    )
+  `);
+  await driver.exec(`
+    CREATE INDEX IF NOT EXISTS idx_variants_product ON product_variants("productId");
+  `);
+
+  // --- E-commerce: orders ---------------------------------------------------
+  // items / shipping are JSON snapshots; money in integer cents. Stock is
+  // decremented when the order transitions to 'paid'.
+  await driver.exec(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id TEXT PRIMARY KEY,
+      "orderNumber" TEXT UNIQUE NOT NULL,
+      "customerId" TEXT,
+      email TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      "subtotalCents" INTEGER NOT NULL DEFAULT 0,
+      "totalCents" INTEGER NOT NULL DEFAULT 0,
+      currency TEXT NOT NULL DEFAULT 'usd',
+      items TEXT,
+      shipping TEXT,
+      notes TEXT,
+      "stripeSessionId" TEXT,
+      "stripePaymentIntent" TEXT,
+      "createdAt" TEXT NOT NULL,
+      "updatedAt" TEXT NOT NULL
+    )
+  `);
+  await driver.exec(`
+    CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+    CREATE INDEX IF NOT EXISTS idx_orders_created ON orders("createdAt" DESC);
+    CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders("customerId");
+    CREATE INDEX IF NOT EXISTS idx_orders_session ON orders("stripeSessionId");
+  `);
 }

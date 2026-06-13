@@ -11,6 +11,11 @@ export const ADMIN_SEARCH_INDEX = [
   
   // Landing Pages
   { id: 'landing-pages', title: 'Landing Pages', description: 'Manage marketing landing pages', href: '/admin/landing-pages', keywords: ['landing', 'campaigns', 'marketing', 'lead', 'pages'] },
+
+  // Store
+  { id: 'store-products', title: 'Store — Products', description: 'Manage store products, prices, variants and stock', href: '/admin/store/products', keywords: ['store', 'shop', 'products', 'ecommerce', 'catalog', 'price', 'variants', 'stock', 'inventory'] },
+  { id: 'store-orders', title: 'Store — Orders', description: 'View and fulfil store orders', href: '/admin/store/orders', keywords: ['store', 'orders', 'sales', 'fulfil', 'fulfill', 'payments', 'stripe', 'checkout'] },
+  { id: 'store-customers', title: 'Store — Customers', description: 'Storefront customer accounts', href: '/admin/store/customers', keywords: ['store', 'customers', 'buyers', 'clients', 'accounts'] },
   
   // Media
   { id: 'media', title: 'Media Library', description: 'Manage images and files', href: '/admin/media', keywords: ['media', 'images', 'files', 'upload', 'gallery'] },
