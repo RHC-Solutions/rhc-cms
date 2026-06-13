@@ -4,6 +4,15 @@ import fs from 'fs';
 import path from 'path';
 import bcrypt from 'bcryptjs';
 import { validatePassword } from '@adminpanel/lib/auth/password';
+import { recordAudit } from '@adminpanel/lib/audit';
+
+function clientIp(request: NextRequest): string | null {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    null
+  );
+}
 
 export interface CMSUser {
   id: string;
@@ -160,6 +169,15 @@ export async function POST(request: NextRequest) {
     users.push(newUser);
     saveUsers(users);
 
+    await recordAudit({
+      actor: auth.email,
+      actorEmail: auth.email,
+      action: 'user.create',
+      target: newUser.email,
+      detail: { id: newUser.id, role: newUser.role, status: newUser.status },
+      ip: clientIp(request),
+    });
+
     return NextResponse.json(sanitizeUser(newUser), { status: 201 });
   } catch (error) {
     console.error('Error creating user:', error);
@@ -242,6 +260,20 @@ export async function PUT(request: NextRequest) {
     users[index] = updated;
     saveUsers(users);
 
+    await recordAudit({
+      actor: auth.email,
+      actorEmail: auth.email,
+      action: mfaAction ? `user.mfa.${mfaAction}` : 'user.update',
+      target: updated.email,
+      detail: {
+        id: updated.id,
+        role: updated.role,
+        status: updated.status,
+        passwordChanged: !!password,
+      },
+      ip: clientIp(request),
+    });
+
     return NextResponse.json(sanitizeUser(updated));
   } catch (error) {
     console.error('Error updating user:', error);
@@ -274,6 +306,15 @@ export async function DELETE(request: NextRequest) {
 
     const filtered = users.filter((u) => u.id !== id);
     saveUsers(filtered);
+
+    await recordAudit({
+      actor: auth.email,
+      actorEmail: auth.email,
+      action: 'user.delete',
+      target: target.email,
+      detail: { id },
+      ip: clientIp(request),
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

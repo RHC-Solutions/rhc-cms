@@ -10,6 +10,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { cache } from './cache';
+import { encryptSecret, decryptSecret } from './crypto/secret-box';
 
 const ENV_PATH = path.join(process.cwd(), '.env.local');
 const SECRETS_PATH = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'secrets.json');
@@ -29,7 +30,13 @@ function loadSecrets(): Record<string, string> {
     const raw = fs.readFileSync(SECRETS_PATH, 'utf-8');
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      secretsCache = parsed as Record<string, string>;
+      // Decrypt at-rest values transparently. Legacy plaintext entries (no
+      // enc:v1: prefix) pass through unchanged; callers see plaintext either way.
+      const decrypted: Record<string, string> = {};
+      for (const [k, v] of Object.entries(parsed)) {
+        decrypted[k] = typeof v === 'string' ? decryptSecret(v) : (v as string);
+      }
+      secretsCache = decrypted;
       secretsCacheMtime = stat.mtimeMs;
       return secretsCache;
     }
@@ -169,7 +176,13 @@ export function setSecrets(updates: Record<string, string | undefined>): void {
     }
   }
   fs.mkdirSync(path.dirname(SECRETS_PATH), { recursive: true });
-  fs.writeFileSync(SECRETS_PATH, JSON.stringify(next, null, 2));
+  // Encrypt every value for at-rest storage (AES-256-GCM). This also
+  // opportunistically migrates any legacy plaintext entries to ciphertext.
+  const encrypted: Record<string, string> = {};
+  for (const [k, v] of Object.entries(next)) {
+    encrypted[k] = encryptSecret(v);
+  }
+  fs.writeFileSync(SECRETS_PATH, JSON.stringify(encrypted, null, 2));
   try {
     fs.chmodSync(SECRETS_PATH, 0o660);
   } catch {

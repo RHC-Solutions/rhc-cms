@@ -53,6 +53,9 @@ export const ADMIN_SEARCH_INDEX = [
   
   // Security (Aikido)
   { id: 'aikido', title: 'Security (Aikido)', description: 'Aikido security scanner — issues, blocked IPs, brute-force protection', href: '/admin/aikido', keywords: ['security', 'aikido', 'blocked', 'ips', 'brute force', 'protection', 'scanner', 'issues'] },
+
+  // Audit Log
+  { id: 'audit', title: 'Audit Log', description: 'Admin action history — who did what and when', href: '/admin/audit', keywords: ['audit', 'log', 'history', 'activity', 'security', 'accountability', 'trail'] },
   
   // MFA Setup
   { id: 'mfa-setup', title: 'MFA Setup', description: 'Configure two-factor authentication', href: '/admin/mfa-setup', keywords: ['mfa', '2fa', 'authentication', 'totp', 'security'] },
