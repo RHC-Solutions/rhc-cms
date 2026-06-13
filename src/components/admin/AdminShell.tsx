@@ -10,7 +10,7 @@ import {
   FaBars, FaTimes, FaSignOutAlt, FaEdit, FaCookie, FaSearch, FaList, FaDatabase,
   FaPalette, FaListAlt, FaCloud, FaChevronDown, FaChevronRight, FaTrash, FaSpinner, FaShieldAlt,
   FaPlug, FaBullhorn, FaRobot, FaHistory, FaStore, FaBoxOpen, FaShoppingCart, FaUserFriends,
-  FaCalendarAlt, FaConciergeBell, FaCalendarCheck, FaClock, FaGift,
+  FaCalendarAlt, FaConciergeBell, FaCalendarCheck, FaClock, FaGift, FaLanguage,
 } from 'react-icons/fa';
 
 interface NavItem {
@@ -80,6 +80,7 @@ export default function AdminShell({ children, title }: AdminShellProps) {
       { name: 'Menu', href: '/admin/menu', icon: FaList, roles: ['admin', 'editor'] },
       { name: 'Footer', href: '/admin/footer', icon: FaListAlt, roles: ['admin', 'editor'] },
       { name: 'Theme Settings', href: '/admin/theme', icon: FaPalette, roles: ['admin', 'editor'] },
+      { name: 'Languages', href: '/admin/i18n', icon: FaLanguage, roles: ['admin'] },
       { name: 'Users', href: '/admin/users', icon: FaUsers, roles: ['admin'] },
       { name: 'SEO', href: '/admin/seo', icon: FaSearch, roles: ['admin', 'editor'] },
       { name: 'Cookie Settings', href: '/admin/cookies', icon: FaCookie, roles: ['admin', 'editor'] },

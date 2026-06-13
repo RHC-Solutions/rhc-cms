@@ -236,4 +236,21 @@ async function migrate(): Promise<void> {
   await driver.exec(`
     CREATE INDEX IF NOT EXISTS idx_giftcard_tx_card ON gift_card_transactions("giftCardId");
   `);
+
+  // --- i18n: machine-translation cache --------------------------------------
+  // Keyed by (locale, sourceHash) so repeat translations are free. sourceText
+  // kept for debugging / cache invalidation.
+  await driver.exec(`
+    CREATE TABLE IF NOT EXISTS translations (
+      id TEXT PRIMARY KEY,
+      locale TEXT NOT NULL,
+      "sourceHash" TEXT NOT NULL,
+      "sourceText" TEXT NOT NULL,
+      "translatedText" TEXT NOT NULL,
+      "createdAt" TEXT NOT NULL
+    )
+  `);
+  await driver.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_translations_key ON translations(locale, "sourceHash");
+  `);
 }

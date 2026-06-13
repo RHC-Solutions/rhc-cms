@@ -37,6 +37,9 @@ export const ADMIN_SEARCH_INDEX = [
   
   // Theme Settings
   { id: 'theme', title: 'Theme Settings', description: 'Customize site theme colors and appearance', href: '/admin/theme', keywords: ['theme', 'colors', 'appearance', 'branding', 'typography', 'styling'] },
+
+  // Languages / i18n
+  { id: 'i18n', title: 'Languages', description: 'Locales and machine translation', href: '/admin/i18n', keywords: ['languages', 'i18n', 'locale', 'translation', 'translate', 'multilingual', 'internationalization'] },
   
   // Users
   { id: 'users', title: 'Users', description: 'Manage user accounts and permissions', href: '/admin/users', keywords: ['users', 'accounts', 'roles', 'permissions', 'access'] },

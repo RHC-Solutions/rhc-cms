@@ -146,6 +146,15 @@ export const INTEGRATIONS: Integration[] = [
     ],
   },
   {
+    id: 'google-translate',
+    name: 'Google Translate (multi-language)',
+    description: 'API key for the Google Cloud Translation API. Powers the Languages module — machine-translates UI/content into your enabled locales (results are cached). Leave blank to keep content single-language.',
+    dashboardLink: 'https://console.cloud.google.com/apis/credentials',
+    fields: [
+      { envVar: 'GOOGLE_TRANSLATE_API_KEY', label: 'API key', type: 'secret' },
+    ],
+  },
+  {
     id: 'google-calendar',
     name: 'Google Calendar (booking sync)',
     description: 'Optional: mirror confirmed appointments to a Google Calendar. Create an OAuth client, authorize the Calendar scope once, and paste the refresh token here. Leave blank to disable sync.',
