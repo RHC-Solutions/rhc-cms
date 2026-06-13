@@ -3,13 +3,16 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import { getSecret } from '@adminpanel/lib/env';
+import { sendOpsEmail, emailChannelConfigured } from '@adminpanel/lib/email';
 
 const USERS_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'users.json');
 const SETTINGS_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'settings.json');
 
 // Abuse mitigation. Reset is intentionally unauthenticated (forgot-password
-// flow), but the password is only delivered to a pre-configured Telegram
-// chat. Without limits, an attacker could repeatedly invalidate the admin's
+// flow), but the new password is only delivered to a server-side address
+// the admin pre-configured (their stored email OR a Telegram chat ID).
+// Without limits, an attacker could repeatedly invalidate the admin's
 // password and reset MFA from anonymous internet. Keep buckets in-process —
 // fine for a single PM2 instance; behind a load balancer move to Redis.
 const IP_WINDOW_MS = 60 * 60 * 1000;
@@ -116,7 +119,7 @@ export async function POST(request: NextRequest) {
     // returns this same payload after the rate-limit check.
     const genericOk = NextResponse.json({
       success: true,
-      message: 'If this account is eligible, the new password has been sent via Telegram.',
+      message: 'If this account is eligible, a new password has been sent via your configured recovery channel.',
     });
 
     // Load users
@@ -147,23 +150,30 @@ export async function POST(request: NextRequest) {
     }
     accountLastReset.set(user.email.toLowerCase(), Date.now());
 
-    // Load Telegram settings
+    // Load Telegram settings (used as a fallback when email isn't configured
+    // or if email delivery fails).
     let telegramConfig = { botToken: '', chatId: '' };
     if (fs.existsSync(SETTINGS_FILE)) {
       const settingsData = fs.readFileSync(SETTINGS_FILE, 'utf-8');
       const settings = JSON.parse(settingsData);
       telegramConfig = settings.telegram || telegramConfig;
     }
+    const telegramConfigured = !!(telegramConfig.botToken && telegramConfig.chatId);
+    const emailConfigured = emailChannelConfigured();
 
-    if (!telegramConfig.botToken || !telegramConfig.chatId) {
-      return NextResponse.json({ 
-        error: 'Telegram is not configured. Please configure Telegram settings in admin panel first.' 
+    if (!emailConfigured && !telegramConfigured) {
+      return NextResponse.json({
+        error: 'No recovery channel configured. Add email (BREVO_API_KEY or SMTP) or Telegram in admin settings first.',
       }, { status: 400 });
     }
 
     // Generate new password
     const newPassword = generateSecurePassword(64);
     const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    // Snapshot the original user so we can roll back if delivery fails on
+    // every configured channel.
+    const originalUser = user;
 
     // Update user password
     users[userIndex] = {
@@ -181,8 +191,8 @@ export async function POST(request: NextRequest) {
     // Save users
     fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 
-    // Send to Telegram
-    const timestamp = new Date().toLocaleString('en-US', { 
+    // Timestamp used in both delivery payloads.
+    const timestamp = new Date().toLocaleString('en-US', {
       timeZone: 'UTC',
       year: 'numeric',
       month: 'long',
@@ -190,10 +200,62 @@ export async function POST(request: NextRequest) {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-      hour12: false
+      hour12: false,
     });
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
 
-    const message = `🔐 <b>Admin Password Reset</b>
+    let deliveredVia: 'email' | 'telegram' | null = null;
+    const deliveryErrors: string[] = [];
+
+    // 1) Try email first (Brevo → SMTP) if any email channel is configured.
+    //    The password is always sent to the admin's STORED email (`user.email`),
+    //    never an address from the request body — so the recipient address
+    //    comes from server-side state, not user input.
+    if (emailConfigured) {
+      const emailHtml = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #1f2937;">🔐 Admin Password Reset</h2>
+          <p><strong>Account:</strong> ${user.name} (${user.email})<br>
+             <strong>Timestamp:</strong> ${timestamp} UTC</p>
+          <p><strong>New password:</strong></p>
+          <pre style="background:#f3f4f6;padding:12px 14px;border-radius:6px;font-size:14px;overflow-wrap:anywhere;">${newPassword}</pre>
+          <p style="background:#fef3c7;border-left:4px solid #f59e0b;padding:10px 14px;color:#92400e;font-size:14px;">
+            ⚠️ <strong>Important:</strong> This 64-character password is single-use — change it after logging in. 2FA has been disabled, please re-enable it from <em>Security → MFA Setup</em>.
+          </p>
+          <p><strong>Next steps:</strong></p>
+          <ol style="font-size:14px;color:#374151;">
+            <li>Copy the password above.</li>
+            <li>Go to <a href="${siteUrl}/admin/login">${siteUrl}/admin/login</a>.</li>
+            <li>Sign in with your email and this password.</li>
+            <li>Re-enable 2FA in security settings.</li>
+          </ol>
+          <p style="color:#6b7280;font-size:12px;border-top:1px solid #e5e7eb;padding-top:12px;margin-top:24px;">
+            If you did not request this reset, change your password immediately and review your account activity. This is an automated security notification.
+          </p>
+        </div>
+      `;
+      const fromAddress =
+        getSecret('BREVO_SENDER_EMAIL') ||
+        getSecret('ADMIN_EMAIL') ||
+        '';
+      const sent = await sendOpsEmail({
+        to: user.email,
+        subject: 'Admin password reset',
+        html: emailHtml,
+        from: fromAddress || undefined,
+        label: 'PasswordReset',
+      });
+      if (sent.ok) {
+        deliveredVia = 'email';
+      } else {
+        deliveryErrors.push(`email: ${sent.error}`);
+      }
+    }
+
+    // 2) Fall back to Telegram if email wasn't configured OR email failed AND
+    //    Telegram is configured.
+    if (!deliveredVia && telegramConfigured) {
+      const message = `🔐 <b>Admin Password Reset</b>
 
 <b>Account:</b> ${user.name} (${user.email})
 <b>Timestamp:</b> ${timestamp} UTC
@@ -209,26 +271,35 @@ export async function POST(request: NextRequest) {
 
 <b>Next Steps:</b>
 1. Copy the password above
-2. Go to ${process.env.NEXT_PUBLIC_SITE_URL || 'https://rhcsolutions.com'}/admin/login
+2. Go to ${siteUrl}/admin/login
 3. Log in with your email and this password
 4. Re-enable 2FA in security settings
 
-This is an automated security notification from RHC Solutions Admin Panel.`;
+This is an automated security notification from the admin panel.`;
+      const sent = await sendToTelegram(telegramConfig.botToken, telegramConfig.chatId, message);
+      if (sent) {
+        deliveredVia = 'telegram';
+      } else {
+        deliveryErrors.push('telegram: send failed');
+      }
+    }
 
-    const sent = await sendToTelegram(telegramConfig.botToken, telegramConfig.chatId, message);
-
-    if (!sent) {
-      // Rollback password change if Telegram send fails
-      users[userIndex] = user;
+    if (!deliveredVia) {
+      // All configured channels failed — roll back the password change so the
+      // admin doesn't get locked out with a password no one received.
+      users[userIndex] = originalUser;
       fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-      return NextResponse.json({ 
-        error: 'Failed to send password to Telegram. Please verify your Telegram settings.' 
+      console.error('[PasswordReset] All channels failed:', deliveryErrors.join('; '));
+      return NextResponse.json({
+        error: 'Failed to deliver the new password on any configured channel. Original password preserved.',
       }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Password has been reset and sent to Telegram. 2FA has been disabled.',
+      message: deliveredVia === 'email'
+        ? `Password reset email sent to ${user.email}. 2FA has been disabled.`
+        : 'Password has been reset and sent to Telegram. 2FA has been disabled.',
     });
   } catch (error) {
     console.error('Password reset error:', error);

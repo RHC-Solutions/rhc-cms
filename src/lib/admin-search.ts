@@ -15,12 +15,6 @@ export const ADMIN_SEARCH_INDEX = [
   // Media
   { id: 'media', title: 'Media Library', description: 'Manage images and files', href: '/admin/media', keywords: ['media', 'images', 'files', 'upload', 'gallery'] },
   
-  // Jobs
-  { id: 'jobs', title: 'Jobs', description: 'Manage job postings', href: '/admin/jobs', keywords: ['jobs', 'careers', 'positions', 'postings'] },
-  
-  // Job Applications
-  { id: 'job-applications', title: 'Job Applications', description: 'View job applications', href: '/admin/job-applications', keywords: ['applications', 'jobs', 'candidates', 'resumes'] },
-  
   // Forms
   { id: 'forms', title: 'Forms', description: 'Manage contact forms and submissions', href: '/admin/forms', keywords: ['forms', 'submissions', 'contact', 'messages', 'inquiries'] },
   

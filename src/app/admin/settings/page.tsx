@@ -91,7 +91,7 @@ export default function SettingsPage() {
       setForm({
         siteName: data.siteName || "",
         tagline: data.tagline || "",
-        siteUrl: data.siteUrl || "https://rhcsolutions.com",
+        siteUrl: data.siteUrl || "https://example.com",
         bookingUrl: data.bookingUrl || "",
         contact: {
           email: data.contact?.email || "",

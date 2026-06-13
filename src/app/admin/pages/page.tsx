@@ -507,7 +507,7 @@ export default function CMSPagesEditor() {
                       );
                       updateCards(next);
                     }}
-                    placeholder="Link URL (optional, e.g. /services/cloud-infrastructure)"
+                    placeholder="Link URL (optional, e.g. /services/your-service)"
                     className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
                   />
                 </div>

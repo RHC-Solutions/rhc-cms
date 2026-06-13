@@ -13,8 +13,8 @@ the shared repo, pull it everywhere.
 ## 0. What you get
 
 A `/admin` area with: Dashboard · Analytics (+ setup) · Pages · Landing Pages ·
-Media · Jobs + Applications · Forms · Menu · Footer · Theme · Typography · Users
-(role-based: `admin` / `editor` / `jobs_manager`) · SEO · Cookies · Cloudflare
+Media · Forms · Menu · Footer · Theme · Typography · Users
+(role-based: `admin` / `editor`) · SEO · Cookies · Cloudflare
 (+ setup) · Integrations · Backups · **Automation** (daily audit + weekly
 dependency PRs) · Security (Aikido) · Settings + Environment. Plus NextAuth login
 with brute-force IP blocking, mandatory TOTP MFA, and a first-run setup wizard.
@@ -233,7 +233,7 @@ because they're needed at build/boot.
 | Var | Purpose |
 |---|---|
 | `SEED_ADMIN_PASSWORD` | Used only if `cms-data/users.json` is auto-seeded; falls back to `admin123` with a warning. |
-| `SEED_ADMIN_EMAIL` / `SEED_JOBS_EMAIL` | Default seed emails; default to `admin@<site-domain>` / `jobs@<site-domain>`. |
+| `SEED_ADMIN_EMAIL` | Default seed email; default to `admin@<site-domain>`. |
 
 ### Automation / audit (all optional — see step 7)
 

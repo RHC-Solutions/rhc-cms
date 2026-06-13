@@ -5,7 +5,7 @@ import { useToast } from '@adminpanel/components/admin/Toast';
 import { FaUserPlus, FaSave, FaTrash, FaShieldAlt, FaExclamationTriangle, FaCheckCircle } from 'react-icons/fa';
 import { validatePassword, getStrengthText, getStrengthColor } from '@adminpanel/lib/auth/password';
 
-type Role = 'admin' | 'editor' | 'jobs_manager';
+type Role = 'admin' | 'editor';
 type Status = 'active' | 'disabled';
 
 interface CMSUser {
@@ -54,12 +54,6 @@ export default function UsersManagement() {
         key: 'editor',
         color: 'cyber-green',
         permissions: ['Content management', 'Media upload', 'Form submissions'],
-      },
-      {
-        name: 'Jobs Manager',
-        key: 'jobs_manager',
-        color: 'cyber-cyan',
-        permissions: ['Jobs CRUD', 'Applicants visibility', 'Analytics (jobs)'],
       },
     ],
     []
@@ -268,7 +262,6 @@ export default function UsersManagement() {
             >
               <option value="admin">Admin</option>
               <option value="editor">Editor</option>
-              <option value="jobs_manager">Jobs Manager</option>
             </select>
             <select
               className="input-cyber"
@@ -393,7 +386,6 @@ export default function UsersManagement() {
                     >
                       <option value="admin">Admin</option>
                       <option value="editor">Editor</option>
-                      <option value="jobs_manager">Jobs Manager</option>
                     </select>
                   </td>
                   <td className="p-4">

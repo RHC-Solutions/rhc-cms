@@ -21,7 +21,7 @@ export interface FormSubmission {
 const SUBMISSIONS_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'submissions.json');
 const FORMS_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'forms.json');
 
-const getAdminEmail = () => getSecret('ADMIN_EMAIL') || 'info@rhcsolutions.com';
+const getAdminEmail = () => getSecret('ADMIN_EMAIL') || 'admin@example.com';
 
 // Escape untrusted form data before embedding it in HTML email bodies or
 // Telegram messages (both use HTML parse modes) — prevents js/xss / injection.

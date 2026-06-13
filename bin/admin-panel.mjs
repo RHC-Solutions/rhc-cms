@@ -360,6 +360,25 @@ async function scaffoldEnv(abs) {
   }
 }
 
+// Copy the panel's default brand assets into the host's public/ when absent. The panel
+// references `/logo.png` widely (favicon, OG image, JSON-LD, Header, login + setup), but
+// only src/ is vendored — public/ is not — so on a fresh host `/logo.png` 404s and
+// next/image optimizing it returns 400, which the browser then retries in a storm. This
+// makes the file resolve. Never overwrites a host-provided asset.
+function provisionPublicAssets(abs) {
+  const assets = ['logo.png'];
+  const destDir = path.join(SITE, 'public');
+  const copied = [];
+  for (const name of assets) {
+    const src = path.join(abs, 'public', name);
+    const dest = path.join(destDir, name);
+    if (!fs.existsSync(src) || fs.existsSync(dest)) continue;
+    try { fs.mkdirSync(destDir, { recursive: true }); fs.copyFileSync(src, dest); copied.push(name); } catch { /* */ }
+  }
+  if (copied.length) ok(`public assets: added ${copied.join(', ')} so /logo.png resolves (avoids the next/image 400 loop)`);
+  else skip('public brand assets');
+}
+
 function updateGitignore() {
   const giPath = path.join(SITE, '.gitignore');
   const needed = ['.env.local', 'cms-data/secrets.json', 'cms-data/users.json', 'cms-data/cms.db'];
@@ -437,6 +456,7 @@ async function runInit() {
   checkPeers(abs);
   checkNextConfig();
   await scaffoldEnv(abs);
+  provisionPublicAssets(abs);
   updateGitignore();
   writeRenovateConfig();
   console.log(`
@@ -469,6 +489,7 @@ function runUpdate() {
   // `new ZipArchive`) while still resolving an older dep, and crash at runtime.
   installDeps(abs);
   checkPeers(abs);
+  provisionPublicAssets(abs); // backfill /logo.png for hosts created before this existed
   writeRenovateConfig(); // backfill auto-updates for hosts created before this existed
   ok('Panel updated. Rebuild: npm run build && restart your server.');
 }

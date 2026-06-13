@@ -129,8 +129,8 @@ export const INTEGRATIONS: Integration[] = [
     dashboardLink: 'https://app.brevo.com/settings/keys/api',
     fields: [
       { envVar: 'BREVO_API_KEY', label: 'Brevo API Key (v3)', type: 'secret' },
-      { envVar: 'BREVO_SENDER_EMAIL', label: 'Sender Email', type: 'text', example: 'info@rhcsolutions.com', description: 'Sender email, must be a verified sender in your Brevo account.' },
-      { envVar: 'BREVO_SENDER_NAME', label: 'Sender Name', type: 'text', example: 'RHC Solutions' },
+      { envVar: 'BREVO_SENDER_EMAIL', label: 'Sender Email', type: 'text', example: 'admin@example.com', description: 'Sender email, must be a verified sender in your Brevo account.' },
+      { envVar: 'BREVO_SENDER_NAME', label: 'Sender Name', type: 'text', example: 'Your Site Name' },
       { envVar: 'BREVO_CONTACT_LIST_ID', label: 'Contact List ID (optional)', type: 'text', example: '2', description: 'Numeric ID of the contact list where form submissions should be added (e.g. newsletter subscribers).' },
     ],
   },

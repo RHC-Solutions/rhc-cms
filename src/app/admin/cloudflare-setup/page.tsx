@@ -72,7 +72,7 @@ export default function CloudflareSetupPage() {
         'Go to Cloudflare Dashboard → Profile → API Tokens',
         'Click "Create Token"',
         'Select "Create Custom Token" template',
-        'Set Name: "RHC Solutions Website API"',
+        'Set Name: "Your Site Name Website API"',
         'Add Permissions:',
         '  - Zone → Zone → Read',
         '  - Zone → DNS → Read',

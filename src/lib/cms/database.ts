@@ -200,7 +200,7 @@ export class CMSDatabase {
           type: 'hero',
           order: 1,
           props: {
-            title: 'Welcome to RHC Solutions',
+            title: 'Welcome to Your New Site',
             subtitle: 'Innovative IT Solutions for Your Business',
             description: 'We provide cutting-edge technology solutions to help your business thrive in the digital age.',
             ctaText: 'Get Started',
@@ -211,28 +211,20 @@ export class CMSDatabase {
       ];
 
       await driver.run(PAGE_INSERT_SQL, [
-        'home', 'Home', '/', 'Welcome to RHC Solutions', 'main', 'published',
+        'home', 'Home', '/', 'Welcome to Your New Site', 'main', 'published',
         JSON.stringify(homeBlocks),
         JSON.stringify({
-          title: 'RHC Solutions - Innovative IT Solutions',
-          description: 'Professional IT services and consulting',
+          title: 'Your Site - Powered by Admin Panel',
+          description: 'A modern site powered by Admin Panel',
           keywords: ['IT solutions', 'technology', 'consulting'],
         }),
         now, now,
       ]);
 
       const servicePages = [
-        { id: 'it-consulting', title: 'IT Consulting', slug: '/services/it-consulting', category: 'services' },
-        { id: 'professional-services', title: 'Professional Services', slug: '/services/professional-services', category: 'services' },
-        { id: 'cio-as-a-service', title: 'CIO as a Service', slug: '/services/cio-as-a-service', category: 'services' },
-        { id: 'ciso-as-a-service', title: 'CISO as a Service', slug: '/services/ciso-as-a-service', category: 'services' },
-        { id: 'cloud-infrastructure', title: 'Cloud Infrastructure', slug: '/services/cloud-infrastructure', category: 'services' },
-        { id: 'cyber-security', title: 'Cyber Security', slug: '/services/cyber-security', category: 'services' },
-        { id: 'virtual-office', title: 'Virtual Office', slug: '/services/virtual-office', category: 'services' },
-        { id: 'business-continuity', title: 'Business Continuity', slug: '/services/business-continuity', category: 'services' },
-        { id: 'about', title: 'About Us', slug: '/about-us', category: 'main' },
+        { id: 'about', title: 'About', slug: '/about', category: 'main' },
+        { id: 'services', title: 'Services', slug: '/services', category: 'main' },
         { id: 'contact', title: 'Contact', slug: '/contact', category: 'main' },
-        { id: 'careers', title: 'Careers', slug: '/careers', category: 'main' },
       ];
 
       for (const page of servicePages) {
@@ -252,11 +244,11 @@ export class CMSDatabase {
     const settingsRow = (await driver.query<{ count: any }>('SELECT COUNT(*) as count FROM settings'))[0];
     if (Number(settingsRow?.count ?? 0) === 0) {
       const defaultSettings: SiteSettings = {
-        siteName: 'RHC Solutions',
-        siteDescription: 'Professional IT Solutions and Consulting',
-        contactEmail: 'info@rhcsolutions.com',
-        contactPhone: '+1 (555) 123-4567',
-        address: '123 Business St, Suite 100, City, State 12345',
+        siteName: 'Your Site Name',
+        siteDescription: 'A modern site powered by Admin Panel',
+        contactEmail: 'admin@example.com',
+        contactPhone: '',
+        address: '',
         socialMedia: { facebook: '', twitter: '', linkedin: '', instagram: '' },
         analytics: { googleAnalyticsId: '', googleTagManagerId: '' },
       };
@@ -386,11 +378,11 @@ export class CMSDatabase {
 
   private getDefaultSettings(): any {
     return {
-      siteName: 'RHC Solutions',
-      siteDescription: 'Professional IT Solutions and Consulting',
-      contactEmail: 'info@rhcsolutions.com',
-      contactPhone: '+1 (555) 123-4567',
-      address: '123 Business St, Suite 100, City, State 12345',
+      siteName: 'Your Site Name',
+      siteDescription: 'A modern site powered by Admin Panel',
+      contactEmail: 'admin@example.com',
+      contactPhone: '',
+      address: '',
       socialMedia: {},
       analytics: {},
       navigation: this.getDefaultNavigation(),
@@ -400,22 +392,9 @@ export class CMSDatabase {
   private getDefaultNavigation(): any[] {
     return [
       { id: '1', label: 'Home', url: '/', visible: true, order: 1 },
-      { id: '2', label: 'About', url: '/about-us', visible: true, order: 2 },
-      {
-        id: '3', label: 'Services', url: '/services', visible: true, order: 3,
-        children: [
-          { id: '3-1', label: 'IT Consulting', url: '/services/it-consulting', visible: true, order: 1 },
-          { id: '3-2', label: 'Professional Services', url: '/services/professional-services', visible: true, order: 2 },
-          { id: '3-3', label: 'CIO as a Service', url: '/services/cio-as-a-service', visible: true, order: 3 },
-          { id: '3-4', label: 'CISO as a Service', url: '/services/ciso-as-a-service', visible: true, order: 4 },
-          { id: '3-5', label: 'Cloud Infrastructure', url: '/services/cloud-infrastructure', visible: true, order: 5 },
-          { id: '3-6', label: 'Cyber Security', url: '/services/cyber-security', visible: true, order: 6 },
-          { id: '3-7', label: 'Virtual Office', url: '/services/virtual-office', visible: true, order: 7 },
-          { id: '3-8', label: 'Business Continuity', url: '/services/business-continuity', visible: true, order: 8 },
-        ],
-      },
-      { id: '4', label: 'Careers', url: '/careers', visible: true, order: 4 },
-      { id: '5', label: 'Contact', url: '/contact', visible: true, order: 5 },
+      { id: '2', label: 'About', url: '/about', visible: true, order: 2 },
+      { id: '3', label: 'Services', url: '/services', visible: true, order: 3 },
+      { id: '4', label: 'Contact', url: '/contact', visible: true, order: 4 },
     ];
   }
 

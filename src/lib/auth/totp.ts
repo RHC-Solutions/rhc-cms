@@ -75,7 +75,7 @@ export const verifyTotp = (token: string, secret: string, window = 1): boolean =
   return false;
 };
 
-export const buildOtpauthURL = (secret: string, email: string, issuer = 'RHC Solutions'): string => {
+export const buildOtpauthURL = (secret: string, email: string, issuer = 'Your Site Name'): string => {
   const label = encodeURIComponent(`${issuer}:${email}`);
   const params = new URLSearchParams({
     secret,

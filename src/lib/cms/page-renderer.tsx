@@ -48,7 +48,7 @@ export async function buildPageMetadata(slug: string) {
   const title = seo.metaTitle || seo.title || page.title;
   const description = seo.metaDescription || seo.description || page.description;
   // Dynamic per-page OG image, falls back to per-page override when provided.
-  const dynamicOg = `${SITE_URL}/api/og?title=${encodeURIComponent(title || 'RHC Solutions')}${
+  const dynamicOg = `${SITE_URL}/api/og?title=${encodeURIComponent(title || 'Your Site')}${
     description ? `&description=${encodeURIComponent(description)}` : ''
   }`;
   const ogImage = seo.ogImage || dynamicOg;
@@ -76,7 +76,7 @@ export async function buildPageMetadata(slug: string) {
       description,
       url: page.slug,
       type: 'website',
-      siteName: 'RHC Solutions',
+      siteName: 'Your Site Name',
       images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
     twitter: {

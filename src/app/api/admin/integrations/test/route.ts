@@ -95,7 +95,7 @@ async function testSmtp(): Promise<TestResult> {
   const user = getSecret('SMTP_USER');
   const pass = getSecret('SMTP_PASS');
   const secure = getSecret('SMTP_SECURE') === 'true';
-  const adminEmail = getSecret('ADMIN_EMAIL') || 'info@rhcsolutions.com';
+  const adminEmail = getSecret('ADMIN_EMAIL') || 'admin@example.com';
 
   if (!host) {
     return { ok: false, summary: 'SMTP_HOST not set', checks: [fail('Connection', 'Host not configured')] };

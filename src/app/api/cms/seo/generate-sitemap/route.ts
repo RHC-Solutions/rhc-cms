@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     const pages = await loadPages();
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://rhcsolutions.com';
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
     const xml = buildXml(baseUrl, pages);
 
     fs.writeFileSync(PUBLIC_SITEMAP, xml, 'utf-8');

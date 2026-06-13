@@ -193,7 +193,7 @@ export default function FormsManagement() {
         { name: 'message', label: 'Message', type: 'textarea', required: true },
       ],
       notifications: { email: true, telegram: true, whatsapp: false },
-      emailTo: 'info@rhcsolutions.com',
+      emailTo: 'admin@example.com',
       enabled: false,
       visibility: {
         active: true,

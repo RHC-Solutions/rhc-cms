@@ -40,7 +40,7 @@ const CONFIG_FILES = [
   '.gitignore',
   'README.md',
   'CHANGELOG.md',
-  'rhcsolutions.com.code-workspace',
+  'example.com.code-workspace',
 ];
 
 // Ensure backups directory exists

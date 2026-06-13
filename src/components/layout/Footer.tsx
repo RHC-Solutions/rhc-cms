@@ -42,7 +42,7 @@ type FooterProps = {
   initialFooterPages?: LinkItem[];
 };
 
-const DEFAULT_SETTINGS: Settings = { siteName: 'RHC Solutions', tagline: 'We Just Do IT' };
+const DEFAULT_SETTINGS: Settings = { siteName: 'Your Site Name', tagline: 'Customize this tagline' };
 const DEFAULT_BRANDING: ThemeBranding = {
   footerFont: 'Inter, system-ui, sans-serif',
   footerFontSize: '0.875rem',

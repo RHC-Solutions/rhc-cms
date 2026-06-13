@@ -113,7 +113,7 @@ export default function MfaSetupPage() {
   };
 
   const handleContinue = async () => {
-    const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://rhcsolutions.com';
+    const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
     const callbackUrl = `${base}/admin/login`;
     await signOut({ callbackUrl });
   };

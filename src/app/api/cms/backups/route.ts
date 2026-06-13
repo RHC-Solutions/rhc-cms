@@ -58,7 +58,7 @@ const CONFIG_FILES = [
   'verify-restore.js',
   'quick-restore.sh',
   'quick-restore.bat',
-  'rhcsolutions.com.code-workspace',
+  'example.com.code-workspace',
 ];
 
 // Check if user is admin
@@ -341,7 +341,7 @@ async function createBackupZip(targetPath: string): Promise<boolean> {
     archive.append(JSON.stringify(manifest, null, 2), { name: 'BACKUP_MANIFEST.json' });
 
     // Add README with restore instructions
-    const readme = `# Admin by RHC Solutions - Backup Restoration Guide
+    const readme = `# Admin by Your Site Name - Backup Restoration Guide
 
 ## 📦 Backup Information
 - Date: ${new Date().toISOString()}

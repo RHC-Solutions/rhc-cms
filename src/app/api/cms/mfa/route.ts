@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   users[idx] = { ...user, totpTempSecret: tempSecret };
   saveUsers(users);
 
-  const otpauthUrl = buildOtpauthURL(tempSecret, email, 'RHC Solutions');
+  const otpauthUrl = buildOtpauthURL(tempSecret, email, 'Your Site Name');
 
   return NextResponse.json({
     enabled: false,
