@@ -98,6 +98,43 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // --- Database driver selection -> .env.local (restart to apply) ---
+  // SQLite is the zero-config default; Postgres is validated before we commit
+  // it so a bad URL can't brick the app on restart.
+  const dbReq = body?.database || {};
+  let database: { driver: string; ok: boolean; error?: string } | null = null;
+  if (dbReq.driver === 'postgres') {
+    const url = typeof dbReq.url === 'string' ? dbReq.url.trim() : '';
+    if (!url) {
+      warnings.push('Postgres selected but no connection string provided; database left unchanged.');
+    } else {
+      const { validatePostgresUrl } = await import('@adminpanel/lib/cms/db/validate');
+      const check = await validatePostgresUrl(url);
+      database = { driver: 'postgres', ok: check.ok, error: check.error };
+      if (check.ok) {
+        try {
+          setEnvValue('DATABASE_URL', url);
+          setEnvValue('DB_DRIVER', 'postgres');
+          saved.env.push('DATABASE_URL', 'DB_DRIVER');
+          restartRequired = true;
+        } catch (e) {
+          warnings.push(`Could not write database config: ${(e as Error).message}`);
+        }
+      } else {
+        warnings.push(`Postgres connection failed: ${check.error}. Database left unchanged.`);
+      }
+    }
+  } else if (dbReq.driver === 'sqlite') {
+    try {
+      setEnvValue('DB_DRIVER', 'sqlite');
+      saved.env.push('DB_DRIVER');
+      restartRequired = true;
+      database = { driver: 'sqlite', ok: true };
+    } catch (e) {
+      warnings.push(`Could not write database config: ${(e as Error).message}`);
+    }
+  }
+
   // --- DNS + validation run CONCURRENTLY (each network op is capped at 6s; the
   // overall response is bounded rather than serialized into a ~30s wait). ---
   const dnsReq = body?.dns || {};
@@ -121,7 +158,7 @@ export async function POST(request: NextRequest) {
   const [dns, validation] = await Promise.all([dnsPromise, Promise.all(checks)]);
 
   return NextResponse.json(
-    { ok: true, saved, rejected, validation, dns, restartRequired, warnings },
+    { ok: true, saved, rejected, validation, dns, database, restartRequired, warnings },
     { headers: { 'Cache-Control': 'private, no-store' } },
   );
 }

@@ -83,6 +83,7 @@ export default function SetupWizard() {
   interface ProvisionResult {
     validation: ValidationResult[];
     dns: DnsResult[];
+    database?: { driver: string; ok: boolean; error?: string } | null;
     restartRequired: boolean;
   }
 
@@ -94,6 +95,7 @@ export default function SetupWizard() {
     smtpHost: '', smtpPort: '587', smtpUser: '', smtpPass: '',
     cloudflareToken: '', cloudflareZoneId: '', cloudflareAccountId: '',
     dnsServerIp: '', dnsWww: true,
+    dbDriver: 'sqlite' as 'sqlite' | 'postgres', dbUrl: '',
   });
 
   const submitProvision = async () => {
@@ -122,12 +124,13 @@ export default function SetupWizard() {
           secrets,
           cloudflare: { apiToken: provision.cloudflareToken, zoneId: provision.cloudflareZoneId, accountId: provision.cloudflareAccountId },
           dns: provision.dnsServerIp ? { serverIp: provision.dnsServerIp, www: provision.dnsWww, proxied: true } : undefined,
+          database: { driver: provision.dbDriver, url: provision.dbUrl },
           validate: true,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      setProvisionResult({ validation: data.validation || [], dns: data.dns || [], restartRequired: !!data.restartRequired });
+      setProvisionResult({ validation: data.validation || [], dns: data.dns || [], database: data.database || null, restartRequired: !!data.restartRequired });
     } catch (e: any) {
       setError(`Configuration failed: ${e.message}`);
     } finally {
@@ -423,6 +426,18 @@ export default function SetupWizard() {
             </div>
 
             <div className="border-t border-gray-700 pt-4">
+              <label className="block text-gray-300 font-semibold mb-2 text-sm">Database</label>
+              <p className="text-xs text-text-muted mb-2">SQLite is zero-config and recommended for most sites. Choose PostgreSQL for multi-instance or larger deployments — the connection is tested before it&apos;s saved.</p>
+              <select value={provision.dbDriver} onChange={(e) => setProvision({ ...provision, dbDriver: e.target.value as 'sqlite' | 'postgres' })} className="w-full bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none">
+                <option value="sqlite">SQLite (file-based, zero-config)</option>
+                <option value="postgres">PostgreSQL (DATABASE_URL)</option>
+              </select>
+              {provision.dbDriver === 'postgres' && (
+                <input value={provision.dbUrl} onChange={(e) => setProvision({ ...provision, dbUrl: e.target.value })} placeholder="postgres://user:pass@host:5432/dbname" className="w-full mt-3 bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+              )}
+            </div>
+
+            <div className="border-t border-gray-700 pt-4">
               <label className="block text-gray-300 font-semibold mb-2 text-sm">Cloudflare (optional)</label>
               <input value={provision.cloudflareToken} onChange={(e) => setProvision({ ...provision, cloudflareToken: e.target.value })} placeholder="API token" type="password" className="w-full bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
@@ -451,7 +466,12 @@ export default function SetupWizard() {
                     {d.ok ? '✓' : '⚠'} DNS {d.type} {d.name}: {d.ok ? d.action : d.message}
                   </div>
                 ))}
-                {provisionResult.restartRequired && <div className="text-yellow-200 text-xs">⚠ Domain/Cloudflare changes apply after restarting the app.</div>}
+                {provisionResult.database && (
+                  <div className={provisionResult.database.ok ? 'text-green-300' : 'text-yellow-300'}>
+                    {provisionResult.database.ok ? '✓' : '⚠'} Database ({provisionResult.database.driver}){provisionResult.database.ok ? ' configured' : `: ${provisionResult.database.error}`}
+                  </div>
+                )}
+                {provisionResult.restartRequired && <div className="text-yellow-200 text-xs">⚠ Domain/Cloudflare/database changes apply after restarting the app.</div>}
               </div>
             )}
 
