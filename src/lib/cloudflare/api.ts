@@ -78,36 +78,6 @@ export async function getZoneInfo() {
   }
 }
 
-export async function getSecurityEvents() {
-  const apiToken = getSecret('CLOUDFLARE_API_TOKEN');
-  const zoneId = process.env.NEXT_PUBLIC_CLOUDFLARE_ZONE_ID;
-
-  if (!apiToken || !zoneId) {
-    return null;
-  }
-
-  try {
-    const response = await fetch(
-      `https://api.cloudflare.com/client/v4/zones/${zoneId}/security/events?limit=100`,
-      {
-        headers: {
-          'Authorization': `Bearer ${apiToken}`,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const data = await response.json();
-    return data.result || [];
-  } catch (error) {
-    console.error('[Cloudflare] Error fetching security events:', error);
-    return null;
-  }
-}
-
 export async function getDNSRecords() {
   const apiToken = getSecret('CLOUDFLARE_API_TOKEN');
   const zoneId = process.env.NEXT_PUBLIC_CLOUDFLARE_ZONE_ID;
