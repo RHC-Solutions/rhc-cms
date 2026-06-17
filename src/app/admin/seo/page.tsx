@@ -270,10 +270,10 @@ export default function SEOManagement() {
           <div className="card-cyber p-8">
             <h2 className="heading-md text-gradient mb-6 flex items-center gap-2">
               <FaSitemap className="text-cyber-green" />
-              Generate sitemap.xml
+              Sitemap (served live)
             </h2>
             <p className="text-text-secondary mb-6">
-              Automatically generate a sitemap.xml file for search engines. This includes all your pages, services, and content with priority levels and update frequency.
+              Your sitemap is generated <strong>dynamically</strong> at <code>/sitemap.xml</code> from the live CMS — it always reflects your current published pages with per-section priorities, so there is nothing to generate or upload. If a stale static <code>public/sitemap.xml</code> ever gets left behind (it would override the live one), use the button below to remove it.
             </p>
 
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
@@ -307,7 +307,7 @@ export default function SEOManagement() {
               className="btn-primary px-8 py-3 flex items-center gap-2"
             >
               <FaSyncAlt className={generatingSitemap ? 'animate-spin' : ''} />
-              {generatingSitemap ? 'Generating...' : 'Generate sitemap.xml'}
+              {generatingSitemap ? 'Clearing...' : 'Clear static sitemap'}
             </button>
 
             <div className="mt-8 bg-dark-card border border-dark-border rounded-lg p-6">
