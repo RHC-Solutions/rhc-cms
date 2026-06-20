@@ -45,8 +45,8 @@ export async function sendBrevoEmail({
   }
 
   // Determine sender
-  const defaultSenderEmail = getSecret('BREVO_SENDER_EMAIL') || getSecret('ADMIN_EMAIL') || 'info@rhcsolutions.com';
-  const defaultSenderName = getSecret('BREVO_SENDER_NAME') || 'RHC Solutions';
+  const defaultSenderEmail = getSecret('BREVO_SENDER_EMAIL') || getSecret('ADMIN_EMAIL') || 'admin@example.com';
+  const defaultSenderName = getSecret('BREVO_SENDER_NAME') || 'Your Site Name';
   const finalSender: BrevoEmailSender = sender || {
     name: defaultSenderName,
     email: defaultSenderEmail,

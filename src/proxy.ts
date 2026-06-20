@@ -24,19 +24,6 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Role-based access control
-  const userRole = token && (token as any).role ? (token as any).role : null;
-
-  // jobs_manager can only access /admin/jobs and /api/cms/jobs
-  if (userRole === 'jobs_manager') {
-    if (
-      (pathname.startsWith('/admin') && !pathname.startsWith('/admin/jobs') && pathname !== '/admin') ||
-      (pathname.startsWith('/api/cms') && !pathname.startsWith('/api/cms/jobs'))
-    ) {
-      return NextResponse.json({ error: 'Forbidden: access restricted to jobs management' }, { status: 403 });
-    }
-  }
-
   return NextResponse.next();
 }
 

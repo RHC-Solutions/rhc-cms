@@ -48,10 +48,13 @@ const generateHotp = (secret: string, counter: number): string => {
 };
 
 export const generateSecret = (length = 32): string => {
-  const bytes = crypto.randomBytes(length);
-  return Array.from(bytes)
-    .map((byte) => BASE32_ALPHABET[byte % BASE32_ALPHABET.length])
-    .join('');
+  // crypto.randomInt is unbiased over [0, n); a raw `randomBytes % 32` would
+  // skew the alphabet distribution (and trips js/biased-cryptographic-random).
+  let secret = '';
+  for (let i = 0; i < length; i++) {
+    secret += BASE32_ALPHABET[crypto.randomInt(BASE32_ALPHABET.length)];
+  }
+  return secret;
 };
 
 export const generateTotp = (secret: string, timestamp = Date.now()): string => {
@@ -72,7 +75,7 @@ export const verifyTotp = (token: string, secret: string, window = 1): boolean =
   return false;
 };
 
-export const buildOtpauthURL = (secret: string, email: string, issuer = 'RHC Solutions'): string => {
+export const buildOtpauthURL = (secret: string, email: string, issuer = 'Your Site Name'): string => {
   const label = encodeURIComponent(`${issuer}:${email}`);
   const params = new URLSearchParams({
     secret,

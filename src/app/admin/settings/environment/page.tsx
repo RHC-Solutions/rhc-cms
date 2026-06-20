@@ -227,7 +227,7 @@ export default function EnvironmentSettingsPage() {
                 type="text"
                 value={settings.nextauthUrl}
                 onChange={(e) => handleChange('nextauthUrl', e.target.value)}
-                placeholder="https://rhcsolutions.com"
+                placeholder="https://example.com"
                 className="w-full px-4 py-2 bg-dark-lighter border border-dark-border rounded-lg text-text-primary focus:outline-none focus:border-cyber-green"
               />
               <p className="text-xs text-text-secondary mt-2">Your site URL for authentication</p>
@@ -393,7 +393,7 @@ export default function EnvironmentSettingsPage() {
                 type="text"
                 value={settings.contactEmail}
                 onChange={(e) => handleChange('contactEmail', e.target.value)}
-                placeholder="info@rhcsolutions.com"
+                placeholder="admin@example.com"
                 className="w-full px-4 py-2 bg-dark-lighter border border-dark-border rounded-lg text-text-primary focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -408,7 +408,7 @@ export default function EnvironmentSettingsPage() {
               { field: 'smtpPort' as const, label: 'SMTP Port', placeholder: '587' },
               { field: 'smtpUser' as const, label: 'SMTP User', placeholder: 'your-email@gmail.com' },
               { field: 'smtpPass' as const, label: 'SMTP Password', secret: true, placeholder: 'Your app password' },
-              { field: 'contactEmail' as const, label: 'Contact Email', placeholder: 'info@rhcsolutions.com' },
+              { field: 'contactEmail' as const, label: 'Contact Email', placeholder: 'admin@example.com' },
             ].map(({ field, label, placeholder, secret }) => (
               <div key={field} className="card-dark p-6">
                 <div className="flex items-center justify-between mb-2">
@@ -615,7 +615,7 @@ export default function EnvironmentSettingsPage() {
         {activeTab === 'site' && (
           <>
             {[
-              { field: 'siteUrl' as const, label: 'Site URL', placeholder: 'https://rhcsolutions.com' },
+              { field: 'siteUrl' as const, label: 'Site URL', placeholder: 'https://example.com' },
               { field: 'bookingUrl' as const, label: 'Booking URL', placeholder: 'https://outlook.office.com/...' },
               { field: 'gaId' as const, label: 'Google Analytics ID', placeholder: 'G-XXXXXXXXXX' },
               { field: 'gtmId' as const, label: 'Google Tag Manager ID', placeholder: 'GTM-XXXXXXX' },

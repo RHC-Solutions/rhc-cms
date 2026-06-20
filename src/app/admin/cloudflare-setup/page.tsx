@@ -16,6 +16,13 @@ interface Credential {
   copied?: boolean;
 }
 
+// Setup-instruction strings are templated off the configured site so they read
+// correctly on any deployment. NEXT_PUBLIC_* values are inlined at build time.
+const SITE_DOMAIN = (process.env.NEXT_PUBLIC_SITE_URL || 'your-domain.com')
+  .replace(/^https?:\/\//, '')
+  .replace(/\/$/, '') || 'your-domain.com';
+const PM2_APP = process.env.NEXT_PUBLIC_PM2_APP_NAME || SITE_DOMAIN.split('.')[0] || 'your-app';
+
 export default function CloudflareSetupPage() {
   const [expandedCard, setExpandedCard] = useState<string | null>('site-key');
   const [copiedText, setCopiedText] = useState<string | null>(null);
@@ -32,7 +39,7 @@ export default function CloudflareSetupPage() {
       steps: [
         'Go to Cloudflare Dashboard → Turnstile',
         'Click "Create Site" or select existing site',
-        'Select domain: rhcsolutions.com',
+        `Select domain: ${SITE_DOMAIN}`,
         'Configure settings (Managed mode recommended)',
         'Copy the Site Key from the results page',
       ],
@@ -65,13 +72,13 @@ export default function CloudflareSetupPage() {
         'Go to Cloudflare Dashboard → Profile → API Tokens',
         'Click "Create Token"',
         'Select "Create Custom Token" template',
-        'Set Name: "RHC Solutions Website API"',
+        'Set Name: "Your Site Name Website API"',
         'Add Permissions:',
         '  - Zone → Zone → Read',
         '  - Zone → DNS → Read',
         '  - Zone → Analytics → Read',
         '  - Zone → Purge Cache → Purge',
-        'Select Zone: rhcsolutions.com',
+        `Select Zone: ${SITE_DOMAIN}`,
         'Click "Create Token" and copy immediately',
       ],
       example: 'v1.0_abc123def456ghi789jkl012mno345pqr678stu',
@@ -85,7 +92,7 @@ export default function CloudflareSetupPage() {
       dashboardLink: 'https://dash.cloudflare.com',
       steps: [
         'Go to Cloudflare Dashboard',
-        'Select your domain: rhcsolutions.com',
+        `Select your domain: ${SITE_DOMAIN}`,
         'Look at the right sidebar under "API" section',
         'Copy the Zone ID (long alphanumeric string)',
         'Alternative: Click Overview tab and scroll to API section',
@@ -123,7 +130,7 @@ export default function CloudflareSetupPage() {
   };
 
   const envTemplate = credentials
-    .map((c) => `${c.envVar}=your-${c.id.replace('-', '-')}`)
+    .map((c) => `${c.envVar}=your-${c.id}`)
     .join('\n');
 
   return (
@@ -147,7 +154,7 @@ export default function CloudflareSetupPage() {
               <p>1️⃣ Visit Cloudflare Dashboard (see links below)</p>
               <p>2️⃣ Copy the 5 credentials listed below</p>
               <p>3️⃣ Update .env.local with your credentials</p>
-              <p>4️⃣ Restart application: <code className="bg-dark-lighter px-2 py-1 rounded">pm2 restart rhcsolutions --update-env</code></p>
+              <p>4️⃣ Restart application: <code className="bg-dark-lighter px-2 py-1 rounded">pm2 restart {PM2_APP} --update-env</code></p>
               <p>5️⃣ Test Turnstile on contact form and check admin dashboard</p>
             </div>
           </div>
@@ -288,7 +295,7 @@ CLOUDFLARE_ACCOUNT_ID=your-account-id`}
           {[
             'Gathered all 5 credentials from Cloudflare dashboard',
             'Updated .env.local with actual values',
-            'Restarted application (pm2 restart rhcsolutions --update-env)',
+            `Restarted application (pm2 restart ${PM2_APP} --update-env)`,
             'Contact form shows Turnstile widget',
             'Can complete Turnstile challenge on contact form',
             'Can submit contact form successfully',
@@ -320,7 +327,7 @@ CLOUDFLARE_ACCOUNT_ID=your-account-id`}
             <ul className="text-text-muted text-sm space-y-1 list-disc list-inside">
               <li>Verify NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY is correct</li>
               <li>Check it's in .env.local, not .env.production.local</li>
-              <li>Restart: pm2 restart rhcsolutions --update-env</li>
+              <li>Restart: pm2 restart {PM2_APP} --update-env</li>
             </ul>
           </div>
           <div>
@@ -336,7 +343,7 @@ CLOUDFLARE_ACCOUNT_ID=your-account-id`}
             <ul className="text-text-muted text-sm space-y-1 list-disc list-inside">
               <li>Verify CLOUDFLARE_API_TOKEN is correct</li>
               <li>Check API token has required permissions</li>
-              <li>Verify CLOUDFLARE_ZONE_ID matches rhcsolutions.com</li>
+              <li>Verify CLOUDFLARE_ZONE_ID matches {SITE_DOMAIN}</li>
               <li>Verify CLOUDFLARE_ACCOUNT_ID is correct</li>
             </ul>
           </div>

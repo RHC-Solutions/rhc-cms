@@ -28,36 +28,36 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://rhcsolutions.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com'),
   title: {
-    default: "RHC Solutions - IT Consulting & Professional Services",
-    template: "%s | RHC Solutions"
+    default: "Your Site - Powered by Admin Panel",
+    template: "%s | Your Site"
   },
-  description: "Since 1994, RHC Solutions provides expert IT consulting, cloud infrastructure, cyber security, business continuity, and professional services. We Just Do IT.",
-  keywords: ["IT consulting", "cloud infrastructure", "cyber security", "business continuity", "IT support", "project management", "AWS", "Azure", "GCP"],
-  authors: [{ name: "RHC Solutions" }],
+  description: "A modern website powered by Admin Panel. Customize content, design, and settings from the admin dashboard.",
+  keywords: ["cms", "admin panel", "website", "content management"],
+  authors: [{ name: "Admin Panel" }],
   alternates: { canonical: '/' },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://rhcsolutions.com",
-    siteName: "RHC Solutions",
-    title: "RHC Solutions - IT Consulting & Professional Services",
-    description: "Since 1994, RHC Solutions provides expert IT consulting, cloud infrastructure, cyber security, business continuity, and professional services.",
+    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com',
+    siteName: "Your Site",
+    title: "Your Site - Powered by Admin Panel",
+    description: "A modern website powered by Admin Panel.",
     images: [
       {
-        url: "/api/og?title=RHC%20Solutions&description=IT%20consulting%2C%20cloud%2C%20cyber%20security%20%26%20business%20continuity%20since%201994.",
+        url: "/api/og?title=Your%20Site&description=A%20modern%20website%20powered%20by%20Admin%20Panel.",
         width: 1200,
         height: 630,
-        alt: "RHC Solutions"
+        alt: "Your Site"
       }
     ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "RHC Solutions - IT Consulting & Professional Services",
-    description: "Since 1994, RHC Solutions provides expert IT consulting, cloud infrastructure, cyber security, and business continuity services.",
-    images: ["/api/og?title=RHC%20Solutions&description=IT%20consulting%2C%20cloud%2C%20cyber%20security%20%26%20business%20continuity%20since%201994."]
+    title: "Your Site - Powered by Admin Panel",
+    description: "A modern website powered by Admin Panel.",
+    images: ["/api/og?title=Your%20Site&description=A%20modern%20website%20powered%20by%20Admin%20Panel."]
   },
   robots: {
     index: true,

@@ -93,7 +93,7 @@ async function fetchSearchConsoleData(credentials: any, siteUrl: string) {
     const searchConsole = google.searchconsole('v1');
 
     // Resolve the property the service account can actually read. GSC properties are
-    // either URL-prefix ("https://rhcsolutions.com/") or Domain ("sc-domain:rhcsolutions.com");
+    // either URL-prefix ("https://example.com/") or Domain ("sc-domain:example.com");
     // pick whichever this account has been granted, so it works regardless of type.
     let resolvedSite = siteUrl;
     try {
@@ -208,7 +208,7 @@ export async function GET(request: NextRequest) {
       pageSpeedApiKey: getSecret('GOOGLE_PAGESPEED_API_KEY'),
     };
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://rhcsolutions.com';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
 
     // Fetch all Google service data in parallel
     const [analytics, searchConsole, pageSpeed] = await Promise.all([

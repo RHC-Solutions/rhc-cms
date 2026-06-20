@@ -39,7 +39,7 @@ type HeaderProps = {
   initialNav?: MenuItem[];
 };
 
-const DEFAULT_SETTINGS: Settings = { siteName: 'RHC Solutions', tagline: 'We Just Do IT' };
+const DEFAULT_SETTINGS: Settings = { siteName: 'Your Site Name', tagline: 'Customize this tagline' };
 const DEFAULT_BRANDING: ThemeBranding = {
   logoSize: 40,
   siteNameSize: '2rem',
@@ -93,11 +93,12 @@ export default function Header({ initialSettings, initialBranding, initialNav }:
           {/* Logo */}
           <Link href="/" className="flex flex-col lg:flex-row items-start lg:items-center lg:space-x-3 group">
             <div className="flex items-center space-x-2 lg:space-x-3">
-              <Image 
-                src={branding.logo || '/logo.png'} 
-                alt={`${settings.siteName} Logo`} 
+              <Image
+                src={branding.logo || '/logo.png'}
+                alt={`${settings.siteName} Logo`}
                 width={32}
                 height={32}
+                unoptimized
                 className="transition-transform duration-300 group-hover:scale-110 lg:w-10 lg:h-10"
               />
               <div 

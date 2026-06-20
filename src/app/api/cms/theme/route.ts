@@ -70,7 +70,7 @@ const defaultTheme: Theme = {
   branding: {
     favicon: '/logo.png',
     logo: '/logo.png',
-    logoAlt: 'RHC Solutions Logo',
+    logoAlt: 'Your Site Name Logo',
   },
   fonts: {
     primary: 'Inter, system-ui, sans-serif',

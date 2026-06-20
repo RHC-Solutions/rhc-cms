@@ -147,13 +147,14 @@ export default function FooterManagement() {
                 <div className="flex items-center justify-between mb-4">
                   <label className="block text-text-primary font-semibold">
                     Links
-                    {section.id === 'services' && (
+                    {(section.id === 'services' || section.id === 'quick-links') && (
                       <span className="ml-2 text-xs text-cyber-green font-normal">
-                        (Auto-synced from Menu → Services)
+                        (Auto-synced from Menu — edit in{' '}
+                        <a href="/admin/menu" className="underline hover:text-cyber-cyan">Menu</a>)
                       </span>
                     )}
                   </label>
-                  {section.id !== 'services' && (
+                  {section.id !== 'services' && section.id !== 'quick-links' && (
                     <button
                       type="button"
                       onClick={() => addLink(sIndex)}
@@ -163,10 +164,12 @@ export default function FooterManagement() {
                     </button>
                   )}
                 </div>
-                {section.id === 'services' ? (
+                {(section.id === 'services' || section.id === 'quick-links') ? (
                   <div className="bg-dark-lighter p-4 rounded-lg border border-dark-border">
                     <p className="text-text-muted text-sm mb-3">
-                      Services are automatically synced from the top menu. To edit services, go to <strong>Menu</strong> and update the Services submenu items.
+                      {section.id === 'quick-links'
+                        ? 'Navigation links are automatically synced from the Menu. To add, remove, or reorder links here, update them in the Menu editor.'
+                        : 'Services are automatically synced from CMS pages with category "services". To edit, manage pages in the Pages editor.'}
                     </p>
                     <div className="space-y-2">
                       {section.links.map((link, lIndex) => (

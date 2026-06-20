@@ -15,7 +15,7 @@ interface Testimonial {
 
 const testimonials: Testimonial[] = [
   {
-    quote: "RHC Solutions transformed our infrastructure completely. Their expertise in cloud migration and security compliance was instrumental in our global expansion.",
+    quote: "Your Site Name transformed our infrastructure completely. Their expertise in cloud migration and security compliance was instrumental in our global expansion.",
     author: "Michael Chen",
     position: "CTO",
     company: "Global Trading Corp",
@@ -31,7 +31,7 @@ const testimonials: Testimonial[] = [
     rating: 5,
   },
   {
-    quote: "Their cyber security and compliance expertise gave us the confidence to expand into new markets. RHC Solutions is a true partner in our success.",
+    quote: "Their cyber security and compliance expertise gave us the confidence to expand into new markets. Your Site Name is a true partner in our success.",
     author: "David Thompson",
     position: "Head of Security",
     company: "BetWin Gaming",

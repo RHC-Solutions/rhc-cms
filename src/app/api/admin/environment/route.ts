@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import * as fs from 'fs';
 import * as path from 'path';
+import { setEnvValue } from '@adminpanel/lib/env';
 
 async function requireAdmin(request: NextRequest) {
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
@@ -97,26 +98,6 @@ function getEnvValue(key: string): string {
     return match ? match[1].trim() : '';
   } catch {
     return '';
-  }
-}
-
-function setEnvValue(key: string, value: string): void {
-  try {
-    let content = fs.readFileSync(ENV_FILE, 'utf-8');
-    
-    if (content.includes(`${key}=`)) {
-      content = content.replace(
-        new RegExp(`^${key}=.*$`, 'm'),
-        `${key}=${value}`
-      );
-    } else {
-      content += `\n${key}=${value}`;
-    }
-    
-    fs.writeFileSync(ENV_FILE, content, 'utf-8');
-  } catch (error) {
-    console.error('Failed to write .env.local:', error);
-    throw error;
   }
 }
 

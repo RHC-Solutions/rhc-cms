@@ -9,11 +9,11 @@ import { AnimatedStatsGrid } from '@adminpanel/components/AnimatedStats';
 const DEFAULT_VALUES = ['Professionalism', 'Reliability', 'Accountability', 'Innovation'];
 
 const DEFAULT_ABOUT = {
-  badge: '> We Just Do IT',
+  badge: '> Customize this tagline',
   headingLead: 'Your Trusted IT Partner',
   headingHighlight: 'Since 1994',
   paragraphs: [
-    'For over three decades, RHC Solutions has been at the forefront of IT innovation, helping businesses transform their operations through strategic technology implementation.',
+    'For over three decades, Your Site Name has been at the forefront of IT innovation, helping businesses transform their operations through strategic technology implementation.',
     'Our mission is to enhance your organization’s performance by delivering robust, scalable IT infrastructure solutions that drive efficiency and growth. We combine deep technical expertise with a passion for solving complex business challenges.',
   ],
   valuesHeadingLead: 'Our Core',

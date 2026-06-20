@@ -10,6 +10,19 @@ async function checkRole(token: any) {
   return ['administrator', 'admin', 'editor'].includes(normalized);
 }
 
+/** Build the `quick-links` section from `settings.navigation`.
+ * This runs on every GET so the footer always mirrors the current menu. */
+function buildNavSection(navigation: any[]): { id: string; title: string; links: { name: string; href: string }[] } {
+  return {
+    id: 'quick-links',
+    title: 'Quick Links',
+    links: (navigation || [])
+      .filter((item: any) => item.visible !== false)
+      .sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0))
+      .map((item: any) => ({ name: item.label, href: item.url })),
+  };
+}
+
 export async function GET() {
   try {
     const settings = await cmsDb.getSettings();
@@ -18,11 +31,20 @@ export async function GET() {
       console.error('Settings not found in database');
       return NextResponse.json([], { status: 200 });
     }
-    
+
+    // Always build the nav section fresh from settings.navigation so that
+    // any edit in /admin/menu is immediately reflected in the footer.
+    const navSection = buildNavSection((settings as any).navigation || []);
+
     // Check if custom footer exists in settings
     const customFooter = (settings as any).customFooter;
     if (customFooter && Array.isArray(customFooter) && customFooter.length > 0) {
-      return NextResponse.json(customFooter);
+      // Inject fresh nav into the stored footer — replace any stale quick-links entry.
+      const synced = [
+        navSection,
+        ...customFooter.filter((s: any) => s.id !== 'quick-links'),
+      ];
+      return NextResponse.json(synced);
     }
     
     // Extract contact info from settings
@@ -31,20 +53,11 @@ export async function GET() {
     
     // Build default footer from settings and navigation
     const footer = [
+      navSection,
       {
         id: 'services',
         title: 'Services',
         links: [] as Array<{ name: string; href: string }>
-      },
-      {
-        id: 'company',
-        title: 'Company',
-        links: [
-          { name: 'About Us', href: '/about-us' },
-          { name: 'Clients', href: '/clients' },
-          { name: 'Partners', href: '/partners' },
-          { name: 'Careers', href: '/careers' }
-        ]
       },
       {
         id: 'legal',
@@ -59,8 +72,8 @@ export async function GET() {
         title: 'Contact',
         phone: contactInfo.phone || '',
         email: contactInfo.email || '',
-        telegram: contactInfo.telegram?.replace('@', '') || '', // Remove @ prefix
-        whatsapp: contactInfo.whatsapp?.replace(/[^0-9]/g, '') || '', // Keep only numbers
+        telegram: contactInfo.telegram?.replace('@', '') || '',
+        whatsapp: contactInfo.whatsapp?.replace(/[^0-9]/g, '') || '',
         socials: {
           linkedin: socialLinks.find((s: any) => s.platform === 'linkedin')?.url || '',
           facebook: socialLinks.find((s: any) => s.platform === 'facebook')?.url || '',
@@ -79,8 +92,8 @@ export async function GET() {
     const servicesSection = footer.find(section => section.id === 'services');
     
     if (servicesSection && servicesPages.length > 0) {
-      servicesSection.links = servicesPages
-        .filter(page => page.slug !== '/services') // Exclude main services page
+      (servicesSection as any).links = servicesPages
+        .filter(page => page.slug !== '/services')
         .map(page => ({
           name: page.title,
           href: page.slug

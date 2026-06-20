@@ -13,7 +13,7 @@ import { BlockRenderer } from '@adminpanel/components/cms/BlockRenderer';
 
 interface ContentBlock {
   id: string;
-  type: 'heading' | 'paragraph' | 'image' | 'button' | 'list' | 'cards' | 'hero' | 'cta' | 'columns' | 'testimonial' | 'worldmap' | 'contactform' | 'servicescarousel' | 'testimonialscarousel' | 'clientsteaser' | 'aboutpreview' | 'ctasection' | 'richtext' | 'faq';
+  type: 'heading' | 'paragraph' | 'image' | 'button' | 'list' | 'cards' | 'hero' | 'cta' | 'columns' | 'testimonial' | 'worldmap' | 'contactform' | 'servicescarousel' | 'testimonialscarousel' | 'clientsteaser' | 'aboutpreview' | 'ctasection' | 'richtext' | 'faq' | 'staticpage';
   props: any;
   order: number;
 }
@@ -507,7 +507,7 @@ export default function CMSPagesEditor() {
                       );
                       updateCards(next);
                     }}
-                    placeholder="Link URL (optional, e.g. /services/cloud-infrastructure)"
+                    placeholder="Link URL (optional, e.g. /services/your-service)"
                     className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
                   />
                 </div>
@@ -729,6 +729,18 @@ export default function CMSPagesEditor() {
           </div>
         );
       }
+      case 'staticpage': {
+        const html = typeof block.props?.html === 'string' ? block.props.html : '';
+        const kb = Math.round((html.length / 1024) * 10) / 10;
+        const slug = typeof block.props?.slug === 'string' ? block.props.slug : '';
+        const href = slug === '/' ? '/pack-preview' : `/pack-preview${slug}`;
+        return (
+          <div className="text-text-secondary text-sm space-y-2">
+            <p>Imported from a static design pack — {kb} KB of HTML{block.props?.dataTopic ? `, theme “${String(block.props.dataTopic)}”` : ''}. Served verbatim; re-apply a pack to change it (not block-editable here).</p>
+            {slug && <a href={href} target="_blank" rel="noreferrer" className="text-cyber-cyan hover:underline">Preview →</a>}
+          </div>
+        );
+      }
       default:
         return <div className="text-text-muted text-sm">Complex block - edit via JSON</div>;
     }
@@ -935,6 +947,15 @@ export default function CMSPagesEditor() {
             <p className="text-text-muted">CTA Section</p>
           </div>
         );
+      case 'staticpage': {
+        const kb = Math.round(((typeof block.props?.html === 'string' ? block.props.html.length : 0) / 1024) * 10) / 10;
+        return (
+          <div className="bg-dark-card p-6 rounded border border-cyber-cyan/30 text-center">
+            <div className="text-4xl text-cyber-cyan mb-2">🌐</div>
+            <p className="text-text-muted">Static page (imported pack) — {kb} KB, served verbatim</p>
+          </div>
+        );
+      }
       default:
         return <div className="text-text-muted">Block type: {block.type}</div>;
     }
@@ -994,9 +1015,15 @@ export default function CMSPagesEditor() {
               </tr>
             </thead>
             <tbody>
-              {filteredPages.map((page) => (
+              {filteredPages.map((page) => {
+                const isStatic = (page.blocks || []).some((b: any) => b.type === 'staticpage');
+                const previewHref = page.slug === '/' ? '/pack-preview' : `/pack-preview${page.slug}`;
+                return (
                 <tr key={page.id} className="border-t border-dark-border hover:bg-dark-lighter/50">
-                  <td className="px-4 py-3 font-medium text-text-primary">{page.title}</td>
+                  <td className="px-4 py-3 font-medium text-text-primary">
+                    {page.title}
+                    {isStatic && <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-cyber-cyan/20 text-cyber-cyan align-middle">static</span>}
+                  </td>
                   <td className="px-4 py-3 font-mono text-text-muted">{page.slug}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -1011,7 +1038,7 @@ export default function CMSPagesEditor() {
                   <td className="px-4 py-3">{new Date(page.updatedAt).toLocaleString()}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end items-center gap-2">
-                      <Link href={page.slug} target="_blank" className="p-2 text-cyber-cyan hover:bg-cyber-cyan/20 rounded transition-colors">
+                      <Link href={isStatic ? previewHref : page.slug} target="_blank" title={isStatic ? 'Preview imported static page' : 'View page'} className="p-2 text-cyber-cyan hover:bg-cyber-cyan/20 rounded transition-colors">
                         <FaExternalLinkAlt />
                       </Link>
                       <button onClick={() => handleEdit(page)} className="btn-primary px-3 py-1">
@@ -1023,7 +1050,7 @@ export default function CMSPagesEditor() {
                     </div>
                   </td>
                 </tr>
-              ))}
+              ); })}
             </tbody>
           </table>
         </div>

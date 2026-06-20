@@ -158,10 +158,11 @@ function LoginPageInner() {
           >
             <Image
               src="/logo.png"
-              alt="RHC Solutions"
+              alt="Your Site Name"
               width={64}
               height={64}
               priority
+              unoptimized
               className="w-16 h-16 object-contain"
             />
           </motion.div>
@@ -210,7 +211,7 @@ function LoginPageInner() {
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="admin@rhcsolutions.com"
+                  placeholder="admin@example.com"
                   required
                 />
               </div>
@@ -251,7 +252,7 @@ function LoginPageInner() {
               <p className="mb-2"><strong>⚠️ Security Notice:</strong></p>
               <ul className="list-disc list-inside space-y-1">
                 <li>A new 64-character password will be generated</li>
-                <li>Password will be sent to your configured Telegram</li>
+                <li>It will be sent to whichever recovery channel this site has configured &mdash; email (Brevo or SMTP), or, if email isn&apos;t set up, your admin Telegram chat</li>
                 <li>2FA will be disabled (re-enable after login)</li>
                 <li>Only available for admin accounts</li>
               </ul>
@@ -275,7 +276,7 @@ function LoginPageInner() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="admin@rhcsolutions.com"
+                placeholder="admin@example.com"
               />
             </div>
           </div>
@@ -348,7 +349,7 @@ function LoginPageInner() {
             }}
             className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
           >
-            Forgot password? Reset via Telegram
+            Forgot password? Send me a new one
           </button>
         </div>
 

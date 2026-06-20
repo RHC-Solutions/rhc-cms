@@ -898,7 +898,6 @@ function MediaPickerField({
         <div className="bg-dark border border-dark-border rounded-lg overflow-hidden aspect-video flex items-center justify-center">
           {url ? (
             isImg ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img src={url} alt="" className="w-full h-full object-cover" />
             ) : (
               <video src={url} muted playsInline className="w-full h-full object-cover" />
@@ -1060,7 +1059,6 @@ function MediaGalleryModal({
                       {isVid ? (
                         <video src={item.url} muted playsInline className="w-full h-full object-cover" />
                       ) : (
-                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={item.url}
                           alt={item.alt || item.filename}

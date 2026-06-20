@@ -27,11 +27,11 @@ interface SEOSettings {
 const SEO_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'seo.json');
 
 const defaultSettings: SEOSettings = {
-  title: 'RHC Solutions - Professional IT Consulting Since 1994',
+  title: 'Your Site Name - Professional IT Consulting Since 1994',
   metaDescription: 'Expert IT consulting and professional services. Cloud infrastructure, cyber security, business continuity, and virtual office support since 1994.',
   keywords: 'IT consulting, cyber security, cloud infrastructure, professional services',
-  ogTitle: 'RHC Solutions | Professional IT Consulting',
-  ogDescription: 'We Just Do IT - Professional IT consulting services since 1994.',
+  ogTitle: 'Your Site Name | Professional IT Consulting',
+  ogDescription: 'Customize this tagline - Professional IT consulting services since 1994.',
   ogImage: '/logo.png',
   googleTagManagerId: process.env.NEXT_PUBLIC_GTM_ID || '',
   googleAnalytics4Id: process.env.NEXT_PUBLIC_GA4_ID || '',

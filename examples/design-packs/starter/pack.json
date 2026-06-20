@@ -1,0 +1,19 @@
+{
+  "packFormat": 1,
+  "name": "Starter",
+  "slug": "starter",
+  "version": "1.0.0",
+  "description": "Minimal starter design pack: theme, typography, cookie consent, and home/about/contact pages with templated copy.",
+  "author": "admin-panel",
+  "minPanelVersion": "1.0.0",
+  "contents": {
+    "theme": "merge",
+    "typography": "overwrite",
+    "cookies": "overwrite",
+    "settings": "merge-design-keys",
+    "menu": "overwrite",
+    "footer": "overwrite",
+    "pages": "upsert-by-slug"
+  },
+  "tokens": ["siteName", "tagline", "contactEmail", "domain"]
+}

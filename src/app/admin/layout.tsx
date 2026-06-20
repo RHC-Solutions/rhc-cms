@@ -11,7 +11,11 @@ function AdminGate({ children }: { children: React.ReactNode }) {
   const { status } = useSession();
 
   useEffect(() => {
-    const publicAdminPaths = ['/admin', '/admin/login', '/admin/mfa-setup'];
+    // Paths the client-side gate must NOT bounce to /admin/login.
+    // `/admin/setup` is critical: on first run there are no users, so the
+    // login page itself redirects to /admin/setup — without it here, the two
+    // pages ping-pong forever (login → setup → gate kicks back to login).
+    const publicAdminPaths = ['/admin', '/admin/login', '/admin/mfa-setup', '/admin/setup'];
     const isPublicAdminPath = publicAdminPaths.includes(pathname || '');
 
     if (typeof window === 'undefined') return;

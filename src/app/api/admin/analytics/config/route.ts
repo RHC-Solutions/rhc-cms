@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate email format
-    if (!data.serviceAccountEmail.includes('gserviceaccount.com')) {
+    if (!data.serviceAccountEmail.endsWith('.gserviceaccount.com')) {
       return NextResponse.json(
         { message: 'Invalid service account email format' },
         { status: 400 }

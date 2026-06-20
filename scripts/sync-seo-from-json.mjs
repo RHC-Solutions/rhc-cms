@@ -15,10 +15,15 @@ const db = new Database(path.join(root, 'cms-data', 'cms.db'));
 
 // Bump updatedAt alongside seo so the sitemap's <lastmod> reflects the
 // change. Without this, sync-only edits never emit a recrawl signal to
-// Google (see docs/AUDIT_SEO_2026-05-25.md §B2).
+// Google (see docs/audits/AUDIT_SEO_2026-05-25.md B2.).
 const update = db.prepare('UPDATE pages SET seo = ?, updatedAt = ? WHERE id = ?');
 const findBySlug = db.prepare('SELECT id FROM pages WHERE slug = ?');
+const findById = db.prepare('SELECT id FROM pages WHERE id = ?');
 const now = new Date().toISOString();
+
+function resolveSeoTitle(seo) {
+  return seo?.metaTitle || seo?.title || '';
+}
 
 let updated = 0;
 let skipped = 0;
@@ -28,7 +33,7 @@ for (const page of pagesJson) {
     continue;
   }
   let id = page.id;
-  const existing = db.prepare('SELECT id FROM pages WHERE id = ?').get(id);
+  const existing = findById.get(id);
   if (!existing) {
     const bySlug = findBySlug.get(page.slug);
     if (!bySlug) {
@@ -39,7 +44,7 @@ for (const page of pagesJson) {
     id = bySlug.id;
   }
   update.run(JSON.stringify(page.seo), now, id);
-  console.log(`  ✓ ${page.slug}  →  ${(page.seo.metaTitle || page.seo.title || '').slice(0, 60)}`);
+  console.log(`  ✓ ${page.slug}  →  ${resolveSeoTitle(page.seo).slice(0, 60)}`);
   updated++;
 }
 

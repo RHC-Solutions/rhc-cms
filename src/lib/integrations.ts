@@ -129,9 +129,41 @@ export const INTEGRATIONS: Integration[] = [
     dashboardLink: 'https://app.brevo.com/settings/keys/api',
     fields: [
       { envVar: 'BREVO_API_KEY', label: 'Brevo API Key (v3)', type: 'secret' },
-      { envVar: 'BREVO_SENDER_EMAIL', label: 'Sender Email', type: 'text', example: 'info@rhcsolutions.com', description: 'Sender email, must be a verified sender in your Brevo account.' },
-      { envVar: 'BREVO_SENDER_NAME', label: 'Sender Name', type: 'text', example: 'RHC Solutions' },
+      { envVar: 'BREVO_SENDER_EMAIL', label: 'Sender Email', type: 'text', example: 'admin@example.com', description: 'Sender email, must be a verified sender in your Brevo account.' },
+      { envVar: 'BREVO_SENDER_NAME', label: 'Sender Name', type: 'text', example: 'Your Site Name' },
       { envVar: 'BREVO_CONTACT_LIST_ID', label: 'Contact List ID (optional)', type: 'text', example: '2', description: 'Numeric ID of the contact list where form submissions should be added (e.g. newsletter subscribers).' },
+    ],
+  },
+  {
+    id: 'stripe',
+    name: 'Stripe (payments)',
+    description: 'Card payments for the Store and Gift Cards. Add the webhook endpoint /api/store/webhook in your Stripe dashboard and paste its signing secret here. With no keys set, the store runs in demo mode (orders auto-confirm).',
+    dashboardLink: 'https://dashboard.stripe.com/apikeys',
+    fields: [
+      { envVar: 'STRIPE_SECRET_KEY', label: 'Secret key', type: 'secret', example: 'sk_live_…' },
+      { envVar: 'STRIPE_PUBLISHABLE_KEY', label: 'Publishable key', type: 'text', example: 'pk_live_…' },
+      { envVar: 'STRIPE_WEBHOOK_SECRET', label: 'Webhook signing secret', type: 'secret', example: 'whsec_…' },
+    ],
+  },
+  {
+    id: 'google-translate',
+    name: 'Google Translate (multi-language)',
+    description: 'API key for the Google Cloud Translation API. Powers the Languages module — machine-translates UI/content into your enabled locales (results are cached). Leave blank to keep content single-language.',
+    dashboardLink: 'https://console.cloud.google.com/apis/credentials',
+    fields: [
+      { envVar: 'GOOGLE_TRANSLATE_API_KEY', label: 'API key', type: 'secret' },
+    ],
+  },
+  {
+    id: 'google-calendar',
+    name: 'Google Calendar (booking sync)',
+    description: 'Optional: mirror confirmed appointments to a Google Calendar. Create an OAuth client, authorize the Calendar scope once, and paste the refresh token here. Leave blank to disable sync.',
+    dashboardLink: 'https://console.cloud.google.com/apis/credentials',
+    fields: [
+      { envVar: 'GOOGLE_CALENDAR_CLIENT_ID', label: 'OAuth client ID', type: 'text' },
+      { envVar: 'GOOGLE_CALENDAR_CLIENT_SECRET', label: 'OAuth client secret', type: 'secret' },
+      { envVar: 'GOOGLE_CALENDAR_REFRESH_TOKEN', label: 'Refresh token', type: 'secret' },
+      { envVar: 'GOOGLE_CALENDAR_ID', label: 'Calendar ID', type: 'text', example: 'primary', description: 'Defaults to "primary".' },
     ],
   },
   {

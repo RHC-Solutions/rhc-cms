@@ -15,7 +15,7 @@ const DEFAULT_HEADING = {
   headingLead: 'Ready to Transform Your',
   headingHighlight: 'IT Infrastructure',
   headingTrailing: '?',
-  description: 'Let’s discuss how RHC Solutions can help drive your business forward with innovative IT solutions tailored to your unique needs.',
+  description: 'Let’s discuss how Your Site Name can help drive your business forward with innovative IT solutions tailored to your unique needs.',
 };
 
 export default function CTASection() {

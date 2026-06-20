@@ -10,7 +10,7 @@ export function JsonLd({ data }: { data: JsonLdObject | JsonLdObject[] }) {
   );
 }
 
-export const SITE_URL = 'https://rhcsolutions.com';
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
 
 export type SiteSettingsLike = {
   siteName?: string;
@@ -43,14 +43,14 @@ export function organizationLd(settings?: SiteSettingsLike | null): JsonLdObject
   const data: JsonLdObject = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: settings?.siteName || 'RHC Solutions',
+    name: settings?.siteName || 'Your Site Name',
     url: SITE_URL,
     logo: `${SITE_URL}/logo.png`,
     description:
       brand?.valueProp ||
-      'Expert IT consulting, cloud infrastructure, cyber security, and business continuity services since 1994.',
-    foundingDate: String(brand?.foundingYear || '1994'),
-    slogan: brand?.tagline || settings?.tagline || 'We Just Do IT',
+      'Describe your organization and services here.',
+    foundingDate: String(brand?.foundingYear || ''),
+    slogan: brand?.tagline || settings?.tagline || '',
   };
 
   if (sameAs.length) data.sameAs = sameAs;
@@ -73,15 +73,15 @@ export function websiteLd(settings?: SiteSettingsLike | null): JsonLdObject {
   const description =
     settings?.brand?.valueProp ||
     settings?.tagline ||
-    'IT consulting, cloud infrastructure, cyber security, and business continuity services since 1994.';
+    'Describe your website and offerings here.';
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: settings?.siteName || 'RHC Solutions',
+    name: settings?.siteName || 'Your Site Name',
     url: SITE_URL,
     description,
     inLanguage: 'en',
-    publisher: { '@type': 'Organization', name: settings?.siteName || 'RHC Solutions' },
+    publisher: { '@type': 'Organization', name: settings?.siteName || 'Your Site Name' },
   };
 }
 
@@ -107,7 +107,7 @@ export function serviceLd(input: ServiceLdInput): JsonLdObject {
     serviceType: input.serviceType || input.name,
     provider: {
       '@type': 'Organization',
-      name: input.providerName || 'RHC Solutions',
+      name: input.providerName || 'Your Site Name',
       url: SITE_URL,
       logo: `${SITE_URL}/logo.png`,
     },

@@ -16,9 +16,19 @@ export async function onRequestPost(context) {
     const jobTitle = formData.get('jobTitle');
     const resumeFile = formData.get('resume');
 
-    // Get credentials from environment
-    const BOT_TOKEN = env.TELEGRAM_BOT_TOKEN || '8212839523:AAE-wlu_cb8hVl8GAvJRr0Gu433T3n_YUFE';
-    const CHAT_ID = env.TELEGRAM_CHAT_ID || '-5006088546';
+    // Credentials come ONLY from the Cloudflare Pages environment bindings.
+    // Never hardcode a bot token / chat id here — committed secrets get leaked
+    // (see GitHub secret-scanning). Set TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID in
+    // the Pages project settings (or .dev.vars locally).
+    const BOT_TOKEN = env.TELEGRAM_BOT_TOKEN;
+    const CHAT_ID = env.TELEGRAM_CHAT_ID;
+    if (!BOT_TOKEN || !CHAT_ID) {
+      console.error('apply.js: TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID not configured');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Application service is not configured.' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Format message for Telegram
     const message = `

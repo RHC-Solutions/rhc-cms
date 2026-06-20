@@ -22,9 +22,6 @@ export const ADMIN_MATCHER = ['/admin/:path*', '/api/cms/:path*'];
 const isPath = (pathname: string, prefixes: string[]) =>
   prefixes.some((prefix) => pathname.startsWith(prefix));
 
-const jobsAllowedAdmin = ['/admin/jobs', '/admin/job-applications'];
-const jobsAllowedApi = ['/api/cms/jobs'];
-
 // Public (GET-only) API endpoints that don't require authentication. The
 // handlers themselves must still enforce auth on POST/PUT/DELETE.
 export const ADMIN_PUBLIC_API_ENDPOINTS = [
@@ -36,6 +33,11 @@ export const ADMIN_PUBLIC_API_ENDPOINTS = [
   '/api/cms/google-integration/verify-meta',
   '/api/cms/pages',
   '/api/cms/footer',
+  // Design-pack apply must be reachable by the unauthenticated first-run wizard
+  // (before an admin exists). The handler self-authorizes: admin token OR first-run
+  // (`!adminExists()`); it 403s otherwise. NOTE: the exact path — not the
+  // '/api/cms/design-pack' prefix — so the export route stays gated to logged-in admins.
+  '/api/cms/design-pack/apply',
 ];
 
 const getBaseUrl = (req: NextRequest) => {
@@ -104,13 +106,9 @@ export async function adminAuthGate(req: NextRequest): Promise<NextResponse | nu
   }
 
   // Role-based restrictions.
-  if (role === 'jobs_manager') {
-    if (
-      (isAdmin && !isPath(pathname, [...jobsAllowedAdmin, '/admin'])) ||
-      (isApi && !isPath(pathname, jobsAllowedApi))
-    ) {
-      return NextResponse.json({ error: 'Forbidden: jobs manager access only' }, { status: 403 });
-    }
+  if (role !== 'admin' && role !== 'editor') {
+    if (isApi) return NextResponse.json({ error: 'Forbidden: unsupported role' }, { status: 403 });
+    return NextResponse.redirect(new URL('/admin/login', getBaseUrl(req)));
   }
 
   if (role === 'editor') {

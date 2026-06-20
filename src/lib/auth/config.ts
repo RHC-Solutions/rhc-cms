@@ -47,7 +47,10 @@ async function sendTelegramNotification(email: string, success: boolean, reason?
     message += `\n`;
   }
   if (reason) message += `📝 <b>Reason:</b> ${reason}\n`;
-  message += `\n🔗 <b>Domain:</b> rhcsolutions.com`;
+  const siteDomain = (process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || '')
+    .replace(/^https?:\/\//, '')
+    .replace(/\/$/, '');
+  if (siteDomain) message += `\n🔗 <b>Domain:</b> ${siteDomain}`;
   
   try {
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -65,7 +68,7 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        email: { label: 'Email', type: 'email', placeholder: 'admin@rhcsolutions.com' },
+        email: { label: 'Email', type: 'email', placeholder: 'admin@example.com' },
         password: { label: 'Password', type: 'password' },
         totp: { label: 'TOTP Code', type: 'text', placeholder: '123456' },
       },

@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ZipArchive } from 'archiver';
 import { getBackupTelegramConfig } from './backup-telegram';
+import { isSqlite } from '@adminpanel/lib/cms/db';
 
 const BACKUPS_DIR = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'backups');
 const ROOT_DIR = process.cwd();
@@ -39,18 +40,18 @@ const CONFIG_FILES = [
   '.gitignore',
   'README.md',
   'CHANGELOG.md',
-  'rhcsolutions.com.code-workspace',
+  'example.com.code-workspace',
 ];
 
 // Ensure backups directory exists
-function ensureBackupsDir() {
+export function ensureBackupsDir() {
   if (!fs.existsSync(BACKUPS_DIR)) {
     fs.mkdirSync(BACKUPS_DIR, { recursive: true });
   }
 }
 
 // Read siteName from settings.json and turn it into a filename-safe slug
-function getSiteSlug(): string {
+export function getSiteSlug(): string {
   try {
     const raw = fs.readFileSync(path.join((process.env.SHARED_ROOT || ROOT_DIR), 'cms-data', 'settings.json'), 'utf-8');
     const name = JSON.parse(raw)?.siteName;
@@ -67,17 +68,20 @@ function getSiteSlug(): string {
 }
 
 // Create FULL backup zip - identical to manual backup from /admin/backups
-async function createBackupZip(targetPath: string): Promise<boolean> {
-  // CRITICAL: Checkpoint SQLite WAL before backup
-  try {
-    const Database = require('better-sqlite3');
-    const dbPath = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'cms.db');
-    const db = new Database(dbPath);
-    db.pragma('wal_checkpoint(TRUNCATE)');
-    db.close();
-    console.log('[BACKUP] ✓ SQLite WAL checkpointed');
-  } catch (error) {
-    console.error('[BACKUP] Warning: Could not checkpoint WAL:', error);
+export async function createBackupZip(targetPath: string): Promise<boolean> {
+  // CRITICAL: Checkpoint SQLite WAL before backup. Skip under Postgres (no cms.db
+  // file; full PG backups use pg_dump — see docs/DEPLOY_NEW_SITE.md).
+  if (isSqlite()) {
+    try {
+      const Database = require('better-sqlite3');
+      const dbPath = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'cms.db');
+      const db = new Database(dbPath);
+      db.pragma('wal_checkpoint(TRUNCATE)');
+      db.close();
+      console.log('[BACKUP] ✓ SQLite WAL checkpointed');
+    } catch (error) {
+      console.error('[BACKUP] Warning: Could not checkpoint WAL:', error);
+    }
   }
 
   return new Promise((resolve) => {

@@ -7,9 +7,10 @@ import { motion } from 'framer-motion';
 import AdminSearch from './AdminSearch';
 import {
   FaHome, FaFileAlt, FaImages, FaUsers, FaCog, FaChartLine,
-  FaBars, FaTimes, FaSignOutAlt, FaEdit, FaCookie, FaSearch, FaBriefcase, FaList, FaDatabase,
+  FaBars, FaTimes, FaSignOutAlt, FaEdit, FaCookie, FaSearch, FaList, FaDatabase,
   FaPalette, FaListAlt, FaCloud, FaChevronDown, FaChevronRight, FaTrash, FaSpinner, FaShieldAlt,
-  FaPlug, FaBullhorn, FaRobot, FaSyncAlt,
+  FaPlug, FaBullhorn, FaRobot, FaSyncAlt, FaHistory, FaStore, FaBoxOpen, FaShoppingCart, FaUserFriends,
+  FaCalendarAlt, FaConciergeBell, FaCalendarCheck, FaClock, FaGift, FaLanguage,
 } from 'react-icons/fa';
 
 interface NavItem {
@@ -32,7 +33,7 @@ export default function AdminShell({ children, title }: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const role = (session?.user as any)?.role as 'admin' | 'editor' | 'jobs_manager' | undefined;
+  const role = (session?.user as any)?.role as 'admin' | 'editor' | undefined;
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [purgingCache, setPurgingCache] = useState(false);
   const [cacheMessage, setCacheMessage] = useState('');
@@ -51,20 +52,35 @@ export default function AdminShell({ children, title }: AdminShellProps) {
       },
       { name: 'Pages', href: '/admin/pages', icon: FaFileAlt, roles: ['admin', 'editor'] },
       { name: 'Landing Pages', href: '/admin/landing-pages', icon: FaBullhorn, roles: ['admin', 'editor'] },
-      { name: 'Media', href: '/admin/media', icon: FaImages, roles: ['admin', 'editor'] },
-      { 
-        name: 'Jobs', 
-        href: '/admin/jobs', 
-        icon: FaBriefcase, 
-        roles: ['admin', 'editor', 'jobs_manager'],
+      {
+        name: 'Store',
+        href: '/admin/store/products',
+        icon: FaStore,
+        roles: ['admin', 'editor'],
         children: [
-          { name: 'Applications', href: '/admin/jobs/applications', icon: FaList, roles: ['admin', 'editor', 'jobs_manager'] },
-        ]
+          { name: 'Products', href: '/admin/store/products', icon: FaBoxOpen, roles: ['admin', 'editor'] },
+          { name: 'Orders', href: '/admin/store/orders', icon: FaShoppingCart, roles: ['admin', 'editor'] },
+          { name: 'Gift Cards', href: '/admin/store/gift-cards', icon: FaGift, roles: ['admin', 'editor'] },
+          { name: 'Customers', href: '/admin/store/customers', icon: FaUserFriends, roles: ['admin', 'editor'] },
+        ],
       },
+      {
+        name: 'Booking',
+        href: '/admin/booking/appointments',
+        icon: FaCalendarAlt,
+        roles: ['admin', 'editor'],
+        children: [
+          { name: 'Appointments', href: '/admin/booking/appointments', icon: FaCalendarCheck, roles: ['admin', 'editor'] },
+          { name: 'Services', href: '/admin/booking/services', icon: FaConciergeBell, roles: ['admin', 'editor'] },
+          { name: 'Availability', href: '/admin/booking/availability', icon: FaClock, roles: ['admin', 'editor'] },
+        ],
+      },
+      { name: 'Media', href: '/admin/media', icon: FaImages, roles: ['admin', 'editor'] },
       { name: 'Forms', href: '/admin/forms', icon: FaEdit, roles: ['admin', 'editor'] },
       { name: 'Menu', href: '/admin/menu', icon: FaList, roles: ['admin', 'editor'] },
       { name: 'Footer', href: '/admin/footer', icon: FaListAlt, roles: ['admin', 'editor'] },
       { name: 'Theme Settings', href: '/admin/theme', icon: FaPalette, roles: ['admin', 'editor'] },
+      { name: 'Languages', href: '/admin/i18n', icon: FaLanguage, roles: ['admin'] },
       { name: 'Users', href: '/admin/users', icon: FaUsers, roles: ['admin'] },
       { name: 'SEO', href: '/admin/seo', icon: FaSearch, roles: ['admin', 'editor'] },
       { name: 'Cookie Settings', href: '/admin/cookies', icon: FaCookie, roles: ['admin', 'editor'] },
@@ -82,6 +98,7 @@ export default function AdminShell({ children, title }: AdminShellProps) {
       { name: 'Automation', href: '/admin/automation', icon: FaRobot, roles: ['admin'] },
       { name: 'OODA', href: '/admin/ooda', icon: FaSyncAlt, roles: ['admin'] },
       { name: 'Security (Aikido)', href: '/admin/aikido', icon: FaShieldAlt, roles: ['admin'] },
+      { name: 'Audit Log', href: '/admin/audit', icon: FaHistory, roles: ['admin'] },
       { 
         name: 'Settings', 
         href: '/admin/settings', 
@@ -130,7 +147,7 @@ export default function AdminShell({ children, title }: AdminShellProps) {
   };
 
   const handleLogout = async () => {
-    const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://rhcsolutions.com';
+    const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
     const callbackUrl = `${base}/admin/login`;
     await signOut({ callbackUrl });
   };

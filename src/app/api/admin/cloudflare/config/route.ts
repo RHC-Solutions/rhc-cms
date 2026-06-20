@@ -68,9 +68,16 @@ export async function POST(request: NextRequest) {
 
     // Validate Zone ID with API Token
     if (CLOUDFLARE_API_TOKEN && NEXT_PUBLIC_CLOUDFLARE_ZONE_ID && NEXT_PUBLIC_CLOUDFLARE_ZONE_ID.trim() !== '') {
+      const zoneId = NEXT_PUBLIC_CLOUDFLARE_ZONE_ID.trim();
+      // Cloudflare zone IDs are exactly 32 hex chars. Enforcing that before
+      // interpolating into the API path keeps the value from redirecting the
+      // request elsewhere (guards SSRF).
+      if (!/^[a-f0-9]{32}$/i.test(zoneId)) {
+        validationResults.zone_id = { valid: false, message: 'Invalid Zone ID format (expected 32 hex characters)' };
+      } else {
       try {
         const response = await fetch(
-          `https://api.cloudflare.com/client/v4/zones/${NEXT_PUBLIC_CLOUDFLARE_ZONE_ID.trim()}`,
+          `https://api.cloudflare.com/client/v4/zones/${zoneId}`,
           {
             headers: {
               'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN.trim()}`,
@@ -87,6 +94,7 @@ export async function POST(request: NextRequest) {
         }
       } catch (error) {
         validationResults.zone_id = { valid: false, message: 'Failed to verify Zone ID' };
+      }
       }
     }
 
@@ -128,7 +136,8 @@ export async function POST(request: NextRequest) {
       message += ` ✅ ${validationResults.zone_id.message}`;
     }
     if (publicSubmitted) {
-      message += ' Public values (NEXT_PUBLIC_*) changed — rebuild required: npm run build && pm2 restart rhcsolutions.';
+      const pm2App = process.env.NEXT_PUBLIC_PM2_APP_NAME || 'your-app';
+      message += ` Public values (NEXT_PUBLIC_*) changed — rebuild required: npm run build && pm2 restart ${pm2App}.`;
     } else {
       message += ' Server secrets are live immediately — no restart needed.';
     }

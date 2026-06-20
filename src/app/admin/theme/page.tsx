@@ -98,7 +98,7 @@ const DEFAULT_THEME: Theme = {
   branding: {
     favicon: '/logo.png',
     logo: '/logo.png',
-    logoAlt: 'RHC Solutions Logo',
+    logoAlt: 'Your Site Name Logo',
     logoSize: 40,
     siteNameSize: '2rem',
     taglineSize: '0.875rem',
@@ -768,7 +768,7 @@ export default function ThemeManagement() {
                       })
                     }
                     className="w-full bg-dark border-2 border-dark-border rounded-lg px-4 py-3 text-text-primary"
-                    placeholder="RHC Solutions"
+                    placeholder="Your Site Name"
                   />
                 </div>
               </div>
@@ -857,7 +857,7 @@ export default function ThemeManagement() {
                         fontFamily: formData.branding?.siteNameFont || 'JetBrains Mono, Courier New, monospace'
                       }}
                     >
-                      RHC Solutions
+                      Your Site Name
                     </span>
                   </div>
                 </div>
@@ -910,7 +910,7 @@ export default function ThemeManagement() {
                         fontFamily: formData.branding?.taglineFont || 'JetBrains Mono, Courier New, monospace'
                       }}
                     >
-                      &gt; We Just Do IT
+                      &gt; Customize this tagline
                     </span>
                   </div>
                 </div>

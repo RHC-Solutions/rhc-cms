@@ -4,12 +4,21 @@ import fs from 'fs';
 import path from 'path';
 import bcrypt from 'bcryptjs';
 import { validatePassword } from '@adminpanel/lib/auth/password';
+import { recordAudit } from '@adminpanel/lib/audit';
+
+function clientIp(request: NextRequest): string | null {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    null
+  );
+}
 
 export interface CMSUser {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'editor' | 'jobs_manager';
+  role: 'admin' | 'editor';
   status: 'active' | 'disabled';
   lastLogin?: string | null;
   passwordHash?: string;
@@ -26,6 +35,13 @@ export interface CMSUser {
 
 const USERS_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'users.json');
 
+// Default seed emails derive from the site domain so a fresh site doesn't
+// inherit example.com addresses. Override with SEED_ADMIN_EMAIL.
+const SEED_DOMAIN = (process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'https://example.com')
+  .replace(/^https?:\/\//, '')
+  .replace(/\/$/, '') || 'example.com';
+const SEED_ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || `admin@${SEED_DOMAIN}`;
+
 const ensureUsersFile = (): CMSUser[] => {
   const dir = path.dirname(USERS_FILE);
   if (!fs.existsSync(dir)) {
@@ -37,23 +53,8 @@ const ensureUsersFile = (): CMSUser[] => {
     {
       id: '1',
       name: 'Admin User',
-      email: 'admin@rhcsolutions.com',
+      email: SEED_ADMIN_EMAIL,
       role: 'admin',
-      status: 'active',
-      passwordHash: defaultPassword,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      createdBy: 'system',
-      updatedBy: 'system',
-      totpEnabled: false,
-      recoveryCodes: [],
-      mfaRequired: false,
-    },
-    {
-      id: '2',
-      name: 'Jobs Manager',
-      email: 'jobs@rhcsolutions.com',
-      role: 'jobs_manager',
       status: 'active',
       passwordHash: defaultPassword,
       createdAt: new Date().toISOString(),
@@ -168,6 +169,15 @@ export async function POST(request: NextRequest) {
     users.push(newUser);
     saveUsers(users);
 
+    await recordAudit({
+      actor: auth.email,
+      actorEmail: auth.email,
+      action: 'user.create',
+      target: newUser.email,
+      detail: { id: newUser.id, role: newUser.role, status: newUser.status },
+      ip: clientIp(request),
+    });
+
     return NextResponse.json(sanitizeUser(newUser), { status: 201 });
   } catch (error) {
     console.error('Error creating user:', error);
@@ -250,6 +260,20 @@ export async function PUT(request: NextRequest) {
     users[index] = updated;
     saveUsers(users);
 
+    await recordAudit({
+      actor: auth.email,
+      actorEmail: auth.email,
+      action: mfaAction ? `user.mfa.${mfaAction}` : 'user.update',
+      target: updated.email,
+      detail: {
+        id: updated.id,
+        role: updated.role,
+        status: updated.status,
+        passwordChanged: !!password,
+      },
+      ip: clientIp(request),
+    });
+
     return NextResponse.json(sanitizeUser(updated));
   } catch (error) {
     console.error('Error updating user:', error);
@@ -282,6 +306,15 @@ export async function DELETE(request: NextRequest) {
 
     const filtered = users.filter((u) => u.id !== id);
     saveUsers(filtered);
+
+    await recordAudit({
+      actor: auth.email,
+      actorEmail: auth.email,
+      action: 'user.delete',
+      target: target.email,
+      detail: { id },
+      ip: clientIp(request),
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

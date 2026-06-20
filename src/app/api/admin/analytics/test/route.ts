@@ -54,7 +54,7 @@ async function testGoogleAnalyticsConnection(config: GA4Config): Promise<TestRes
       status: 'error',
       message: 'Service account email is empty',
     });
-  } else if (!config.serviceAccountEmail.includes('gserviceaccount.com')) {
+  } else if (!config.serviceAccountEmail.endsWith('.gserviceaccount.com')) {
     results.push({
       field: 'Service Account Email',
       status: 'error',

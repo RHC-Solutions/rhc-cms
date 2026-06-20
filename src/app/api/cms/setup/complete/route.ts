@@ -2,15 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import { generateSecret, buildOtpauthURL } from '@adminpanel/lib/auth/totp';
 
 const USERS_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'users.json');
 const CMS_DATA_DIR = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data');
-
-// Hash password using SHA-256
-function hashPassword(password: string): string {
-  return crypto.createHash('sha256').update(password).digest('hex');
-}
 
 // Complete initial setup by creating admin user
 export async function POST(request: NextRequest) {
@@ -34,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@.]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
         { error: 'Invalid email format' },
@@ -67,17 +63,36 @@ export async function POST(request: NextRequest) {
     const totpSecret = generateSecret();
     const otpauthURL = buildOtpauthURL(totpSecret, email.toLowerCase().trim());
 
-    // Create admin user
+    // Create admin user. Shape MUST match lib/auth/users.ts (seed) and what
+    // lib/auth/config.ts reads at login: bcrypt `passwordHash` (not a SHA-256
+    // `password` field) and `totpEnabled` (not `mfaEnabled`).
+    //
+    // MFA is left disabled here on purpose — this wizard shows a QR but never
+    // verifies a code, so enabling it now would lock out anyone who mis-scans.
+    // The middleware forces the verified /admin/mfa-setup flow (which generates
+    // recovery codes) on first login instead.
+    //
+    // We DO persist the generated secret as `totpTempSecret` so that the
+    // mfa-setup page (which prefers an existing temp secret over generating a
+    // fresh one) reuses the *same* secret the user just scanned here. Without
+    // this, the user is shown a second, different QR on first login and has to
+    // re-enroll — the duplicate-2FA UX bug.
+    const now = new Date().toISOString();
     const adminUser = {
       id: crypto.randomUUID(),
       email: email.toLowerCase().trim(),
       name: name.trim(),
-      password: hashPassword(password),
+      passwordHash: bcrypt.hashSync(password, 10),
       role: 'admin',
-      mfaEnabled: true,
-      totpSecret: totpSecret,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      status: 'active',
+      totpEnabled: false,
+      totpTempSecret: totpSecret,
+      recoveryCodes: [],
+      lastLogin: null,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: 'system',
+      updatedBy: 'system',
     };
 
     // Add to users array
