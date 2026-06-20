@@ -8,6 +8,7 @@ import { sendOpsEmail, emailChannelConfigured } from '@adminpanel/lib/email';
 
 const USERS_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'users.json');
 const SETTINGS_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'settings.json');
+const SECRETS_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'secrets.json');
 
 // Abuse mitigation. Reset is intentionally unauthenticated (forgot-password
 // flow), but the new password is only delivered to a server-side address
@@ -150,13 +151,33 @@ export async function POST(request: NextRequest) {
     }
     accountLastReset.set(user.email.toLowerCase(), Date.now());
 
-    // Load Telegram settings (used as a fallback when email isn't configured
-    // or if email delivery fails).
+    // Load Telegram credentials for the fallback channel (used when email isn't
+    // configured or if email delivery fails). The live bots are configured in
+    // cms-data/secrets.json (admin → Integrations), keyed by purpose — NOT in
+    // settings.json (which is why this previously reported "not configured"
+    // even though Telegram was set up). Prefer the CONTACT pair, fall back to
+    // the dedicated login-alert pair, then the legacy settings.json block.
     let telegramConfig = { botToken: '', chatId: '' };
-    if (fs.existsSync(SETTINGS_FILE)) {
-      const settingsData = fs.readFileSync(SETTINGS_FILE, 'utf-8');
-      const settings = JSON.parse(settingsData);
-      telegramConfig = settings.telegram || telegramConfig;
+    try {
+      if (fs.existsSync(SECRETS_FILE)) {
+        const secrets = JSON.parse(fs.readFileSync(SECRETS_FILE, 'utf-8'));
+        // Pick a MATCHED bot+chat pair (a bot can only message chats it belongs
+        // to). Prefer the CONTACT pair — that's the channel the login-alert
+        // notifications actually deliver to, so the admin already monitors it;
+        // fall back to the dedicated login-alert pair.
+        const pairs: Array<[string, string]> = [
+          [secrets.TELEGRAM_CONTACT_BOT_TOKEN, secrets.TELEGRAM_CONTACT_CHAT_ID],
+          [secrets.TELEGRAM_LOGIN_ALERT_BOT_TOKEN, secrets.TELEGRAM_LOGIN_ALERT_CHAT_ID],
+        ];
+        const match = pairs.find(([b, c]) => b && c);
+        if (match) telegramConfig = { botToken: match[0], chatId: match[1] };
+      }
+    } catch { /* fall through to settings.json */ }
+    if ((!telegramConfig.botToken || !telegramConfig.chatId) && fs.existsSync(SETTINGS_FILE)) {
+      try {
+        const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
+        if (settings.telegram?.botToken && settings.telegram?.chatId) telegramConfig = settings.telegram;
+      } catch { /* ignore */ }
     }
     const telegramConfigured = !!(telegramConfig.botToken && telegramConfig.chatId);
     const emailConfigured = emailChannelConfigured();

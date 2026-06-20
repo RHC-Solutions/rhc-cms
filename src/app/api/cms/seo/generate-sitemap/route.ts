@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import fs from 'fs';
 import fsp from 'fs/promises';
 import path from 'path';
 
-interface CmsPage {
-  slug: string;
-  status?: string;
-  updatedAt?: string;
-  createdAt?: string;
-}
-
-const PAGES_PATH = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'pages.json');
+// The sitemap is served DYNAMICALLY by src/app/sitemap.ts from the live CMS
+// (cms.db) with proper per-section priorities. A static public/sitemap.xml would
+// SHADOW that route (Next serves public/* ahead of routes) and serve stale data
+// — which is exactly the recurring bug this endpoint used to cause by writing a
+// pages.json-derived file. So "generate" now means: remove any static shadow
+// and confirm the dynamic sitemap is the source of truth.
 const PUBLIC_SITEMAP = path.join(process.cwd(), 'public', 'sitemap.xml');
 
 async function checkAdmin(request: NextRequest) {
@@ -20,48 +17,22 @@ async function checkAdmin(request: NextRequest) {
   return role === 'admin';
 }
 
-const loadPages = async (): Promise<CmsPage[]> => {
-  try {
-    const raw = await fsp.readFile(PAGES_PATH, 'utf-8');
-    return JSON.parse(raw) as CmsPage[];
-  } catch (error) {
-    console.error('[sitemap] Failed to read pages.json', error);
-    return [];
-  }
-};
-
-const buildXml = (baseUrl: string, pages: CmsPage[]) => {
-  const urls = pages
-    .filter((p) => p.slug && (p.status ?? 'published') === 'published')
-    .map((p) => {
-      const lastmod = p.updatedAt || p.createdAt || new Date().toISOString().slice(0, 10);
-      return `  <url>\n    <loc>${baseUrl}${p.slug}</loc>\n    <lastmod>${lastmod.slice(0, 10)}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>${p.slug === '/' ? '1.0' : '0.7'}</priority>\n  </url>`;
-    })
-    .join('\n');
-
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
-};
-
 export async function POST(request: NextRequest) {
+  if (!(await checkAdmin(request))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  }
   try {
-    if (!(await checkAdmin(request))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-
-    const pages = await loadPages();
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
-    const xml = buildXml(baseUrl, pages);
-
-    fs.writeFileSync(PUBLIC_SITEMAP, xml, 'utf-8');
-
+    let removed = false;
+    try { await fsp.unlink(PUBLIC_SITEMAP); removed = true; } catch { /* not present — fine */ }
     return NextResponse.json({
       success: true,
-      message: 'sitemap.xml generated successfully',
-      urlCount: pages.filter((p) => p.slug && (p.status ?? 'published') === 'published').length,
-      baseUrl,
+      dynamic: true,
+      message: removed
+        ? 'Removed a stale static public/sitemap.xml. Your sitemap is served live at /sitemap.xml from the CMS — no static file needed.'
+        : 'Nothing to do — your sitemap is already served live at /sitemap.xml from the CMS (no static file).',
     });
   } catch (error) {
-    console.error('Error generating sitemap.xml:', error);
-    return NextResponse.json({ error: 'Failed to generate sitemap.xml' }, { status: 500 });
+    console.error('Error clearing static sitemap:', error);
+    return NextResponse.json({ error: 'Failed to clear static sitemap' }, { status: 500 });
   }
 }

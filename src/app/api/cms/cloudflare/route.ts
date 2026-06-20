@@ -171,30 +171,6 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Fallback to REST API if GraphQL didn't work
-    if (events.length === 0) {
-      const eventsResponse = await fetch(
-        `https://api.cloudflare.com/client/v4/zones/${zoneId}/security/events?per_page=100`,
-        { headers }
-      );
-      const eventsData = await eventsResponse.json();
-      
-      console.log('Security events REST API response:', {
-        status: eventsResponse.status,
-        success: eventsData.success,
-        resultCount: eventsData.result?.length || 0,
-        errors: eventsData.errors,
-        messages: eventsData.messages
-      });
-
-      if (!eventsData.success && eventsData.errors) {
-        console.error('Cloudflare security events errors:', eventsData.errors);
-      }
-      
-      events = eventsData.success ? (eventsData.result || []) : [];
-    }
-
-    console.log(`Final security events count: ${events.length}`);
 
     // Fetch DNS records
     const dnsResponse = await fetch(

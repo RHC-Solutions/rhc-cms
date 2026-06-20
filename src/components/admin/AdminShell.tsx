@@ -9,7 +9,7 @@ import {
   FaHome, FaFileAlt, FaImages, FaUsers, FaCog, FaChartLine,
   FaBars, FaTimes, FaSignOutAlt, FaEdit, FaCookie, FaSearch, FaList, FaDatabase,
   FaPalette, FaListAlt, FaCloud, FaChevronDown, FaChevronRight, FaTrash, FaSpinner, FaShieldAlt,
-  FaPlug, FaBullhorn, FaRobot, FaHistory, FaStore, FaBoxOpen, FaShoppingCart, FaUserFriends,
+  FaPlug, FaBullhorn, FaRobot, FaSyncAlt, FaHistory, FaStore, FaBoxOpen, FaShoppingCart, FaUserFriends,
   FaCalendarAlt, FaConciergeBell, FaCalendarCheck, FaClock, FaGift, FaLanguage,
 } from 'react-icons/fa';
 
@@ -96,6 +96,7 @@ export default function AdminShell({ children, title }: AdminShellProps) {
       { name: 'Integrations', href: '/admin/integrations', icon: FaPlug, roles: ['admin'] },
       { name: 'Backups', href: '/admin/backups', icon: FaDatabase, roles: ['admin'] },
       { name: 'Automation', href: '/admin/automation', icon: FaRobot, roles: ['admin'] },
+      { name: 'OODA', href: '/admin/ooda', icon: FaSyncAlt, roles: ['admin'] },
       { name: 'Security (Aikido)', href: '/admin/aikido', icon: FaShieldAlt, roles: ['admin'] },
       { name: 'Audit Log', href: '/admin/audit', icon: FaHistory, roles: ['admin'] },
       { 
