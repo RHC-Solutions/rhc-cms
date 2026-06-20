@@ -48,8 +48,10 @@ function mapService(r: any): Service {
 }
 
 function slugify(input: string): string {
+  // Bound the length BEFORE the regexes run: the trim regex (/^-+|-+$/) is
+  // polynomial-backtracking on long dash runs, so cap input to 80 chars first.
   return (
-    input.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) ||
+    input.toLowerCase().trim().slice(0, 80).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') ||
     crypto.randomUUID().slice(0, 8)
   );
 }
