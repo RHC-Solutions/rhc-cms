@@ -1,9 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import AdminShell from "@adminpanel/components/admin/AdminShell";
+import IntegrationsPanel from "@adminpanel/components/admin/IntegrationsPanel";
 import { FaCog, FaEnvelope, FaGlobe, FaPalette, FaShieldAlt } from "react-icons/fa";
 import { useToast } from "@adminpanel/components/admin/Toast";
 import { TIMEZONES, getGeoTimezone } from "@adminpanel/lib/timezones";
+
+type SettingsTab = "general" | "integrations" | "advanced";
 
 type SocialLink = { platform: string; url: string };
 type Settings = {
@@ -66,9 +70,14 @@ export default function SettingsPage() {
   // Raw settings as loaded, kept so we can deep-merge nested objects (brand/stats)
   // on save instead of clobbering keys the form doesn't expose (about, values, etc.).
   const [raw, setRaw] = useState<Record<string, any>>({});
+  const [activeTab, setActiveTab] = useState<SettingsTab>("general");
 
   useEffect(() => {
     fetchSettings();
+    // Deep-link support: /admin/settings?tab=integrations (used by the redirects
+    // from the old /admin/integrations, /admin/analytics/setup, /admin/cloudflare/setup).
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (t === "integrations" || t === "advanced") setActiveTab(t);
   }, []);
 
   const fetchSettings = async () => {
@@ -279,9 +288,36 @@ export default function SettingsPage() {
     <AdminShell title="Settings">
       <div className="mb-8">
         <h1 className="heading-xl text-gradient mb-2">Site Settings</h1>
-        <p className="text-text-secondary">Configure your website settings and preferences</p>
+        <p className="text-text-secondary">Configure your website settings, integrations and infrastructure — all in one place.</p>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-dark-border mb-8 overflow-x-auto">
+        {([["general", "General"], ["integrations", "Integrations"], ["advanced", "Advanced"]] as const).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setActiveTab(id)}
+            className={`px-4 py-2 -mb-px border-b-2 font-semibold whitespace-nowrap ${activeTab === id ? "border-cyber-green text-cyber-green" : "border-transparent text-text-secondary hover:text-text-primary"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "integrations" && <IntegrationsPanel />}
+
+      {activeTab === "advanced" && (
+        <div className="card-cyber p-8 space-y-3">
+          <h2 className="text-xl font-bold text-text-primary mb-1">Advanced</h2>
+          <p className="text-text-secondary text-sm mb-4">Infrastructure and lower-level configuration.</p>
+          <Link href="/admin/settings/environment" className="block text-cyber-cyan hover:text-cyber-green">Environment variables (.env.local) →</Link>
+          <Link href="/admin/cloudflare" className="block text-cyber-cyan hover:text-cyber-green">Cloudflare dashboard (cache, DNS, WAF) →</Link>
+        </div>
+      )}
+
+      {activeTab === "general" && (
+      <>
       {/* General Settings */}
       <div className="card-cyber p-8 mb-8">
         <div className="flex items-center space-x-3 mb-6">
@@ -759,6 +795,8 @@ export default function SettingsPage() {
           {saving ? "Saving..." : "Save All Settings"}
         </button>
       </div>
+      </>
+      )}
     </AdminShell>
   );
 }
