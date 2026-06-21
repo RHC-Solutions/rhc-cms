@@ -217,7 +217,11 @@ export default function AdminShell({ children, title }: AdminShellProps) {
             <div className="flex items-center space-x-4">
               <AdminSearch />
               {session?.user && (
-                <div className="hidden md:flex items-center space-x-2 text-sm">
+                <Link
+                  href="/admin/account"
+                  title="Account settings"
+                  className="hidden md:flex items-center space-x-2 text-sm rounded-lg px-2 py-1 hover:bg-dark-lighter transition-colors"
+                >
                   <div className="w-8 h-8 rounded-full bg-linear-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-semibold">
                     {session.user.name?.charAt(0) || 'U'}
                   </div>
@@ -225,7 +229,7 @@ export default function AdminShell({ children, title }: AdminShellProps) {
                     <p className="text-text-primary font-medium">{session.user.name}</p>
                     <p className="text-text-muted text-xs">{session.user.email}</p>
                   </div>
-                </div>
+                </Link>
               )}
               <Link
                 href="/"
