@@ -5,12 +5,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import AdminSearch from './AdminSearch';
+import { ADMIN_NAV, type AdminNavEntry } from '@adminpanel/lib/admin-nav';
 import {
   FaHome, FaFileAlt, FaImages, FaUsers, FaCog, FaChartLine,
   FaBars, FaTimes, FaSignOutAlt, FaEdit, FaCookie, FaSearch, FaList, FaDatabase,
   FaPalette, FaListAlt, FaCloud, FaChevronDown, FaChevronRight, FaTrash, FaSpinner, FaShieldAlt,
   FaPlug, FaBullhorn, FaRobot, FaSyncAlt, FaHistory, FaStore, FaBoxOpen, FaShoppingCart, FaUserFriends,
-  FaCalendarAlt, FaConciergeBell, FaCalendarCheck, FaClock, FaGift, FaLanguage,
+  FaCalendarAlt, FaConciergeBell, FaCalendarCheck, FaClock, FaGift, FaLanguage, FaUser,
 } from 'react-icons/fa';
 
 interface NavItem {
@@ -20,6 +21,15 @@ interface NavItem {
   roles: string[];
   children?: NavItem[];
 }
+
+// Resolve admin-nav.ts iconName strings to components. The nav tree itself lives in
+// src/lib/admin-nav.ts (shared with search) and carries no React imports.
+const NAV_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  FaHome, FaChartLine, FaCog, FaFileAlt, FaBullhorn, FaStore, FaBoxOpen, FaShoppingCart,
+  FaGift, FaUserFriends, FaCalendarAlt, FaCalendarCheck, FaConciergeBell, FaClock, FaImages,
+  FaEdit, FaList, FaListAlt, FaPalette, FaLanguage, FaUsers, FaSearch, FaCookie, FaCloud,
+  FaPlug, FaDatabase, FaRobot, FaSyncAlt, FaShieldAlt, FaHistory, FaUser,
+};
 
 interface AdminShellProps {
   children: React.ReactNode;
@@ -38,79 +48,16 @@ export default function AdminShell({ children, title }: AdminShellProps) {
   const [purgingCache, setPurgingCache] = useState(false);
   const [cacheMessage, setCacheMessage] = useState('');
 
-  const navigation: NavItem[] = useMemo(
-    () => [
-      { name: 'Dashboard', href: '/admin/dashboard', icon: FaHome, roles: ['admin', 'editor'] },
-      { 
-        name: 'Analytics', 
-        href: '/admin/analytics', 
-        icon: FaChartLine, 
-        roles: ['admin', 'editor'],
-        children: [
-          { name: 'Setup', href: '/admin/analytics/setup', icon: FaCog, roles: ['admin', 'editor'] },
-        ]
-      },
-      { name: 'Pages', href: '/admin/pages', icon: FaFileAlt, roles: ['admin', 'editor'] },
-      { name: 'Landing Pages', href: '/admin/landing-pages', icon: FaBullhorn, roles: ['admin', 'editor'] },
-      {
-        name: 'Store',
-        href: '/admin/store/products',
-        icon: FaStore,
-        roles: ['admin', 'editor'],
-        children: [
-          { name: 'Products', href: '/admin/store/products', icon: FaBoxOpen, roles: ['admin', 'editor'] },
-          { name: 'Orders', href: '/admin/store/orders', icon: FaShoppingCart, roles: ['admin', 'editor'] },
-          { name: 'Gift Cards', href: '/admin/store/gift-cards', icon: FaGift, roles: ['admin', 'editor'] },
-          { name: 'Customers', href: '/admin/store/customers', icon: FaUserFriends, roles: ['admin', 'editor'] },
-        ],
-      },
-      {
-        name: 'Booking',
-        href: '/admin/booking/appointments',
-        icon: FaCalendarAlt,
-        roles: ['admin', 'editor'],
-        children: [
-          { name: 'Appointments', href: '/admin/booking/appointments', icon: FaCalendarCheck, roles: ['admin', 'editor'] },
-          { name: 'Services', href: '/admin/booking/services', icon: FaConciergeBell, roles: ['admin', 'editor'] },
-          { name: 'Availability', href: '/admin/booking/availability', icon: FaClock, roles: ['admin', 'editor'] },
-        ],
-      },
-      { name: 'Media', href: '/admin/media', icon: FaImages, roles: ['admin', 'editor'] },
-      { name: 'Forms', href: '/admin/forms', icon: FaEdit, roles: ['admin', 'editor'] },
-      { name: 'Menu', href: '/admin/menu', icon: FaList, roles: ['admin', 'editor'] },
-      { name: 'Footer', href: '/admin/footer', icon: FaListAlt, roles: ['admin', 'editor'] },
-      { name: 'Theme Settings', href: '/admin/theme', icon: FaPalette, roles: ['admin', 'editor'] },
-      { name: 'Languages', href: '/admin/i18n', icon: FaLanguage, roles: ['admin'] },
-      { name: 'Users', href: '/admin/users', icon: FaUsers, roles: ['admin'] },
-      { name: 'SEO', href: '/admin/seo', icon: FaSearch, roles: ['admin', 'editor'] },
-      { name: 'Cookie Settings', href: '/admin/cookies', icon: FaCookie, roles: ['admin', 'editor'] },
-      {
-        name: 'Cloudflare',
-        href: '/admin/cloudflare',
-        icon: FaCloud,
-        roles: ['admin'],
-        children: [
-          { name: 'Setup', href: '/admin/cloudflare/setup', icon: FaCog, roles: ['admin'] },
-        ]
-      },
-      { name: 'Integrations', href: '/admin/integrations', icon: FaPlug, roles: ['admin'] },
-      { name: 'Backups', href: '/admin/backups', icon: FaDatabase, roles: ['admin'] },
-      { name: 'Automation', href: '/admin/automation', icon: FaRobot, roles: ['admin'] },
-      { name: 'OODA', href: '/admin/ooda', icon: FaSyncAlt, roles: ['admin'] },
-      { name: 'Security (Aikido)', href: '/admin/aikido', icon: FaShieldAlt, roles: ['admin'] },
-      { name: 'Audit Log', href: '/admin/audit', icon: FaHistory, roles: ['admin'] },
-      { 
-        name: 'Settings', 
-        href: '/admin/settings', 
-        icon: FaCog, 
-        roles: ['admin', 'editor'],
-        children: [
-          { name: 'Environment', href: '/admin/settings/environment', icon: FaCog, roles: ['admin'] },
-        ]
-      },
-    ],
-    []
-  );
+  const navigation: NavItem[] = useMemo(() => {
+    const toItem = (n: AdminNavEntry): NavItem => ({
+      name: n.name,
+      href: n.href,
+      roles: n.roles,
+      icon: NAV_ICONS[n.iconName] || FaCog,
+      children: n.children?.filter((c) => !c.hidden).map(toItem),
+    });
+    return ADMIN_NAV.filter((n) => !n.hidden).map(toItem);
+  }, []);
 
   const filterNavigation = (items: NavItem[]): NavItem[] => {
     return items
