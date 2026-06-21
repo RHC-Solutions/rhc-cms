@@ -26,13 +26,7 @@ export interface AdminNavEntry {
 
 export const ADMIN_NAV: AdminNavEntry[] = [
   { name: 'Dashboard', href: '/admin/dashboard', iconName: 'FaHome', roles: ['admin', 'editor'], description: 'View dashboard overview', keywords: ['dashboard', 'overview', 'stats', 'home'] },
-  {
-    name: 'Analytics', href: '/admin/analytics', iconName: 'FaChartLine', roles: ['admin', 'editor'],
-    description: 'View site analytics and traffic', keywords: ['analytics', 'stats', 'traffic', 'visitors', 'engagement'],
-    children: [
-      { name: 'Setup', href: '/admin/analytics/setup', iconName: 'FaCog', roles: ['admin', 'editor'], description: 'Connect GA4 / service account', keywords: ['analytics', 'setup', 'ga4', 'google analytics', 'service account', 'property'] },
-    ],
-  },
+  { name: 'Analytics', href: '/admin/analytics', iconName: 'FaChartLine', roles: ['admin', 'editor'], description: 'View site analytics and traffic', keywords: ['analytics', 'stats', 'traffic', 'visitors', 'engagement', 'ga4', 'google analytics'] },
   { name: 'Pages', href: '/admin/pages', iconName: 'FaFileAlt', roles: ['admin', 'editor'], description: 'Manage website pages', keywords: ['pages', 'content', 'create', 'edit', 'delete', 'homepage', 'contact'] },
   { name: 'Landing Pages', href: '/admin/landing-pages', iconName: 'FaBullhorn', roles: ['admin', 'editor'], description: 'Manage marketing landing pages', keywords: ['landing', 'campaigns', 'marketing', 'lead', 'pages'] },
   {
@@ -61,14 +55,8 @@ export const ADMIN_NAV: AdminNavEntry[] = [
   { name: 'Users', href: '/admin/users', iconName: 'FaUsers', roles: ['admin'], description: 'Manage user accounts and permissions', keywords: ['users', 'accounts', 'roles', 'permissions', 'access'] },
   { name: 'SEO', href: '/admin/seo', iconName: 'FaSearch', roles: ['admin', 'editor'], description: 'SEO, GTM, Analytics, Ahrefs, IPinfo, OG image', keywords: ['seo', 'meta', 'og image', 'gtm', 'google tag manager', 'analytics', 'ahrefs', 'ipinfo', 'sitemap', 'robots'] },
   { name: 'Cookie Settings', href: '/admin/cookies', iconName: 'FaCookie', roles: ['admin', 'editor'], description: 'Manage cookie consent and tracking', keywords: ['cookies', 'consent', 'privacy', 'gdpr', 'tracking'] },
-  {
-    name: 'Cloudflare', href: '/admin/cloudflare', iconName: 'FaCloud', roles: ['admin'],
-    description: 'Cache, DNS, Turnstile, and WAF status', keywords: ['cloudflare', 'cdn', 'cache', 'dns', 'turnstile', 'waf'],
-    children: [
-      { name: 'Setup', href: '/admin/cloudflare/setup', iconName: 'FaCog', roles: ['admin'], description: 'Cloudflare API token + DNS automation', keywords: ['cloudflare', 'setup', 'api token', 'zone', 'dns', 'turnstile'] },
-    ],
-  },
-  { name: 'Integrations', href: '/admin/integrations', iconName: 'FaPlug', roles: ['admin'], description: 'Connect third-party services', keywords: ['integrations', 'smtp', 'telegram', 'whatsapp', 'brevo', 'stripe', 'recaptcha', 'email', 'notifications', 'api keys', 'secrets'] },
+  { name: 'Cloudflare', href: '/admin/cloudflare', iconName: 'FaCloud', roles: ['admin'], description: 'Cache, DNS, Turnstile, and WAF status (API token in Settings → Integrations)', keywords: ['cloudflare', 'cdn', 'cache', 'dns', 'turnstile', 'waf'] },
+  { name: 'Integrations', href: '/admin/settings?tab=integrations', iconName: 'FaPlug', roles: ['admin'], description: 'Connect third-party services (under Settings)', keywords: ['integrations', 'smtp', 'telegram', 'whatsapp', 'brevo', 'stripe', 'recaptcha', 'cloudflare', 'email', 'notifications', 'api keys', 'secrets'] },
   { name: 'Backups', href: '/admin/backups', iconName: 'FaDatabase', roles: ['admin'], description: 'Manage database backups', keywords: ['backups', 'restore', 'database', 'recovery'] },
   { name: 'Automation', href: '/admin/automation', iconName: 'FaRobot', roles: ['admin'], description: 'Daily site audit, dependency PRs, panel updates', keywords: ['automation', 'audit', 'cron', 'schedule', 'dependencies', 'auto-fix', 'reports', 'updates'] },
   { name: 'OODA', href: '/admin/ooda', iconName: 'FaSyncAlt', roles: ['admin'], description: 'Self-improvement loop — observe, orient, decide, act', keywords: ['ooda', 'automation', 'self-healing', 'loop', 'observe', 'orient', 'decide', 'act'] },

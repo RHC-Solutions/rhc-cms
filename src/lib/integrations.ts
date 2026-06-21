@@ -100,6 +100,8 @@ export const INTEGRATIONS: Integration[] = [
     description: 'Private key for the GA Data API service account. Used to render the analytics dashboard. PEM-encoded; preserve newlines.',
     dashboardLink: 'https://console.cloud.google.com/apis/credentials',
     fields: [
+      { envVar: 'NEXT_PUBLIC_GA_PROPERTY_ID', label: 'GA4 property ID', type: 'text', example: '123456789', description: 'Numeric GA4 property ID used by the Data API dashboard.' },
+      { envVar: 'NEXT_PUBLIC_GA_SERVICE_ACCOUNT_EMAIL', label: 'Service account email', type: 'text', example: 'ga-reader@project.iam.gserviceaccount.com' },
       { envVar: 'GA_PRIVATE_KEY', label: 'Private key (PEM)', type: 'longtext', description: 'Paste the full PEM including BEGIN/END lines. Newlines preserved.' },
     ],
   },
@@ -164,6 +166,16 @@ export const INTEGRATIONS: Integration[] = [
       { envVar: 'GOOGLE_CALENDAR_CLIENT_SECRET', label: 'OAuth client secret', type: 'secret' },
       { envVar: 'GOOGLE_CALENDAR_REFRESH_TOKEN', label: 'Refresh token', type: 'secret' },
       { envVar: 'GOOGLE_CALENDAR_ID', label: 'Calendar ID', type: 'text', example: 'primary', description: 'Defaults to "primary".' },
+    ],
+  },
+  {
+    id: 'cloudflare',
+    name: 'Cloudflare',
+    description: 'API token + account ID for DNS automation and cache purge (the token needs Zone:DNS:Edit and Cache Purge). The public Zone ID is build-time — set it under Settings → Advanced (Environment).',
+    dashboardLink: 'https://dash.cloudflare.com/profile/api-tokens',
+    fields: [
+      { envVar: 'CLOUDFLARE_API_TOKEN', label: 'API token', type: 'secret' },
+      { envVar: 'CLOUDFLARE_ACCOUNT_ID', label: 'Account ID', type: 'text' },
     ],
   },
   {
