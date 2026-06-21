@@ -13,6 +13,7 @@ interface Config {
   daily: { enabled: boolean; autofix: AutofixMode };
   weekly: { enabled: boolean };
   ooda: OodaConfig;
+  autoUpdate: { enabled: boolean; mode: 'check' | 'apply' };
   recipientEmail: string;
   updatedAt: string | null;
 }
@@ -126,6 +127,45 @@ export default function AutomationPage() {
     }
   };
 
+  // ---- Panel updates ----
+  const [updateCheck, setUpdateCheck] = useState<any | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [updateResult, setUpdateResult] = useState<any | null>(null);
+
+  const checkUpdates = async () => {
+    setMsg(null); setChecking(true); setUpdateResult(null);
+    try {
+      const res = await fetch('/api/admin/automation', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'check-updates' }),
+      });
+      const json = await res.json();
+      setUpdateCheck(json);
+      if (!json.ok) setMsg({ type: 'error', text: json.error || 'Update check failed.' });
+    } catch (e: any) {
+      setMsg({ type: 'error', text: e.message });
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const runUpdate = async () => {
+    if (!confirm('Take a full backup and update the admin panel to the latest version? A rebuild + restart is required afterwards to apply it.')) return;
+    setMsg(null); setUpdating(true); setUpdateResult(null);
+    try {
+      const res = await fetch('/api/admin/automation', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'run-update' }),
+      });
+      const json = await res.json();
+      setUpdateResult(json);
+      setMsg({ type: json.ok ? 'success' : 'error', text: json.message || (json.ok ? 'Updated.' : 'Update failed.') });
+    } catch (e: any) {
+      setMsg({ type: 'error', text: e.message });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const viewReport = async (date: string) => {
     if (openReport === date) { setOpenReport(null); return; }
     setOpenReport(date); setReportText('Loading…');
@@ -170,6 +210,60 @@ export default function AutomationPage() {
             {msg.type === 'success' ? <FaCheckCircle /> : <FaTimesCircle />}{msg.text}
           </div>
         )}
+
+        {/* ---- Panel updates ---- */}
+        <div className="card-cyber p-5 space-y-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h2 className="heading-md text-text-primary">Panel updates</h2>
+              <p className="text-text-muted text-sm">Check GitHub for a newer admin panel. Updating takes a full backup first, then fast-forwards the vendored panel.</p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={checkUpdates} disabled={checking || updating} className="px-4 py-2 rounded-lg border border-cyber-cyan/40 text-cyber-cyan hover:bg-cyber-cyan/10 disabled:opacity-50">
+                {checking ? 'Checking…' : 'Check for updates'}
+              </button>
+              {updateCheck?.ok && !updateCheck.upToDate && (
+                <button onClick={runUpdate} disabled={updating} className="btn-primary px-4 py-2">
+                  {updating ? 'Updating…' : 'Back up & update'}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {updateCheck && (
+            <div className="bg-dark border border-dark-border rounded-lg p-4 text-sm space-y-2">
+              {updateCheck.error ? (
+                <p className="text-red-400">{updateCheck.error}</p>
+              ) : updateCheck.upToDate ? (
+                <p className="text-cyber-green">✓ Up to date{updateCheck.version ? ` (v${updateCheck.version}, ${updateCheck.current})` : ''}.</p>
+              ) : (
+                <>
+                  <p className="text-text-primary"><span className="text-yellow-400 font-semibold">{updateCheck.behind} commit(s) behind.</span> Local <code>{updateCheck.current}</code> → latest <code>{updateCheck.latest}</code>.</p>
+                  {updateCheck.changelog?.length > 0 && (
+                    <ul className="list-disc pl-5 text-text-secondary space-y-0.5 max-h-48 overflow-y-auto">
+                      {updateCheck.changelog.map((c: any) => (
+                        <li key={c.sha}><code className="text-text-muted">{c.sha}</code> {c.message}</li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {updateResult && (
+            <div className={`rounded-lg p-4 text-sm ${updateResult.ok ? 'bg-cyber-green/10 border border-cyber-green/30' : 'bg-red-500/10 border border-red-500/30'}`}>
+              <p className={updateResult.ok ? 'text-cyber-green' : 'text-red-400'}>{updateResult.message}</p>
+              {updateResult.backup && <p className="text-text-muted text-xs mt-1">Backup: <code>{updateResult.backup}</code></p>}
+              {updateResult.rebuildRequired && <p className="text-yellow-200 text-xs mt-1">⚠ Run <code>npm run build &amp;&amp; pm2 restart</code> on the host to apply.</p>}
+              {updateResult.changelog?.length > 0 && (
+                <ul className="list-disc pl-5 text-text-secondary space-y-0.5 mt-2 max-h-48 overflow-y-auto">
+                  {updateResult.changelog.map((c: any) => (<li key={c.sha}><code className="text-text-muted">{c.sha}</code> {c.message}</li>))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* ---- Last run ---- */}
         <div className="card-cyber p-5">
@@ -251,6 +345,13 @@ export default function AutomationPage() {
             desc="Mondays: safe patch/minor bumps as a PR after build + typecheck + lint pass. Majors stay manual."
             checked={cfg.weekly.enabled}
             onChange={(v) => setCfg({ ...cfg, weekly: { enabled: v } })}
+          />
+
+          <Toggle
+            label="Daily update check"
+            desc="Checks GitHub daily for a newer admin panel and notifies via Telegram + email. Never auto-applies — apply from Panel updates above. (Requires the daily-update.sh cron on the host.)"
+            checked={cfg.autoUpdate.enabled}
+            onChange={(v) => setCfg({ ...cfg, autoUpdate: { ...cfg.autoUpdate, enabled: v } })}
           />
 
           <div className="pl-1">
