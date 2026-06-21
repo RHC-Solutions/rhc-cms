@@ -319,13 +319,21 @@ To enable:
 2. Add cron jobs (adjust paths/times):
 
    ```cron
-   17 6 * * *   cd /path/to/your-site && ./vendor/admin-panel/scripts/audit/daily-audit.sh  >> logs/audit/cron.log 2>&1
-   37 7 * * 1   cd /path/to/your-site && ./vendor/admin-panel/scripts/audit/weekly-deps.sh  >> logs/audit/cron.log 2>&1
+   17 6 * * *   cd /path/to/your-site && ./vendor/admin-panel/scripts/audit/daily-audit.sh        >> logs/audit/cron.log 2>&1
+   37 7 * * 1   cd /path/to/your-site && ./vendor/admin-panel/scripts/audit/weekly-deps.sh        >> logs/audit/cron.log 2>&1
+   23 7 * * *   cd /path/to/your-site && ./vendor/admin-panel/scripts/auto-update/daily-update.sh >> logs/auto-update.log 2>&1
    ```
 
 3. Toggle each job and set the recipient email from the `/admin/automation` UI
-   (stored in `cms-data/automation.json`). With no config set, both default to
-   enabled and email the `ADMIN_EMAIL`.
+   (stored in `cms-data/automation.json`). With no config set, the audit + weekly
+   jobs default to enabled and email the `ADMIN_EMAIL`.
+
+**Panel update check** (third cron line): a **check-only**, opt-in daily job that
+notifies (Telegram + email) when a newer admin panel is available — it never
+auto-applies. Enable the "Daily update check" toggle in `/admin/automation`
+(`autoUpdate.enabled`, default **off**). Apply updates deliberately from the same
+page's **Panel updates** card (it takes a full backup, fast-forwards the submodule,
+shows the changelog, then asks you to rebuild + restart).
 
 Everything in the scripts is parameterized — a fresh clone runs with sane
 defaults and no edits; override via the `AUDIT_*` env vars above.
