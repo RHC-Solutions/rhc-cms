@@ -122,8 +122,7 @@ Before an **admin re-apply** to an existing site, a full backup is taken automat
   `GET /api/cms/design-pack/export?name=My%20Template`
 - **Validate** any pack directory before zipping:
   `node scripts/design-pack/validate-pack.mjs path/to/pack`
-- **Schema:** `scripts/design-pack/pack.schema.json`
-- **Reference pack:** `examples/design-packs/starter/`
+- **Schema:** `scripts/design-pack/pack.schema.json` — the authoritative shape; no example pack is bundled (this repo is the consumer, not a pack store).
 
 ## Applying a pack
 

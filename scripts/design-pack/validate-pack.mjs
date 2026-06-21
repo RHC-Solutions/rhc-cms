@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // Validate a design-pack directory against the format contract (packFormat 1).
-// Usage: node scripts/design-pack/validate-pack.mjs [packDir]
-//        defaults to examples/design-packs/starter
+// Usage: node scripts/design-pack/validate-pack.mjs <packDir>
+//
+// No bundled example pack lives in this repo (it's the consumer, not a pack store),
+// so the pack directory is a required argument — point it at the pack you're checking.
 //
 // Pure Node built-ins — no deps. Checks the manifest, apply-mode enums, forbidden
 // files, and page shape. Exits non-zero on any violation. Mirrors the runtime
@@ -18,7 +20,11 @@ const FORBIDDEN_FILES = [
 ];
 const FORBIDDEN_PATTERNS = [/(^|\/)\.env/i];
 
-const dir = path.resolve(process.argv[2] || 'examples/design-packs/starter');
+if (!process.argv[2]) {
+  console.error('Usage: node scripts/design-pack/validate-pack.mjs <packDir>');
+  process.exit(2);
+}
+const dir = path.resolve(process.argv[2]);
 const errors = [];
 const fail = (m) => errors.push(m);
 
