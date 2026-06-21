@@ -3,6 +3,7 @@ import { getToken } from 'next-auth/jwt';
 import { writeFile, mkdir } from 'fs/promises';
 import fs from 'fs';
 import path from 'path';
+import { seedBrandMedia } from '@adminpanel/lib/cms/media-scan';
 
 const MEDIA_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'media-index.json');
 const MEDIA_DIR = path.join((process.env.SHARED_ROOT || process.cwd()), 'public', 'uploads');
@@ -60,6 +61,12 @@ export async function GET(request: NextRequest) {
   if (!auth.authorized) return auth.response;
 
   await ensureDir();
+  // Fresh deploys have an empty media-index.json, so /admin/media looks broken even
+  // though the site ships a logo + favicon. Surface those bundled brand assets the
+  // first time the (empty) library is opened. Idempotent and additive.
+  if (loadMedia().length === 0) {
+    try { seedBrandMedia(); } catch { /* best effort — never block the listing */ }
+  }
   const media = loadMedia();
   // Ensure all items have a url property and type alias for backward compatibility
   const mediaWithUrls = media.map((item) => ({

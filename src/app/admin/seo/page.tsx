@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
 import { useToast } from '@adminpanel/components/admin/Toast';
+import MediaPicker from '@adminpanel/components/admin/MediaPicker';
 import { FaSearch, FaSitemap, FaGoogle, FaSave, FaSyncAlt, FaCheckCircle, FaLink } from 'react-icons/fa';
 
 interface SEOSettings {
@@ -252,13 +253,13 @@ export default function SEOManagement() {
                 </div>
 
                 <div>
-                  <label className="block text-text-primary font-semibold mb-2">OG Image URL</label>
-                  <input
-                    type="text"
+                  <MediaPicker
+                    label="OG Image"
+                    accept="image"
                     value={settings.ogImage}
-                    onChange={(e) => setSettings({ ...settings, ogImage: e.target.value })}
-                    className="w-full bg-dark-card border-2 border-dark-border rounded-lg py-3 px-4 text-text-primary focus:border-cyber-cyan focus:outline-none"
+                    onChange={(url) => setSettings({ ...settings, ogImage: url })}
                   />
+                  <p className="text-text-muted text-xs mt-2">Used as the default social-share image when a page has no per-page OG image.</p>
                 </div>
               </div>
             </div>
