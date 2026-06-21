@@ -3,6 +3,7 @@ import { getToken } from 'next-auth/jwt';
 import { setSecrets, setEnvValue } from '@adminpanel/lib/env';
 import { MANAGED_SECRET_KEYS } from '@adminpanel/lib/integrations';
 import { cmsDb } from '@adminpanel/lib/cms/database';
+import { seedBrandMedia } from '@adminpanel/lib/cms/media-scan';
 import { adminExists } from '@adminpanel/lib/auth/setup-gate';
 import { validateBrevo, validateCloudflareToken, validateSmtp, type ValidationResult } from '@adminpanel/lib/integrations/test';
 import { domainToHost } from '@adminpanel/lib/url-path';
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const saved = { settings: [] as string[], secrets: [] as string[], env: [] as string[] };
+  const saved = { settings: [] as string[], secrets: [] as string[], env: [] as string[], media: [] as string[] };
   const rejected: string[] = [];
   const warnings: string[] = [];
   let restartRequired = false;
@@ -54,6 +55,15 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       warnings.push(`Could not save site settings: ${(e as Error).message}`);
     }
+  }
+
+  // --- Seed the media library with the bundled brand assets (logo/favicon/og) so
+  // /admin/media isn't empty on a fresh deploy. Idempotent + best-effort. ---
+  try {
+    const seed = seedBrandMedia('system');
+    saved.media = seed.files;
+  } catch (e) {
+    warnings.push(`Could not seed brand media: ${(e as Error).message}`);
   }
 
   // --- Public site URL -> .env.local (restart to apply). NOTE: we intentionally do

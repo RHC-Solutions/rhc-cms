@@ -29,6 +29,7 @@ export interface MediaItem {
   caption?: string;
   path: string;
   url: string;
+  system?: boolean; // bundled brand asset (logo/favicon/og) seeded by seedBrandMedia
 }
 
 export interface ScanResult {
@@ -80,4 +81,78 @@ export function scanOrphanUploads(uploadedBy = 'system'): ScanResult {
     fs.writeFileSync(MEDIA_FILE, JSON.stringify([...existing, ...newItems], null, 2));
   }
   return { indexed: newItems.length, total: allFiles.length, newFiles: newItems.map((i) => i.filename) };
+}
+
+// Bundled brand assets a freshly-deployed site already has on disk but that never
+// land in media-index.json (so /admin/media starts empty and the logo/favicon are
+// invisible). seedBrandMedia surfaces them as managed media. Idempotent + additive:
+// keyed by served URL, never overwrites or deletes. Assets already under public/ are
+// referenced in place; Next file-convention icons (src/app/icon.png …) live outside
+// public/, so they're copied into public/uploads/ to guarantee they're served.
+const BRAND_CANDIDATES: { url?: string; rel: string; copyAs?: string; label: string }[] = [
+  { rel: 'public/logo.png', url: '/logo.png', label: 'Logo' },
+  { rel: 'public/logo.svg', url: '/logo.svg', label: 'Logo' },
+  { rel: 'public/favicon.ico', url: '/favicon.ico', label: 'Favicon' },
+  { rel: 'public/og-image.jpg', url: '/og-image.jpg', label: 'Social share image' },
+  { rel: 'public/og-image.png', url: '/og-image.png', label: 'Social share image' },
+  // Next metadata-file icons — outside public/, copy into uploads so they render.
+  { rel: 'src/app/icon.png', copyAs: 'favicon.png', label: 'Favicon' },
+  { rel: 'app/icon.png', copyAs: 'favicon.png', label: 'Favicon' },
+  { rel: 'src/app/apple-icon.png', copyAs: 'apple-icon.png', label: 'Apple touch icon' },
+  { rel: 'app/apple-icon.png', copyAs: 'apple-icon.png', label: 'Apple touch icon' },
+];
+
+export function seedBrandMedia(uploadedBy = 'system'): { seeded: number; files: string[] } {
+  const root = process.env.SHARED_ROOT || process.cwd();
+  const existing = loadMedia();
+  const seenUrls = new Set(existing.map((m) => m.url));
+  const seenFiles = new Set(existing.map((m) => m.filename));
+  const added: MediaItem[] = [];
+
+  for (const cand of BRAND_CANDIDATES) {
+    const src = path.join(root, cand.rel);
+    if (!fs.existsSync(src)) continue;
+    let url: string;
+    let filename: string;
+    if (cand.copyAs) {
+      // Copy into public/uploads so it's served + becomes real managed media.
+      filename = cand.copyAs;
+      url = `/uploads/${filename}`;
+      if (seenUrls.has(url) || seenFiles.has(filename)) continue;
+      try {
+        if (!fs.existsSync(MEDIA_DIR)) fs.mkdirSync(MEDIA_DIR, { recursive: true });
+        const dest = path.join(MEDIA_DIR, filename);
+        if (!fs.existsSync(dest)) fs.copyFileSync(src, dest);
+      } catch { continue; }
+    } else {
+      url = cand.url!;
+      filename = path.basename(cand.rel);
+      if (seenUrls.has(url)) continue;
+    }
+    seenUrls.add(url);
+    seenFiles.add(filename);
+    let size = 0;
+    try { size = fs.statSync(path.join(root, cand.copyAs ? path.join('public', 'uploads', filename) : cand.rel)).size; } catch { /* best effort */ }
+    added.push({
+      id: `brand_${filename.replace(/[^a-z0-9]+/gi, '_')}`,
+      filename,
+      originalName: filename,
+      mimeType: guessMime(filename),
+      size,
+      uploadedAt: new Date().toISOString(),
+      uploadedBy,
+      alt: cand.label,
+      caption: '',
+      path: url,
+      url,
+      system: true,
+    });
+  }
+
+  if (added.length > 0) {
+    const dir = path.dirname(MEDIA_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(MEDIA_FILE, JSON.stringify([...existing, ...added], null, 2));
+  }
+  return { seeded: added.length, files: added.map((i) => i.filename) };
 }
