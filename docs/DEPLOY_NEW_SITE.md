@@ -15,7 +15,7 @@ cd mysite
 # Static-pack hosts: the pack owns '/', so remove the host's own root page:
 rm -f src/app/page.tsx
 
-npx github:RHC-Solutions/admin_panel init --static-site
+npx github:RHC-Solutions/rhc-cms init --static-site
 #   → adds vendor/admin-panel submodule, @adminpanel/* tsconfig path, middleware
 #     (adminAuthGate), route wrappers, installs deps, scaffolds .env.local + a fresh
 #     NEXTAUTH_SECRET, renovate.json, and the static-site catch-all app/[[...slug]]/route.ts
@@ -54,7 +54,7 @@ Open `https://admin.<domain>/admin` → the wizard runs while no admin exists ye
 
 **5b. CLI alternative (scriptable):**
 ```bash
-npx github:RHC-Solutions/admin_panel apply-pack ./design-pack.zip \
+npx github:RHC-Solutions/rhc-cms apply-pack ./design-pack.zip \
   --site-url http://localhost:<port> --tokens '{"siteName":"Acme Inc","domain":"example.com"}'
 ```
 (File upload works first-run; a remote `https` URL pack requires admin login.)
@@ -71,7 +71,7 @@ Either let the wizard create the A records (Cloudflare), or manually point `@` (
 - If analytics enabled (seo.json `injectAnalyticsIntoStaticPages` + GA4 id): GA loads with Consent Mode v2 *denied* on pack pages.
 
 ## 8. Keeping it current
-- `npx github:RHC-Solutions/admin_panel update` (pulls panel source, syncs deps, warns on skew) → rebuild + restart.
+- `npx github:RHC-Solutions/rhc-cms update` (pulls panel source, syncs deps, warns on skew) → rebuild + restart.
 - Or enable the **Renovate** GitHub App on the host repo (the scaffolded `renovate.json` bumps the submodule + deps via PRs).
 
 ## Database (SQLite default, Postgres optional)

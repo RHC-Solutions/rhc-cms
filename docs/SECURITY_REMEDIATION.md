@@ -2,7 +2,7 @@
 
 ## 2026‑06‑07 — Leaked Telegram bot token (`functions/api/apply.js`)
 
-GitHub secret‑scanning ([alert #1](https://github.com/RHC-Solutions/admin_panel/security/secret-scanning/1)) flagged a hardcoded Telegram bot token committed as a fallback in [functions/api/apply.js](../functions/api/apply.js) — the job‑application Cloudflare Pages function (`@RHC_CV_bot`, id `8212839523`). The same literal was present in the live `rhcsolutions.com` repo and in git history (commit `ffbb523`).
+GitHub secret‑scanning ([alert #1](https://github.com/RHC-Solutions/rhc-cms/security/secret-scanning/1)) flagged a hardcoded Telegram bot token committed as a fallback in [functions/api/apply.js](../functions/api/apply.js) — the job‑application Cloudflare Pages function (`@RHC_CV_bot`, id `8212839523`). The same literal was present in the live `rhcsolutions.com` repo and in git history (commit `ffbb523`).
 
 **Closed:**
 - Removed the hardcoded token **and** chat id from `functions/api/apply.js` in both repos; the function now requires `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` from the environment and fails safe (500) if absent. Never reintroduce a literal fallback.
@@ -11,7 +11,7 @@ GitHub secret‑scanning ([alert #1](https://github.com/RHC-Solutions/admin_pane
 - The dead literal remains in git history but is inert (revoked) — no purge needed.
 
 **Hardening status:**
-- `RHC-Solutions/admin_panel` (public): secret scanning **+ push protection enabled** ✓
+- `RHC-Solutions/rhc-cms` (public): secret scanning **+ push protection enabled** ✓
 - `RHC-Solutions/rhcsolutions.com_2026` (private): secret scanning is **off**; on a private repo it requires GitHub Advanced Security (paid). Enable it (org billing decision) so future commits are scanned/blocked at push time.
 
 ## 2026‑05‑13 — Pen‑test follow‑up audit

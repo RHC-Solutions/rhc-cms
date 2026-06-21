@@ -130,7 +130,7 @@ Before an **admin re-apply** to an existing site, a full backup is taken automat
   Apply. Runs while no admin exists yet (the only sound first-run auth signal).
 - **Admin (existing site):** `POST /api/cms/design-pack/apply` (admin session) with a
   multipart `pack` file, or JSON `{ "url": "https://…", "tokens": { … } }`.
-- **CLI:** `npx github:RHC-Solutions/admin_panel apply-pack <zip|https-url> --site-url <url> --tokens '{…}'`
+- **CLI:** `npx github:RHC-Solutions/rhc-cms apply-pack <zip|https-url> --site-url <url> --tokens '{…}'`
   — posts to the running site's apply API (file upload works during first-run; a remote
   URL pack requires admin login). Makes design → install → apply scriptable.
 

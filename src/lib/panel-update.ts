@@ -5,7 +5,7 @@ import path from 'path';
 import { createBackupZip, ensureBackupsDir, getSiteSlug } from './backup';
 
 /**
- * Panel self-update helpers. Hosts embed admin_panel as the `vendor/admin-panel`
+ * Panel self-update helpers. Hosts embed rhc-cms as the `vendor/admin-panel`
  * git submodule; "updating" = fast-forwarding that submodule to the latest commit
  * on its tracking branch. checkForUpdate() is READ-ONLY (GitHub API). applyUpdate()
  * takes a full backup FIRST, then fast-forwards, captures the changelog, and signals
@@ -14,7 +14,7 @@ import { createBackupZip, ensureBackupsDir, getSiteSlug } from './backup';
  */
 
 const execFileP = promisify(execFile);
-const REPO = 'RHC-Solutions/admin_panel';
+const REPO = 'RHC-Solutions/rhc-cms';
 const BRANCH = 'main';
 const LOCK_FILE = '/tmp/panel-update.lock';
 

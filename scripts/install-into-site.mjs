@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Install the embedded admin panel into a host site.
 //
-// Run this from a host site that has added admin_panel as a git submodule
+// Run this from a host site that has added rhc-cms as a git submodule
 // (default location: vendor/admin-panel). It mirrors every admin route from the
 // submodule into the host's src/app as a thin re-export wrapper, so Next.js
 // (whose routing is file-system based) picks them up while the real code stays
@@ -36,7 +36,7 @@ const hostSrcApp = path.join(siteRoot, 'src', 'app');
 
 // --print-deps is a pure read of THIS package.json; allow it to run from
 // anywhere (e.g. `node scripts/install-into-site.mjs --print-deps` inside the
-// admin_panel repo itself) so it works as a discovery tool before the host
+// rhc-cms repo itself) so it works as a discovery tool before the host
 // site has wired up the submodule.
 if (args.includes('--print-deps')) {
   const selfPkgPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'package.json');
@@ -50,7 +50,7 @@ if (args.includes('--print-deps')) {
 }
 
 if (!fs.existsSync(submoduleSrcApp)) {
-  console.error(`✗ Could not find ${submoduleSrcApp}\n  Add the submodule first:\n  git submodule add https://github.com/RHC-Solutions/admin_panel.git ${submoduleRel}`);
+  console.error(`✗ Could not find ${submoduleSrcApp}\n  Add the submodule first:\n  git submodule add https://github.com/RHC-Solutions/rhc-cms.git ${submoduleRel}`);
   process.exit(1);
 }
 

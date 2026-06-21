@@ -30,20 +30,20 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com'),
   title: {
-    default: "Your Site - Powered by Admin Panel",
+    default: "Your Site - Powered by RHC CMS",
     template: "%s | Your Site"
   },
-  description: "A modern website powered by Admin Panel. Customize content, design, and settings from the admin dashboard.",
+  description: "A modern website powered by RHC CMS. Customize content, design, and settings from the admin dashboard.",
   keywords: ["cms", "admin panel", "website", "content management"],
-  authors: [{ name: "Admin Panel" }],
+  authors: [{ name: "RHC CMS" }],
   alternates: { canonical: '/' },
   openGraph: {
     type: "website",
     locale: "en_US",
     url: process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com',
     siteName: "Your Site",
-    title: "Your Site - Powered by Admin Panel",
-    description: "A modern website powered by Admin Panel.",
+    title: "Your Site - Powered by RHC CMS",
+    description: "A modern website powered by RHC CMS.",
     images: [
       {
         url: "/api/og?title=Your%20Site&description=A%20modern%20website%20powered%20by%20Admin%20Panel.",
@@ -55,8 +55,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Your Site - Powered by Admin Panel",
-    description: "A modern website powered by Admin Panel.",
+    title: "Your Site - Powered by RHC CMS",
+    description: "A modern website powered by RHC CMS.",
     images: ["/api/og?title=Your%20Site&description=A%20modern%20website%20powered%20by%20Admin%20Panel."]
   },
   robots: {

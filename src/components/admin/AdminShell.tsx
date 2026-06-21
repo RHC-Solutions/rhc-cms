@@ -154,7 +154,7 @@ export default function AdminShell({ children, title }: AdminShellProps) {
               </button>
               <div className="ml-4">
                 <h1 className="text-xl font-bold">
-                  <span className="text-gradient">RHC</span> Admin
+                  <span className="text-gradient">RHC</span> CMS
                 </h1>
                 <p className="text-xs text-text-muted font-mono hidden sm:block">&gt; {title}</p>
               </div>

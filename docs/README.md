@@ -1,6 +1,6 @@
 # 📚 Documentation index
 
-`admin_panel` is an embeddable Next.js 16 CMS admin that drops into any host site as a git
+`rhc-cms` is an embeddable Next.js 16 CMS admin that drops into any host site as a git
 submodule (`vendor/admin-panel`), plus a **design-pack** pipeline that turns a fresh domain
 into a finished site. Think "WordPress for the Node/Next/Postgres stack." This folder holds
 the deeper docs — start with the root **[README](../README.md)**.
@@ -49,9 +49,9 @@ Check each doc's Progress Log for status before acting on its recommendations.
 ## ⚡ Quick reference
 | Need | Command / path |
 |---|---|
-| Embed panel into a host | `npx github:RHC-Solutions/admin_panel init` (add `--static-site` for pack-served hosts) |
-| Apply a design pack (CLI) | `npx github:RHC-Solutions/admin_panel apply-pack <zip\|url> --site-url <url> --tokens '{…}'` |
-| Update the panel in a host | `npx github:RHC-Solutions/admin_panel update` → rebuild + restart |
+| Embed panel into a host | `npx github:RHC-Solutions/rhc-cms init` (add `--static-site` for pack-served hosts) |
+| Apply a design pack (CLI) | `npx github:RHC-Solutions/rhc-cms apply-pack <zip\|url> --site-url <url> --tokens '{…}'` |
+| Update the panel in a host | `npx github:RHC-Solutions/rhc-cms update` → rebuild + restart |
 | Build & run | `npm run build && pm2 restart ecosystem.config.js` |
 | Type-check | `npx --no-install tsc --noEmit` |
 | Postgres instead of SQLite | set `DATABASE_URL=postgres://…` (or `DB_DRIVER=postgres`) |

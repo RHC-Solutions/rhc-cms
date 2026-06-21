@@ -224,7 +224,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // ---- Check for a newer admin_panel on GitHub (read-only) ----
+  // ---- Check for a newer rhc-cms on GitHub (read-only) ----
   if (body?.action === 'check-updates') {
     const result = await checkForUpdate();
     return NextResponse.json(result, { headers: { 'Cache-Control': 'private, no-store' } });
