@@ -1,4 +1,5 @@
 import { ADMIN_NAV, type AdminNavEntry } from './admin-nav';
+import { INTEGRATIONS } from './integrations';
 
 export interface AdminSearchEntry {
   id: string;
@@ -33,6 +34,28 @@ function flattenNav(items: AdminNavEntry[], parent?: AdminNavEntry): AdminSearch
 
 const NAV_ENTRIES = flattenNav(ADMIN_NAV);
 
+// Every integration and credential FIELD is searchable and routes to the
+// consolidated Settings → Integrations tab. This is what makes search cover
+// "all settings" and not just menu destinations — e.g. searching "BREVO_API_KEY",
+// "stripe", "smtp port" or "telegram backup" jumps straight to the right place.
+const tokenize = (s: string) => s.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+const SETTINGS_FIELD_ENTRIES: AdminSearchEntry[] = INTEGRATIONS.flatMap((i) => [
+  {
+    id: `int-${i.id}`,
+    title: `Settings — ${i.name}`,
+    description: i.description,
+    href: '/admin/settings?tab=integrations',
+    keywords: ['integration', 'settings', i.id, ...tokenize(i.name)],
+  },
+  ...i.fields.map((f) => ({
+    id: `int-${f.envVar}`,
+    title: `${i.name} — ${f.label}`,
+    description: `Configure ${f.envVar} (Settings → Integrations)`,
+    href: '/admin/settings?tab=integrations',
+    keywords: [f.envVar, f.envVar.toLowerCase(), i.id, ...tokenize(f.label)],
+  })),
+]);
+
 // Extra entries registered by feature code (e.g. the consolidated settings schema
 // in PR9). Kept separate so the nav-derived base stays clean.
 const EXTRA_ENTRIES: AdminSearchEntry[] = [];
@@ -42,7 +65,7 @@ export function registerSearchEntries(entries: AdminSearchEntry[]) {
   }
 }
 
-export const ADMIN_SEARCH_INDEX: AdminSearchEntry[] = NAV_ENTRIES;
+export const ADMIN_SEARCH_INDEX: AdminSearchEntry[] = [...NAV_ENTRIES, ...SETTINGS_FIELD_ENTRIES];
 
 // Fuzzy search function
 export function searchAdmin(query: string) {
