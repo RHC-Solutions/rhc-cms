@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
 import { useToast } from '@adminpanel/components/admin/Toast';
+import SiteCopyEditor from '@adminpanel/components/admin/SiteCopyEditor';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaEdit, FaEye, FaSearch, FaTimes, FaSave, FaExternalLinkAlt, 
@@ -982,6 +983,9 @@ export default function CMSPagesEditor() {
           <span>New Page</span>
         </button>
       </div>
+
+      {/* Homepage & Contact page copy (settings.json-backed; moved here from Settings) */}
+      <SiteCopyEditor />
 
       {/* Search */}
       <div className="card-cyber p-6 mb-6">
