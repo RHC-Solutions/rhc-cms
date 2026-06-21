@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { runOodaCycle } from '@adminpanel/lib/ooda/cycle';
 import { DEFAULT_OODA_POLICY, SAFE_ACTION_TYPES, type ActionType } from '@adminpanel/lib/ooda/types';
+import { checkForUpdate, applyUpdate } from '@adminpanel/lib/panel-update';
 
 export const runtime = 'nodejs';
 
@@ -59,6 +60,11 @@ function loadConfig() {
       enabled: raw?.ooda?.enabled === true,
       autoApply: sanitizeAutoApply(raw?.ooda?.autoApply),
       dryRun: raw?.ooda?.dryRun !== false, // default dry-run unless explicitly disabled
+    },
+    autoUpdate: {
+      // Check-only + disabled by default: never auto-apply panel updates unattended.
+      enabled: raw?.autoUpdate?.enabled === true,
+      mode: raw?.autoUpdate?.mode === 'apply' ? 'apply' : 'check',
     },
     recipientEmail: typeof raw?.recipientEmail === 'string' ? raw.recipientEmail : '',
     updatedAt: raw?.updatedAt ?? null,
@@ -146,6 +152,10 @@ export async function POST(request: NextRequest) {
         autoApply: sanitizeAutoApply(c?.ooda?.autoApply),
         dryRun: c?.ooda?.dryRun !== false,
       },
+      autoUpdate: {
+        enabled: c?.autoUpdate?.enabled === true,
+        mode: c?.autoUpdate?.mode === 'apply' ? 'apply' : 'check',
+      },
       recipientEmail:
         typeof c?.recipientEmail === 'string' ? c.recipientEmail.trim() : '',
       updatedAt: new Date().toISOString(),
@@ -212,6 +222,21 @@ export async function POST(request: NextRequest) {
     } catch (e: any) {
       return NextResponse.json({ error: `OODA cycle failed: ${e.message}` }, { status: 500 });
     }
+  }
+
+  // ---- Check for a newer admin_panel on GitHub (read-only) ----
+  if (body?.action === 'check-updates') {
+    const result = await checkForUpdate();
+    return NextResponse.json(result, { headers: { 'Cache-Control': 'private, no-store' } });
+  }
+
+  // ---- Apply a panel update: full backup, then fast-forward the submodule ----
+  if (body?.action === 'run-update') {
+    const result = await applyUpdate();
+    return NextResponse.json(result, {
+      status: result.ok ? 200 : 409,
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
   }
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
