@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { FaUser, FaLock, FaShieldAlt, FaCheckCircle, FaPalette, FaCog, FaInfoCircle } from 'react-icons/fa';
+import { INTEGRATIONS } from '@adminpanel/lib/integrations';
 import QRCode from 'qrcode';
 
 // Wizard steps (all pre-login, while no admin exists yet): 1) apply a design pack,
@@ -98,6 +99,11 @@ export default function SetupWizard() {
     dbDriver: 'sqlite' as 'sqlite' | 'postgres', dbUrl: '',
   });
 
+  // Optional extra integration credentials collected during setup (catalog-driven).
+  // Merged into the provisioned secrets; provision allow-lists via MANAGED_SECRET_KEYS.
+  const [extraSecrets, setExtraSecrets] = useState<Record<string, string>>({});
+  const [openIntegration, setOpenIntegration] = useState<string | null>(null);
+
   const submitProvision = async () => {
     setError('');
     setProvisioning(true);
@@ -115,6 +121,10 @@ export default function SetupWizard() {
         if (provision.smtpPass) secrets.SMTP_PASS = provision.smtpPass;
         // Persist implicit-TLS flag so runtime send matches what was tested (465 -> secure).
         if (provision.smtpHost && provision.smtpPort) secrets.SMTP_SECURE = (provision.smtpPort === '465').toString();
+      }
+      // Merge any optional integration credentials entered in the accordion.
+      for (const [k, v] of Object.entries(extraSecrets)) {
+        if (v && v.trim()) secrets[k] = v.trim();
       }
       const res = await fetch('/api/cms/setup/provision', {
         method: 'POST',
@@ -450,6 +460,44 @@ export default function SetupWizard() {
                   <input type="checkbox" checked={provision.dnsWww} onChange={(e) => setProvision({ ...provision, dnsWww: e.target.checked })} />
                   <span>Also create a <span className="font-mono">www</span> record. Requires the API token to have DNS edit permission on the zone.</span>
                 </label>
+              </div>
+            </div>
+
+            {/* Optional: connect any other integration now. Same catalog as
+                Settings → Integrations; values are saved to secrets.json by provision. */}
+            <div className="border-t border-gray-700 pt-4">
+              <label className="block text-gray-300 font-semibold mb-2 text-sm">More integrations (optional)</label>
+              <p className="text-xs text-text-muted mb-3">Telegram, Stripe, reCAPTCHA, analytics and more — add any now, or later in Settings → Integrations.</p>
+              <div className="space-y-2">
+                {INTEGRATIONS.filter((i) => !['brevo', 'smtp', 'cloudflare', 'misc'].includes(i.id)).map((i) => {
+                  const set = i.fields.filter((f) => (extraSecrets[f.envVar] || '').trim()).length;
+                  return (
+                    <div key={i.id} className="border border-gray-700 rounded-lg overflow-hidden">
+                      <button type="button" onClick={() => setOpenIntegration(openIntegration === i.id ? null : i.id)}
+                        className="w-full flex items-center justify-between px-3 py-2 text-left text-sm text-gray-200 hover:bg-gray-700/50">
+                        <span>{i.name}</span>
+                        <span className="text-xs text-gray-500">{set}/{i.fields.length}</span>
+                      </button>
+                      {openIntegration === i.id && (
+                        <div className="px-3 pb-3 pt-1 space-y-2">
+                          {i.fields.map((f) => (
+                            f.type === 'longtext' ? (
+                              <textarea key={f.envVar} rows={4} value={extraSecrets[f.envVar] || ''}
+                                onChange={(e) => setExtraSecrets((p) => ({ ...p, [f.envVar]: e.target.value }))}
+                                placeholder={f.label}
+                                className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none text-xs font-mono" />
+                            ) : (
+                              <input key={f.envVar} type={f.type === 'secret' ? 'password' : 'text'} value={extraSecrets[f.envVar] || ''}
+                                onChange={(e) => setExtraSecrets((p) => ({ ...p, [f.envVar]: e.target.value }))}
+                                placeholder={f.example ? `${f.label} (e.g. ${f.example})` : f.label}
+                                className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none text-sm" />
+                            )
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
