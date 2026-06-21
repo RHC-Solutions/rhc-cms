@@ -22,11 +22,13 @@ export interface MediaPickerItem {
 }
 
 const isImageUrl = (u: string) => /\.(png|jpe?g|gif|webp|avif|svg)(\?|$)/i.test(u);
-// Only ever feed http(s) / root-relative / image-data URLs into an <img src> — never
-// arbitrary schemes (javascript:, etc.). Sanitizes the value before the DOM sink.
-const isSafeImgSrc = (u: string) => {
-  const s = u.trim();
-  return /^https?:\/\//i.test(s) || s.startsWith('/') || /^data:image\//i.test(s);
+// Sanitize a value before it reaches an <img src> sink: return it only when it's an
+// http(s) / root-relative / image-data URL, else ''. Never lets arbitrary schemes
+// (javascript:, etc.) through. The sink uses this RETURN value, so the raw input
+// never reaches the DOM unsanitized.
+const safeImgSrc = (u: string): string => {
+  const s = (u || '').trim();
+  return /^https?:\/\//i.test(s) || s.startsWith('/') || /^data:image\//i.test(s) ? s : '';
 };
 
 export default function MediaPicker({
@@ -43,16 +45,17 @@ export default function MediaPicker({
   placeholder?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const showImg = !!value && (accept !== 'video') && isSafeImgSrc(value) && (isImageUrl(value) || accept === 'image');
+  const safeSrc = safeImgSrc(value);
+  const showImg = !!safeSrc && (accept !== 'video') && (isImageUrl(value) || accept === 'image');
 
   return (
     <div>
       {label && <label className="block text-text-primary font-semibold mb-2">{label}</label>}
       <div className="flex items-start gap-4">
         <div className="w-24 h-24 shrink-0 bg-dark border border-dark-border rounded-lg overflow-hidden flex items-center justify-center">
-          {value && showImg ? (
+          {showImg ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={value} alt="" className="w-full h-full object-contain" />
+            <img src={safeSrc} alt="" className="w-full h-full object-contain" />
           ) : (
             <FaImage className="text-2xl text-text-muted" />
           )}
