@@ -4,6 +4,7 @@ import { setSecrets, setEnvValue } from '@adminpanel/lib/env';
 import { MANAGED_SECRET_KEYS } from '@adminpanel/lib/integrations';
 import { cmsDb } from '@adminpanel/lib/cms/database';
 import { seedBrandMedia } from '@adminpanel/lib/cms/media-scan';
+import { seedSeoDefaults } from '@adminpanel/lib/cms/seo-store';
 import { adminExists } from '@adminpanel/lib/auth/setup-gate';
 import { validateBrevo, validateCloudflareToken, validateSmtp, type ValidationResult } from '@adminpanel/lib/integrations/test';
 import { domainToHost } from '@adminpanel/lib/url-path';
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const saved = { settings: [] as string[], secrets: [] as string[], env: [] as string[], media: [] as string[] };
+  const saved = { settings: [] as string[], secrets: [] as string[], env: [] as string[], media: [] as string[], seo: [] as string[] };
   const rejected: string[] = [];
   const warnings: string[] = [];
   let restartRequired = false;
@@ -64,6 +65,14 @@ export async function POST(request: NextRequest) {
     saved.media = seed.files;
   } catch (e) {
     warnings.push(`Could not seed brand media: ${(e as Error).message}`);
+  }
+
+  // --- Seed cms-data/seo.json from identity so /admin/seo opens pre-filled with the
+  // real site name/domain instead of the generic placeholder. Write-if-absent only. ---
+  try {
+    saved.seo = seedSeoDefaults({ siteName: settingsPatch.siteName, host });
+  } catch (e) {
+    warnings.push(`Could not seed SEO defaults: ${(e as Error).message}`);
   }
 
   // --- Public site URL -> .env.local (restart to apply). NOTE: we intentionally do
