@@ -56,7 +56,9 @@ export async function PUT(request: NextRequest) {
   // current session, so the client must re-authenticate afterwards.
   if (typeof body.email === 'string' && body.email.trim().toLowerCase() !== me.email.toLowerCase()) {
     const next = body.email.trim();
-    if (!EMAIL_RE.test(next)) return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
+    // Cap length (RFC 5321 max is 254) BEFORE the regex so the pattern only ever
+    // runs on a bounded string — defuses the polynomial-backtracking ReDoS class.
+    if (next.length > 254 || !EMAIL_RE.test(next)) return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
     if (users.some((u, i) => i !== idx && u.email.toLowerCase() === next.toLowerCase()))
       return NextResponse.json({ error: 'That email is already in use' }, { status: 409 });
     updates.email = next;

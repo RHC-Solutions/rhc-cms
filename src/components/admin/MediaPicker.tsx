@@ -22,6 +22,12 @@ export interface MediaPickerItem {
 }
 
 const isImageUrl = (u: string) => /\.(png|jpe?g|gif|webp|avif|svg)(\?|$)/i.test(u);
+// Only ever feed http(s) / root-relative / image-data URLs into an <img src> — never
+// arbitrary schemes (javascript:, etc.). Sanitizes the value before the DOM sink.
+const isSafeImgSrc = (u: string) => {
+  const s = u.trim();
+  return /^https?:\/\//i.test(s) || s.startsWith('/') || /^data:image\//i.test(s);
+};
 
 export default function MediaPicker({
   value,
@@ -37,7 +43,7 @@ export default function MediaPicker({
   placeholder?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const showImg = !!value && (accept !== 'video') && (isImageUrl(value) || accept === 'image');
+  const showImg = !!value && (accept !== 'video') && isSafeImgSrc(value) && (isImageUrl(value) || accept === 'image');
 
   return (
     <div>
