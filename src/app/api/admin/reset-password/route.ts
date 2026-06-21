@@ -296,7 +296,7 @@ export async function POST(request: NextRequest) {
 3. Log in with your email and this password
 4. Re-enable 2FA in security settings
 
-This is an automated security notification from the admin panel.`;
+This is an automated security notification from RHC CMS.`;
       const sent = await sendToTelegram(telegramConfig.botToken, telegramConfig.chatId, message);
       if (sent) {
         deliveredVia = 'telegram';

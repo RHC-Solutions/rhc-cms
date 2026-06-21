@@ -1,4 +1,4 @@
-# admin_panel — embeddable CMS admin + design-pack platform
+# RHC CMS — embeddable CMS admin + design-pack platform
 
 A reusable Next.js 16 (App Router) admin panel that drops into any site as a **git
 submodule** and runs *inside* the host's process — so it uses that site's theme, data,
@@ -26,7 +26,7 @@ is the consumer + the runtime.)
   proposing the rest. Dry-run by default.
 - **SQLite or Postgres** — SQLite (`cms-data/cms.db`) is the zero-config default; set
   `DATABASE_URL` (or `DB_DRIVER=postgres`) to run on Postgres. Same CMS API on both.
-- **CLI** — `init`, `update`, `apply-pack` via `npx github:RHC-Solutions/admin_panel`.
+- **CLI** — `init`, `update`, `apply-pack` via `npx github:RHC-Solutions/rhc-cms`.
 
 ## Architecture
 
@@ -53,7 +53,7 @@ your-site/
 **One command**, from the root of your site:
 
 ```bash
-npx github:RHC-Solutions/admin_panel init
+npx github:RHC-Solutions/rhc-cms init
 #   add --static-site if the public site IS a static design pack (scaffolds the
 #   app/[[...slug]]/route.ts catch-all; skip it on hosts with their own Next pages)
 ```
@@ -73,14 +73,14 @@ Full runbook with the test checklist: **[docs/DEPLOY_NEW_SITE.md](./docs/DEPLOY_
 Scriptable apply:
 
 ```bash
-npx github:RHC-Solutions/admin_panel apply-pack ./design-pack.zip \
+npx github:RHC-Solutions/rhc-cms apply-pack ./design-pack.zip \
   --site-url http://localhost:<port> --tokens '{"siteName":"Acme Inc","domain":"example.com"}'
 ```
 
 ## Pull updates into every site
 
 ```bash
-npx github:RHC-Solutions/admin_panel update    # pulls panel source, syncs deps, warns on skew
+npx github:RHC-Solutions/rhc-cms update    # pulls panel source, syncs deps, warns on skew
 npm run build && pm2 restart ecosystem.config.js
 ```
 

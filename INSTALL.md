@@ -38,7 +38,7 @@ with guidance if a `package.json`, Node 20.9+, git, or npm is missing):
 ```bash
 npx create-next-app@latest your-site --typescript --app
 cd your-site
-npx github:RHC-Solutions/admin_panel init            # add --static-site if the pack IS the whole site
+npx github:RHC-Solutions/rhc-cms init            # add --static-site if the pack IS the whole site
 ```
 
 > **`init` vs `update`:** `init` sets up a fresh site; `update` only upgrades a site
@@ -54,7 +54,7 @@ npx github:RHC-Solutions/admin_panel init            # add --static-site if the 
 From the root of your site:
 
 ```bash
-npx github:RHC-Solutions/admin_panel init
+npx github:RHC-Solutions/rhc-cms init
 ```
 
 This runs the bundled CLI ([bin/admin-panel.mjs](./bin/admin-panel.mjs)), which
@@ -80,7 +80,7 @@ jump to **step 4** to fill in the 3 required env vars, and **step 6** to run.
 
 > The first `npx` run clones the panel once to execute the CLI; that's expected.
 
-To pull a newer panel later: `npx github:RHC-Solutions/admin_panel update` (or
+To pull a newer panel later: `npx github:RHC-Solutions/rhc-cms update` (or
 `node vendor/admin-panel/bin/admin-panel.mjs update`) — see step 8.
 
 ### Manual path — what the CLI automates
@@ -91,7 +91,7 @@ in steps 3–4:
 
 ```bash
 cd your-site
-git submodule add https://github.com/RHC-Solutions/admin_panel.git vendor/admin-panel
+git submodule add https://github.com/RHC-Solutions/rhc-cms.git vendor/admin-panel
 node vendor/admin-panel/scripts/install-into-site.mjs        # writes thin re-export wrappers into src/app
 ```
 
@@ -346,7 +346,7 @@ defaults and no edits; override via the `AUDIT_*` env vars above.
 
 ```bash
 cd your-site
-npx github:RHC-Solutions/admin_panel update
+npx github:RHC-Solutions/rhc-cms update
 npm run build && pm2 restart your-app
 ```
 

@@ -1,5 +1,5 @@
 /**
- * Daily admin_panel update CHECK (check-only — never applies). If a newer panel is
+ * Daily rhc-cms update CHECK (check-only — never applies). If a newer panel is
  * available on GitHub and cms-data/automation.json has autoUpdate.enabled=true, it
  * notifies via Telegram (backup channel) + email (Brevo), then exits. Applying an
  * update is a deliberate, backed-up action from /admin/automation, never unattended.
@@ -15,7 +15,7 @@ import path from 'path';
 import { getSecret, log } from '../audit/_lib.mjs';
 
 const ROOT = process.env.SHARED_ROOT || process.cwd();
-const REPO = 'RHC-Solutions/admin_panel';
+const REPO = 'RHC-Solutions/rhc-cms';
 const BRANCH = 'main';
 
 function autoUpdateCfg() {

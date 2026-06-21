@@ -150,7 +150,7 @@ export default function AutomationPage() {
   };
 
   const runUpdate = async () => {
-    if (!confirm('Take a full backup and update the admin panel to the latest version? A rebuild + restart is required afterwards to apply it.')) return;
+    if (!confirm('Take a full backup and update RHC CMS to the latest version? A rebuild + restart is required afterwards to apply it.')) return;
     setMsg(null); setUpdating(true); setUpdateResult(null);
     try {
       const res = await fetch('/api/admin/automation', {
@@ -216,7 +216,7 @@ export default function AutomationPage() {
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
               <h2 className="heading-md text-text-primary">Panel updates</h2>
-              <p className="text-text-muted text-sm">Check GitHub for a newer admin panel. Updating takes a full backup first, then fast-forwards the vendored panel.</p>
+              <p className="text-text-muted text-sm">Check GitHub for a newer version of RHC CMS. Updating takes a full backup first, then fast-forwards the vendored panel.</p>
             </div>
             <div className="flex gap-2">
               <button onClick={checkUpdates} disabled={checking || updating} className="px-4 py-2 rounded-lg border border-cyber-cyan/40 text-cyber-cyan hover:bg-cyber-cyan/10 disabled:opacity-50">
@@ -349,7 +349,7 @@ export default function AutomationPage() {
 
           <Toggle
             label="Daily update check"
-            desc="Checks GitHub daily for a newer admin panel and notifies via Telegram + email. Never auto-applies — apply from Panel updates above. (Requires the daily-update.sh cron on the host.)"
+            desc="Checks GitHub daily for a newer version of RHC CMS and notifies via Telegram + email. Never auto-applies — apply from Panel updates above. (Requires the daily-update.sh cron on the host.)"
             checked={cfg.autoUpdate.enabled}
             onChange={(v) => setCfg({ ...cfg, autoUpdate: { ...cfg.autoUpdate, enabled: v } })}
           />

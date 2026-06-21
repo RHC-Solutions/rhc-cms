@@ -214,8 +214,8 @@ export class CMSDatabase {
         'home', 'Home', '/', 'Welcome to Your New Site', 'main', 'published',
         JSON.stringify(homeBlocks),
         JSON.stringify({
-          title: 'Your Site - Powered by Admin Panel',
-          description: 'A modern site powered by Admin Panel',
+          title: 'Your Site - Powered by RHC CMS',
+          description: 'A modern site powered by RHC CMS',
           keywords: ['IT solutions', 'technology', 'consulting'],
         }),
         now, now,
@@ -245,7 +245,7 @@ export class CMSDatabase {
     if (Number(settingsRow?.count ?? 0) === 0) {
       const defaultSettings: SiteSettings = {
         siteName: 'Your Site Name',
-        siteDescription: 'A modern site powered by Admin Panel',
+        siteDescription: 'A modern site powered by RHC CMS',
         contactEmail: 'admin@example.com',
         contactPhone: '',
         address: '',
@@ -379,7 +379,7 @@ export class CMSDatabase {
   private getDefaultSettings(): any {
     return {
       siteName: 'Your Site Name',
-      siteDescription: 'A modern site powered by Admin Panel',
+      siteDescription: 'A modern site powered by RHC CMS',
       contactEmail: 'admin@example.com',
       contactPhone: '',
       address: '',

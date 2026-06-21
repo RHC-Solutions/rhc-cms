@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // admin-panel CLI — one-command installer for the embeddable CMS admin.
 //
-//   npx github:RHC-Solutions/admin_panel init     # bootstrap into the current site
-//   npx github:RHC-Solutions/admin_panel update   # pull a newer panel + refresh wrappers + sync deps
-//   npx github:RHC-Solutions/admin_panel apply-pack <zip|url>   # apply a design pack to the running site
+//   npx github:RHC-Solutions/rhc-cms init     # bootstrap into the current site
+//   npx github:RHC-Solutions/rhc-cms update   # pull a newer panel + refresh wrappers + sync deps
+//   npx github:RHC-Solutions/rhc-cms apply-pack <zip|url>   # apply a design pack to the running site
 //
 // Prerequisites (checked at runtime by checkPrerequisites): Node >= 20.9 (init/update/
 // apply-pack), git + npm (init/update). `init`/`update` must run from the root of a
@@ -34,7 +34,7 @@ import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { runEnvWizard, renderEnv } from './lib/env-wizard.mjs';
 
-const DEFAULT_URL = 'https://github.com/RHC-Solutions/admin_panel.git';
+const DEFAULT_URL = 'https://github.com/RHC-Solutions/rhc-cms.git';
 const SITE = process.cwd();
 
 // ---------- arg parsing ----------
@@ -96,7 +96,7 @@ function checkPrerequisites({ needGit = true, needNpm = true } = {}) {
 // app before the panel can embed into it.
 const SCAFFOLD_HINT =
   `      npx create-next-app@latest . --ts --app\n` +
-  `      npx github:RHC-Solutions/admin_panel init${STATIC_SITE ? ' --static-site' : ' --static-site   # for a single-purpose design-pack site'}`;
+  `      npx github:RHC-Solutions/rhc-cms init${STATIC_SITE ? ' --static-site' : ' --static-site   # for a single-purpose design-pack site'}`;
 
 function assertHostSite(context = 'init') {
   const pkgPath = path.join(SITE, 'package.json');
@@ -118,7 +118,7 @@ function assertHostSite(context = 'init') {
   try {
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
     if (pkg.name === 'rhcsolutions-admin') {
-      die(`This is the admin_panel repo itself — run \`init\` from a *host* site, not from inside the panel.`);
+      die(`This is the rhc-cms repo itself — run \`init\` from a *host* site, not from inside the panel.`);
     }
   } catch { /* unreadable package.json is fine to proceed past */ }
 }
@@ -478,7 +478,7 @@ function runUpdate() {
   if (!fs.existsSync(path.join(abs, 'src', 'app'))) {
     die(`No panel submodule at ${SUBMODULE} — this site has not been set up yet.\n` +
         `  \`update\` only upgrades an existing embed. Run \`init\` first:\n` +
-        `      npx github:RHC-Solutions/admin_panel init${STATIC_SITE ? ' --static-site' : ''}`);
+        `      npx github:RHC-Solutions/rhc-cms init${STATIC_SITE ? ' --static-site' : ''}`);
   }
   setSubmoduleBranch(); // backfill the tracking branch for hosts created before this existed
   info('Pulling latest panel…');
@@ -540,11 +540,11 @@ Prerequisites:
   • a Next.js app to embed into — init/update run from the app's root (where
     package.json lives). Brand-new site? Scaffold the app first, THEN init:
       npx create-next-app@latest .
-      npx github:RHC-Solutions/admin_panel init --static-site   # --static-site = pack IS the site
+      npx github:RHC-Solutions/rhc-cms init --static-site   # --static-site = pack IS the site
 
 Usage (from your site's root):
-  npx github:RHC-Solutions/admin_panel init [options]
-  npx github:RHC-Solutions/admin_panel update
+  npx github:RHC-Solutions/rhc-cms init [options]
+  npx github:RHC-Solutions/rhc-cms update
 
 init bootstraps the panel into the CURRENT Next.js app. update upgrades a site that
 ALREADY embedded the panel — it pulls the newest panel source, regenerates the route
