@@ -9,7 +9,7 @@ import {
   FaHome, FaFileAlt, FaImages, FaUsers, FaCog, FaChartLine,
   FaBars, FaTimes, FaSignOutAlt, FaEdit, FaCookie, FaSearch, FaBriefcase, FaList, FaDatabase,
   FaPalette, FaListAlt, FaCloud, FaChevronDown, FaChevronRight, FaTrash, FaSpinner, FaShieldAlt,
-  FaPlug, FaBullhorn, FaRobot, FaSyncAlt,
+  FaPlug, FaBullhorn, FaRobot, FaSyncAlt, FaChartBar,
 } from 'react-icons/fa';
 
 interface NavItem {
@@ -49,6 +49,7 @@ export default function AdminShell({ children, title }: AdminShellProps) {
           { name: 'Setup', href: '/admin/analytics/setup', icon: FaCog, roles: ['admin', 'editor'] },
         ]
       },
+      { name: 'Rybbit Analytics', href: '/admin/rybbit', icon: FaChartBar, roles: ['admin', 'editor'] },
       { name: 'Pages', href: '/admin/pages', icon: FaFileAlt, roles: ['admin', 'editor'] },
       { name: 'Landing Pages', href: '/admin/landing-pages', icon: FaBullhorn, roles: ['admin', 'editor'] },
       { name: 'Media', href: '/admin/media', icon: FaImages, roles: ['admin', 'editor'] },
