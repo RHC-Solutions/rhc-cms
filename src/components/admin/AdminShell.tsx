@@ -49,7 +49,7 @@ export default function AdminShell({ children, title }: AdminShellProps) {
           { name: 'Setup', href: '/admin/analytics/setup', icon: FaCog, roles: ['admin', 'editor'] },
         ]
       },
-      { name: 'Rybbit Analytics', href: '/admin/rybbit', icon: FaChartBar, roles: ['admin', 'editor'] },
+      { name: 'Rybbit Analytics', href: '/admin/rybbit', icon: FaChartBar, roles: ['admin'] },
       { name: 'Pages', href: '/admin/pages', icon: FaFileAlt, roles: ['admin', 'editor'] },
       { name: 'Landing Pages', href: '/admin/landing-pages', icon: FaBullhorn, roles: ['admin', 'editor'] },
       { name: 'Media', href: '/admin/media', icon: FaImages, roles: ['admin', 'editor'] },
@@ -79,6 +79,7 @@ export default function AdminShell({ children, title }: AdminShellProps) {
         ]
       },
       { name: 'Integrations', href: '/admin/integrations', icon: FaPlug, roles: ['admin'] },
+      { name: 'Social Autopilot', href: '/admin/buffer', icon: FaBullhorn, roles: ['admin'] },
       { name: 'Backups', href: '/admin/backups', icon: FaDatabase, roles: ['admin'] },
       { name: 'Automation', href: '/admin/automation', icon: FaRobot, roles: ['admin'] },
       { name: 'OODA', href: '/admin/ooda', icon: FaSyncAlt, roles: ['admin'] },
