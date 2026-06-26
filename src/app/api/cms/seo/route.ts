@@ -15,6 +15,8 @@ interface SEOSettings {
   googleTagManagerId: string;
   googleAnalytics4Id: string;
   googleSearchConsoleVerification: string;
+  bingWebmasterVerification?: string;
+  yandexVerification?: string;
   // Ahrefs Integration
   ahrefsId: string;
   ahrefsApiKey: string;
@@ -36,6 +38,8 @@ const defaultSettings: SEOSettings = {
   googleTagManagerId: process.env.NEXT_PUBLIC_GTM_ID || '',
   googleAnalytics4Id: process.env.NEXT_PUBLIC_GA4_ID || '',
   googleSearchConsoleVerification: '',
+  bingWebmasterVerification: '',
+  yandexVerification: '',
   ahrefsId: '',
   ahrefsApiKey: '',
   ahrefsDomain: '',
