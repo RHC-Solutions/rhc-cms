@@ -16,7 +16,6 @@ interface SEOSettings {
   googleAnalytics4Id: string;
   googleSearchConsoleVerification: string;
   bingWebmasterVerification?: string;
-  yandexVerification?: string;
   // Ahrefs Integration
   ahrefsId: string;
   ahrefsApiKey: string;
@@ -411,18 +410,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                   className="w-full bg-dark-card border-2 border-dark-border rounded-lg py-3 px-4 text-text-primary font-mono focus:border-cyber-blue focus:outline-none transition-colors"
                 />
                 <p className="text-text-muted text-sm mt-2">From Bing Webmaster Tools → add site → &quot;Meta tag&quot; option. Paste only the <code>content</code> value of the <code>&lt;meta name=&quot;msvalidate.01&quot;&gt;</code> tag. Renders into &lt;head&gt; for ownership verification (Bing also powers ChatGPT Search &amp; Copilot citations).</p>
-              </div>
-
-              <div>
-                <label className="block text-text-primary font-semibold mb-2">Yandex Verification Meta</label>
-                <input
-                  type="text"
-                  value={settings?.yandexVerification || ''}
-                  onChange={(e) => setSettings(settings ? { ...settings, yandexVerification: e.target.value } : null)}
-                  placeholder="content value of the yandex-verification meta tag"
-                  className="w-full bg-dark-card border-2 border-dark-border rounded-lg py-3 px-4 text-text-primary font-mono focus:border-cyber-blue focus:outline-none transition-colors"
-                />
-                <p className="text-text-muted text-sm mt-2">From Yandex Webmaster. Paste only the <code>content</code> value of the <code>&lt;meta name=&quot;yandex-verification&quot;&gt;</code> tag.</p>
               </div>
 
               <div className="flex flex-col md:flex-row gap-4">
