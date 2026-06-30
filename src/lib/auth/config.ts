@@ -13,6 +13,7 @@ import {
   getBlockedIPInfo,
   cleanupExpiredBlocks,
 } from './ip-blocker';
+import { getClientIp } from './client-ip';
 import { getAuthSecret } from './secret';
 import { getSecret } from '@adminpanel/lib/env';
 
@@ -70,7 +71,12 @@ export const authOptions: NextAuthOptions = {
         totp: { label: 'TOTP Code', type: 'text', placeholder: '123456' },
       },
       async authorize(credentials, req) {
-        // Derive IP from client payload or request headers
+        // Derive the client IP SERVER-SIDE from the headers of the request that
+        // reached this origin through Cloudflare. We deliberately do NOT trust
+        // `credentials.ip` (it is attacker-controlled in the login payload) nor
+        // the leftmost X-Forwarded-For entry for the brute-force blocker key —
+        // see getClientIp(). city/country stay payload-sourced because they are
+        // display-only (Telegram alert) and not security-relevant.
         const getHeader = (name: string) => {
           const headersObj: any = (req as any)?.headers;
           if (!headersObj) return undefined;
@@ -78,16 +84,8 @@ export const authOptions: NextAuthOptions = {
           return headersObj[name] || headersObj[name?.toLowerCase?.()];
         };
 
-        const forwarded = getHeader('x-forwarded-for');
-        const realIp = getHeader('x-real-ip');
-        const cfIp = getHeader('cf-connecting-ip');
+        const ip = getClientIp(getHeader);
 
-        const ip = (credentials as any)?.ip
-          || forwarded?.split(',')[0]?.trim()
-          || realIp
-          || cfIp
-          || 'unknown';
-        
         const city = (credentials as any)?.city || 'Unknown';
         const country = (credentials as any)?.country || 'Unknown';
 
