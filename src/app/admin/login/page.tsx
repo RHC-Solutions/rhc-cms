@@ -1,11 +1,18 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { FaLock, FaEnvelope, FaSpinner, FaKey } from 'react-icons/fa';
+import CloudflareTurnstile from '@adminpanel/components/CloudflareTurnstile';
+
+// Turnstile is enforced server-side in authorize() whenever the secret is set.
+// The client mirrors that with the public site key: when it is absent the widget
+// is skipped entirely rather than blocking the form, so a missing key can never
+// lock an admin out of the panel.
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
 
 function LoginPageInner() {
   const router = useRouter();
@@ -23,6 +30,20 @@ function LoginPageInner() {
   const [resetEmail, setResetEmail] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetMessage, setResetMessage] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
+  // Turnstile tokens are single-use: bump this to force a fresh widget after
+  // every submit, otherwise a second attempt replays a spent token and 403s.
+  const [turnstileNonce, setTurnstileNonce] = useState(0);
+
+  const resetTurnstile = useCallback(() => {
+    setTurnstileToken('');
+    setTurnstileNonce((n) => n + 1);
+  }, []);
+
+  // Stable identity: CloudflareTurnstile keys its script/widget effects off
+  // onVerify/onError, so an inline arrow here would tear the widget down and
+  // rebuild it on every render.
+  const handleTurnstileError = useCallback(() => setTurnstileToken(''), []);
 
   // Check if initial setup is needed
   useEffect(() => {
@@ -51,6 +72,12 @@ function LoginPageInner() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setError('Please complete the bot check before signing in.');
+      return;
+    }
+
     setLoading(true);
 
     // Get client IP address and location (prefer internal API, fallback to ipify)
@@ -83,6 +110,7 @@ function LoginPageInner() {
         email,
         password,
         totp,
+        turnstileToken,
         ip: clientIp,
         country: clientCountry,
         city: clientCity,
@@ -98,19 +126,28 @@ function LoginPageInner() {
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
+      // The token was spent by this attempt (success or not) — issue a new one
+      // so a retry is not rejected for replaying it.
+      resetTurnstile();
     }
   };
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setResetMessage('');
+
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setResetMessage('✗ Please complete the bot check first.');
+      return;
+    }
+
     setResetLoading(true);
 
     try {
       const response = await fetch('/api/admin/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: resetEmail }),
+        body: JSON.stringify({ email: resetEmail, turnstileToken }),
       });
 
       const data = await response.json();
@@ -130,6 +167,7 @@ function LoginPageInner() {
       setResetMessage('✗ An error occurred. Please try again.');
     } finally {
       setResetLoading(false);
+      resetTurnstile();
     }
   };
 
@@ -216,10 +254,21 @@ function LoginPageInner() {
               </div>
             </div>
 
+            {TURNSTILE_SITE_KEY && (
+              <div className="flex justify-center">
+                <CloudflareTurnstile
+                  key={`turnstile-reset-${turnstileNonce}`}
+                  theme="dark"
+                  onVerify={setTurnstileToken}
+                  onError={handleTurnstileError}
+                />
+              </div>
+            )}
+
             <div className="space-y-3">
               <motion.button
                 type="submit"
-                disabled={resetLoading}
+                disabled={resetLoading || (!!TURNSTILE_SITE_KEY && !turnstileToken)}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="w-full bg-linear-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -319,10 +368,21 @@ function LoginPageInner() {
             </div>
           </div>
 
+          {TURNSTILE_SITE_KEY && (
+            <div className="flex justify-center">
+              <CloudflareTurnstile
+                key={`turnstile-login-${turnstileNonce}`}
+                theme="dark"
+                onVerify={setTurnstileToken}
+                onError={handleTurnstileError}
+              />
+            </div>
+          )}
+
           {/* Submit Button */}
           <motion.button
             type="submit"
-            disabled={loading}
+            disabled={loading || (!!TURNSTILE_SITE_KEY && !turnstileToken)}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className="w-full bg-linear-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -345,6 +405,7 @@ function LoginPageInner() {
             onClick={() => {
               setResetMode(true);
               setError('');
+              resetTurnstile();
             }}
             className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
           >

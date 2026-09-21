@@ -3,14 +3,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaSearch, FaTimes } from 'react-icons/fa';
-import { searchAdmin } from '@adminpanel/lib/admin-search';
+import { useSession } from 'next-auth/react';
+import { searchAdmin, type AdminSearchItem } from '@adminpanel/lib/admin-search';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AdminSearch() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const role = (session?.user as any)?.role as string | undefined;
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState<AdminSearchItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -41,33 +44,29 @@ export default function AdminSearch() {
     }
   }, [isOpen]);
 
-  // Handle search
+  // Handle search. Results are filtered by the signed-in role so search never
+  // offers a page the user would be redirected or 403'd out of.
   useEffect(() => {
-    if (query.trim()) {
-      const searchResults = searchAdmin(query);
-      setResults(searchResults as any);
-      setSelectedIndex(0);
-    } else {
-      setResults([]);
-      setSelectedIndex(0);
-    }
-  }, [query]);
+    setResults(query.trim() ? searchAdmin(query, role) : []);
+    setSelectedIndex(0);
+  }, [query, role]);
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (results.length === 0) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setSelectedIndex((prev) => (prev + 1) % results.length);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setSelectedIndex((prev) => (prev - 1 + results.length) % results.length);
-    } else if (e.key === 'Enter' && results.length > 0) {
+    } else if (e.key === 'Enter') {
       e.preventDefault();
       handleSelect(results[selectedIndex]);
     }
   }, [results, selectedIndex]);
 
-  const handleSelect = (item: any) => {
+  const handleSelect = (item: AdminSearchItem) => {
     router.push(item.href);
     setIsOpen(false);
     setQuery('');
@@ -145,7 +144,7 @@ export default function AdminSearch() {
                 <div ref={resultsRef} className="max-h-96 overflow-y-auto">
                   {results.length > 0 ? (
                     <div className="divide-y divide-dark-border">
-                      {results.map((item: any, index: number) => (
+                      {results.map((item, index) => (
                         <motion.button
                           key={item.id}
                           onClick={() => handleSelect(item)}
@@ -159,8 +158,13 @@ export default function AdminSearch() {
                           }`}
                         >
                           <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <p className="font-semibold text-text-primary">{item.title}</p>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-text-primary">
+                                {item.section && (
+                                  <span className="text-text-muted font-normal">{item.section} › </span>
+                                )}
+                                {item.title}
+                              </p>
                               <p className="text-sm text-text-muted">{item.description}</p>
                             </div>
                             <span className="text-xs text-text-muted ml-2 whitespace-nowrap">

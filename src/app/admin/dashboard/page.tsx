@@ -6,8 +6,51 @@ import { motion } from 'framer-motion';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
 import { 
   FaUsers, FaFileAlt, FaImages, FaChartLine, FaEye, FaMousePointer,
-  FaClock, FaGlobeAmericas, FaDesktop, FaMobile, FaArrowUp, FaArrowDown
+  FaClock, FaGlobeAmericas, FaDesktop, FaMobile,
+  FaSpinner, FaExclamationTriangle
 } from 'react-icons/fa';
+
+// One placeholder for both analytics panels. Previously they rendered a flat
+// "Connect Google Analytics" message for every non-populated state, so a request
+// that was still in flight (or had 401'd) looked exactly like "GA is not set up".
+function PanelPlaceholder({
+  icon: Icon,
+  loading,
+  error,
+  emptyHint,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  loading: boolean;
+  error?: string;
+  emptyHint: string;
+}) {
+  if (loading) {
+    return (
+      <div className="text-center py-12 text-text-muted">
+        <FaSpinner className="text-4xl mx-auto mb-4 animate-spin text-cyber-green/60" />
+        <p>Loading analytics…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12 text-text-muted">
+        <FaExclamationTriangle className="text-4xl mx-auto mb-4 text-yellow-500/70" />
+        <p className="text-yellow-500">Analytics unavailable</p>
+        <p className="text-sm mt-2">{error}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-center py-12 text-text-muted">
+      <Icon className="text-5xl mx-auto mb-4 opacity-30" />
+      <p>No analytics data available</p>
+      <p className="text-sm mt-2">{emptyHint}</p>
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -15,6 +58,7 @@ export default function AdminDashboard() {
   const loading = status === 'loading';
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [analyticsError, setAnalyticsError] = useState('');
   const [cmsData, setCmsData] = useState<any>({ pages: 0, media: 0 });
 
   useEffect(() => {
@@ -28,13 +72,23 @@ export default function AdminDashboard() {
     // Fetch Google Analytics data
     const fetchAnalytics = async () => {
       try {
+        // No `pagespeed=1`: this page never renders Lighthouse scores, and asking
+        // for them made the whole request wait out a 15-60s PageSpeed run.
         const response = await fetch('/api/cms/google-services');
-        if (response.ok) {
-          const data = await response.json();
-          setAnalyticsData(data);
+        if (!response.ok) {
+          setAnalyticsError(
+            response.status === 401
+              ? 'Session expired — sign in again to load analytics.'
+              : `Analytics request failed (HTTP ${response.status}).`
+          );
+          return;
         }
+        const data = await response.json();
+        setAnalyticsData(data);
+        if (data?.analytics?.error) setAnalyticsError(data.analytics.error);
       } catch (error) {
         console.error('Failed to fetch analytics:', error);
+        setAnalyticsError('Could not reach the analytics service.');
       } finally {
         setAnalyticsLoading(false);
       }
@@ -89,12 +143,17 @@ export default function AdminDashboard() {
     returningUsers: (analytics?.totalUsers || 0) - (analytics?.newUsers || 0),
   };
 
-  const recentPages: Array<{ title: string; views: number; change: number; trending: 'up' | 'down' }> = 
+  // Share of the top-10 page views, so each row carries a real number. The old
+  // shape hardcoded `change: 0, trending: 'up'` and rendered a fabricated "↑ 0%"
+  // next to every page — GA4 isn't queried for a comparison period here.
+  const topPageViewTotal: number =
+    analytics?.topPages?.reduce((sum: number, p: any) => sum + (p.screenPageViews || 0), 0) || 0;
+
+  const recentPages: Array<{ title: string; views: number; share: number }> =
     analytics?.topPages?.slice(0, 5).map((page: any) => ({
       title: page.pagePath || page.pageTitle || 'Unknown',
       views: page.screenPageViews || 0,
-      change: 0,
-      trending: 'up' as const
+      share: topPageViewTotal > 0 ? Math.round(((page.screenPageViews || 0) / topPageViewTotal) * 100) : 0,
     })) || [];
 
   const trafficSources: Array<{ source: string; users: number; percentage: number }> = 
@@ -226,18 +285,18 @@ export default function AdminDashboard() {
                     <h4 className="text-text-primary font-semibold">{page.title}</h4>
                     <p className="text-text-secondary text-sm">{page.views.toLocaleString()} views</p>
                   </div>
-                  <div className={`flex items-center ${page.trending === 'up' ? 'text-cyber-green' : 'text-cyber-red'}`}>
-                    {page.trending === 'up' ? <FaArrowUp className="mr-1" /> : <FaArrowDown className="mr-1" />}
-                    <span className="font-mono text-sm">{Math.abs(page.change)}%</span>
+                  <div className="flex items-center text-cyber-green" title="Share of top-10 page views">
+                    <span className="font-mono text-sm">{page.share}%</span>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center py-12 text-text-muted">
-                <FaChartLine className="text-5xl mx-auto mb-4 opacity-30" />
-                <p>No analytics data available</p>
-                <p className="text-sm mt-2">Connect Google Analytics to view page statistics</p>
-              </div>
+              <PanelPlaceholder
+                icon={FaChartLine}
+                loading={analyticsLoading}
+                error={analyticsError}
+                emptyHint="No page views recorded in the last 30 days."
+              />
             )}
           </div>
         </motion.div>
@@ -271,11 +330,12 @@ export default function AdminDashboard() {
                 </div>
               ))
             ) : (
-              <div className="text-center py-12 text-text-muted">
-                <FaGlobeAmericas className="text-5xl mx-auto mb-4 opacity-30" />
-                <p>No traffic data available</p>
-                <p className="text-sm mt-2">Connect Google Analytics to view traffic sources</p>
-              </div>
+              <PanelPlaceholder
+                icon={FaGlobeAmericas}
+                loading={analyticsLoading}
+                error={analyticsError}
+                emptyHint="No sessions recorded in the last 30 days."
+              />
             )}
           </div>
         </motion.div>

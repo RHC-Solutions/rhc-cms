@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import bcrypt from 'bcryptjs';
+import { getSecret } from '@adminpanel/lib/env';
+import { verifyTurnstileToken } from '@adminpanel/lib/cloudflare/turnstile';
 
 const USERS_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'users.json');
 const SETTINGS_FILE = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'settings.json');
@@ -99,10 +101,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email } = await request.json();
+    const { email, turnstileToken } = await request.json();
 
     if (!email || typeof email !== 'string') {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    }
+
+    // Turnstile bot gate. Fail-closed once a secret is configured, fail-open when
+    // Turnstile is not set up at all so the forgot-password path stays reachable.
+    if (getSecret('CLOUDFLARE_TURNSTILE_SECRET_KEY')) {
+      if (!turnstileToken || typeof turnstileToken !== 'string') {
+        return NextResponse.json({ error: 'Bot check required' }, { status: 403 });
+      }
+      const turnstile = await verifyTurnstileToken(turnstileToken);
+      if (!turnstile.success) {
+        return NextResponse.json({ error: 'Bot check failed. Please try again.' }, { status: 403 });
+      }
     }
 
     // Generic success response used to prevent account enumeration. Any path

@@ -16,6 +16,20 @@ import {
 import { getClientIp } from './client-ip';
 import { getAuthSecret } from './secret';
 import { getSecret } from '@adminpanel/lib/env';
+import { verifyTurnstileToken } from '@adminpanel/lib/cloudflare/turnstile';
+
+// city/country arrive in the login payload (attacker-controlled) and are
+// rendered into a parse_mode:'HTML' Telegram message — strip anything that
+// could inject markup or spoof the alert's structure.
+function sanitizeDisplayLocation(value: unknown): string {
+  if (typeof value !== 'string') return 'Unknown';
+  const sanitized = value
+    .trim()
+    .replace(/[<>&"'`{}[\]\\]/g, '')
+    .replace(/\s+/g, ' ')
+    .slice(0, 80);
+  return sanitized || 'Unknown';
+}
 
 async function sendTelegramNotification(email: string, success: boolean, reason?: string, ip?: string, city?: string, country?: string) {
   const botToken = getSecret('TELEGRAM_CONTACT_BOT_TOKEN');
@@ -69,6 +83,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email', placeholder: 'admin@rhcsolutions.com' },
         password: { label: 'Password', type: 'password' },
         totp: { label: 'TOTP Code', type: 'text', placeholder: '123456' },
+        turnstileToken: { label: 'Turnstile Token', type: 'text' },
       },
       async authorize(credentials, req) {
         // Derive the client IP SERVER-SIDE from the headers of the request that
@@ -86,8 +101,8 @@ export const authOptions: NextAuthOptions = {
 
         const ip = getClientIp(getHeader);
 
-        const city = (credentials as any)?.city || 'Unknown';
-        const country = (credentials as any)?.country || 'Unknown';
+        const city = sanitizeDisplayLocation((credentials as any)?.city);
+        const country = sanitizeDisplayLocation((credentials as any)?.country);
 
         // Clean up expired blocks
         cleanupExpiredBlocks();
@@ -108,6 +123,41 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
         
+        // Cloudflare Turnstile: bot gate in front of the credential check.
+        // Fail-CLOSED once a secret is configured (same posture as /api/contact),
+        // but fail-OPEN when Turnstile is not configured at all so a fresh install
+        // or a wiped secret can never permanently lock everyone out of /admin.
+        // A Turnstile failure deliberately does NOT call recordFailedAttempt(): a
+        // flaky widget must not be able to IP-block a legitimate admin.
+        if (getSecret('CLOUDFLARE_TURNSTILE_SECRET_KEY')) {
+          const turnstileToken = (credentials as any)?.turnstileToken as string | undefined;
+          if (!turnstileToken) {
+            console.log('[Auth] Missing Turnstile token');
+            await sendTelegramNotification(
+              credentials?.email || 'unknown',
+              false,
+              'Missing Turnstile token (bot check)',
+              ip,
+              city,
+              country
+            );
+            return null;
+          }
+          const turnstile = await verifyTurnstileToken(turnstileToken);
+          if (!turnstile.success) {
+            console.log('[Auth] Turnstile verification failed:', turnstile.error);
+            await sendTelegramNotification(
+              credentials?.email || 'unknown',
+              false,
+              `Turnstile verification failed (${turnstile.error || 'unknown'})`,
+              ip,
+              city,
+              country
+            );
+            return null;
+          }
+        }
+
         if (!credentials?.email || !credentials?.password) {
           console.log('[Auth] Missing credentials');
           recordFailedAttempt(ip);

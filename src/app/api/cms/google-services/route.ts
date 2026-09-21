@@ -154,11 +154,15 @@ async function fetchSearchConsoleData(credentials: any, siteUrl: string) {
 }
 
 // PageSpeed Insights Data
+// A PageSpeed run against a real page routinely takes 15-60s. Cap it so the
+// route always answers promptly even when Lighthouse is having a bad day.
+const PAGESPEED_TIMEOUT_MS = 25_000;
+
 async function fetchPageSpeedData(url: string, apiKey?: string) {
   try {
     const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=mobile${apiKey ? `&key=${apiKey}` : ''}`;
-    
-    const response = await fetch(apiUrl);
+
+    const response = await fetch(apiUrl, { signal: AbortSignal.timeout(PAGESPEED_TIMEOUT_MS) });
     const data = await response.json();
 
     if (!response.ok) {
@@ -210,17 +214,28 @@ export async function GET(request: NextRequest) {
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://rhcsolutions.com';
 
-    // Fetch all Google service data in parallel
+    // PageSpeed is OPT-IN (`?pagespeed=1`). A Lighthouse run costs 15-60s while the
+    // GA + Search Console reports answer in well under a second, and Promise.all made
+    // every caller wait for the slowest one. The dashboard doesn't render PageSpeed at
+    // all, so it was sitting on the "no analytics data" empty state for the length of a
+    // Lighthouse run it then threw away. /admin/analytics, which does render it, asks
+    // for it explicitly.
+    const wantPageSpeed = ['1', 'true'].includes(
+      (request.nextUrl.searchParams.get('pagespeed') || '').toLowerCase()
+    );
+
     const [analytics, searchConsole, pageSpeed] = await Promise.all([
       fetchAnalyticsData(credentials),
       fetchSearchConsoleData(credentials, siteUrl),
-      fetchPageSpeedData(siteUrl, credentials.pageSpeedApiKey),
+      wantPageSpeed ? fetchPageSpeedData(siteUrl, credentials.pageSpeedApiKey) : Promise.resolve(null),
     ]);
 
     return NextResponse.json({
       analytics: analytics || { error: 'Analytics data unavailable' },
       searchConsole: searchConsole || { error: 'Search Console data unavailable' },
-      pageSpeed: pageSpeed || { error: 'PageSpeed data unavailable' },
+      pageSpeed: wantPageSpeed
+        ? pageSpeed || { error: 'PageSpeed data unavailable' }
+        : { skipped: true },
       lastUpdated: new Date().toISOString(),
     });
   } catch (error) {

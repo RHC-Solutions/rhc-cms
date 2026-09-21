@@ -100,7 +100,8 @@ export default function AnalyticsPage() {
 
     // Fetch Google Services (Analytics, Search Console, PageSpeed)
     try {
-      const response = await fetch('/api/cms/google-services');
+      // This page renders the PageSpeed card, so ask for the (slow) Lighthouse run.
+      const response = await fetch('/api/cms/google-services?pagespeed=1');
       const result = await response.json();
       setGoogleServices(result);
     } catch (err) {
