@@ -155,6 +155,8 @@ export default function CMSPagesEditor() {
       slug: '/new-page',
       category: 'Main',
       status: 'draft',
+      // Pages opt IN to the footer by default; uncheck per page to hide one.
+      showInFooter: true,
       blocks: [],
       createdBy: 'admin',
       createdAt: new Date().toISOString(),

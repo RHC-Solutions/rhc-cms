@@ -33,8 +33,6 @@ export const ADMIN_SEARCH_INDEX: AdminSearchItem[] = [
     keywords: ['analytics', 'ga4', 'google analytics', 'search console', 'gsc', 'pagespeed', 'lighthouse', 'traffic', 'visitors', 'sessions', 'bounce'] },
   { id: 'analytics-setup', title: 'Analytics Setup', description: 'Connect the GA4 property and service account', href: '/admin/analytics/setup', section: 'Analytics', roles: ADMIN_EDITOR,
     keywords: ['analytics', 'setup', 'connect', 'ga4', 'property id', 'service account', 'credentials'] },
-  { id: 'rybbit', title: 'Rybbit Analytics', description: 'Cookieless self-hosted analytics', href: '/admin/rybbit', roles: ADMIN_ONLY,
-    keywords: ['rybbit', 'analytics', 'cookieless', 'privacy', 'self hosted', 'tracking', 'site id'] },
 
   // ---- Content ------------------------------------------------------------
   { id: 'pages', title: 'Pages', description: 'Create and edit website pages and their blocks', href: '/admin/pages', roles: ADMIN_EDITOR,

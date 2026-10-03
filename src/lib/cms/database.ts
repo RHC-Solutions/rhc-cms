@@ -78,7 +78,7 @@ function initDatabase() {
       description TEXT,
       category TEXT,
       status TEXT DEFAULT 'draft',
-      showInFooter INTEGER DEFAULT 0,
+      showInFooter INTEGER DEFAULT 1,
       blocks TEXT,
       seo TEXT,
       createdAt TEXT NOT NULL,

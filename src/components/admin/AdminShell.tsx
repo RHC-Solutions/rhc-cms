@@ -49,7 +49,6 @@ export default function AdminShell({ children, title }: AdminShellProps) {
           { name: 'Setup', href: '/admin/analytics/setup', icon: FaCog, roles: ['admin', 'editor'] },
         ]
       },
-      { name: 'Rybbit Analytics', href: '/admin/rybbit', icon: FaChartBar, roles: ['admin'] },
       { name: 'Pages', href: '/admin/pages', icon: FaFileAlt, roles: ['admin', 'editor'] },
       { name: 'Landing Pages', href: '/admin/landing-pages', icon: FaBullhorn, roles: ['admin', 'editor'] },
       { name: 'Media', href: '/admin/media', icon: FaImages, roles: ['admin', 'editor'] },
