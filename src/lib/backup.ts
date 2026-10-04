@@ -21,8 +21,6 @@ const BACKUP_SOURCES = [
 
 // Root level config files to include (same as API backup)
 const CONFIG_FILES = [
-  '.env.local',
-  '.env.example',
   'package.json',
   'package-lock.json',
   'package.scripts.json',
@@ -160,7 +158,7 @@ async function createBackupZip(targetPath: string): Promise<boolean> {
       restoreInstructions: [
         '1. Extract the entire backup zip to your deployment directory',
         '2. Run: npm install',
-        '3. Verify .env.local exists',
+        '3. Verify cms-data/cms.db exists (it holds all settings and secrets)',
         '4. Run: npm run build',
         '5. Run: pm2 start ecosystem.config.js or npm start',
       ],

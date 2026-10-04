@@ -142,11 +142,11 @@ export default function CloudflareSetupPage() {
           <div className="text-4xl">🚀</div>
           <div>
             <h3 className="text-lg font-bold text-text-primary mb-2">Quick Start</h3>
-            <p className="text-text-muted mb-3">You need to collect 5 credentials from Cloudflare dashboard and add them to .env.local</p>
+            <p className="text-text-muted mb-3">You need to collect 5 credentials from Cloudflare dashboard and save them in the admin (they're stored in the site database)</p>
             <div className="space-y-1 text-sm text-text-secondary">
               <p>1️⃣ Visit Cloudflare Dashboard (see links below)</p>
               <p>2️⃣ Copy the 5 credentials listed below</p>
-              <p>3️⃣ Update .env.local with your credentials</p>
+              <p>3️⃣ Save your credentials on the Cloudflare setup page</p>
               <p>4️⃣ Restart application: <code className="bg-dark-lighter px-2 py-1 rounded">pm2 restart rhcsolutions --update-env</code></p>
               <p>5️⃣ Test Turnstile on contact form and check admin dashboard</p>
             </div>
@@ -246,7 +246,7 @@ export default function CloudflareSetupPage() {
                         <li>Never share this credential</li>
                         <li>Never commit to git</li>
                         <li>Never expose in frontend code</li>
-                        <li>Store in .env.local only</li>
+                        <li>Store them only in the admin (site database), never in files</li>
                       </ul>
                     </div>
                   </div>
@@ -257,11 +257,11 @@ export default function CloudflareSetupPage() {
         ))}
       </div>
 
-      {/* .env.local Template */}
+      {/* Variable names */}
       <div className="card-cyber p-6 mb-8">
         <h3 className="heading-md text-text-primary mb-4 flex items-center gap-2">
           <FaKey />
-          .env.local Template
+          Variable names
         </h3>
         <p className="text-text-muted text-sm mb-4">Copy this template and fill in your credentials:</p>
         <div className="flex items-start gap-2">
@@ -287,7 +287,7 @@ CLOUDFLARE_ACCOUNT_ID=your-account-id`}
         <div className="space-y-3">
           {[
             'Gathered all 5 credentials from Cloudflare dashboard',
-            'Updated .env.local with actual values',
+            'Saved the values in the admin',
             'Restarted application (pm2 restart rhcsolutions --update-env)',
             'Contact form shows Turnstile widget',
             'Can complete Turnstile challenge on contact form',
@@ -319,7 +319,7 @@ CLOUDFLARE_ACCOUNT_ID=your-account-id`}
             <p className="font-semibold text-text-primary mb-2">❌ Turnstile widget not appearing on contact form</p>
             <ul className="text-text-muted text-sm space-y-1 list-disc list-inside">
               <li>Verify NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY is correct</li>
-              <li>Check it's in .env.local, not .env.production.local</li>
+              <li>Check it's saved in the admin and the site was rebuilt</li>
               <li>Restart: pm2 restart rhcsolutions --update-env</li>
             </ul>
           </div>

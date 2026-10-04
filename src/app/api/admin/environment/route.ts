@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import * as fs from 'fs';
-import * as path from 'path';
+import { getSecret, setSecrets } from '@adminpanel/lib/env';
 
 async function requireAdmin(request: NextRequest) {
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
@@ -49,7 +48,6 @@ interface EnvSettings {
   ipinfoToken: string;
 }
 
-const ENV_FILE = path.join(process.cwd(), '.env.local');
 
 const ENV_VAR_MAPPING: Record<keyof EnvSettings, string> = {
   nextauthUrl: 'NEXTAUTH_URL',
@@ -90,34 +88,13 @@ const ENV_VAR_MAPPING: Record<keyof EnvSettings, string> = {
   ipinfoToken: 'IPINFO_TOKEN',
 };
 
+// Settings live in the site database (secrets table), not an .env file.
 function getEnvValue(key: string): string {
-  try {
-    const content = fs.readFileSync(ENV_FILE, 'utf-8');
-    const match = content.match(new RegExp(`^${key}=(.*)$`, 'm'));
-    return match ? match[1].trim() : '';
-  } catch {
-    return '';
-  }
+  return getSecret(key);
 }
 
 function setEnvValue(key: string, value: string): void {
-  try {
-    let content = fs.readFileSync(ENV_FILE, 'utf-8');
-    
-    if (content.includes(`${key}=`)) {
-      content = content.replace(
-        new RegExp(`^${key}=.*$`, 'm'),
-        `${key}=${value}`
-      );
-    } else {
-      content += `\n${key}=${value}`;
-    }
-    
-    fs.writeFileSync(ENV_FILE, content, 'utf-8');
-  } catch (error) {
-    console.error('Failed to write .env.local:', error);
-    throw error;
-  }
+  setSecrets({ [key]: value });
 }
 
 export async function GET(request: NextRequest) {

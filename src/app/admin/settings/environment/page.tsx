@@ -188,7 +188,7 @@ export default function EnvironmentSettingsPage() {
     <AdminShell title="Environment Settings">
       <div className="mb-8">
         <h1 className="heading-xl text-gradient mb-2">Environment Configuration</h1>
-        <p className="text-text-secondary">Manage all application settings from .env.local</p>
+        <p className="text-text-secondary">Application settings are stored in the site database. Changes to NEXT_PUBLIC_* and NEXTAUTH_* values apply after the next build and restart.</p>
       </div>
 
       {/* Tabs */}

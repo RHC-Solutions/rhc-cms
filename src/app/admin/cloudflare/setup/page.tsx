@@ -223,11 +223,11 @@ export default function CloudflareSetupPage() {
           <div className="text-4xl">🚀</div>
           <div>
             <h3 className="text-lg font-bold text-text-primary mb-2">Quick Start</h3>
-            <p className="text-text-muted mb-3">You need to collect 5 credentials from Cloudflare dashboard and add them to .env.local</p>
+            <p className="text-text-muted mb-3">You need to collect 5 credentials from Cloudflare dashboard and save them in the admin (they're stored in the site database)</p>
             <div className="space-y-1 text-sm text-text-secondary">
               <p>1️⃣ Visit Cloudflare Dashboard (see links below)</p>
               <p>2️⃣ Copy the 5 credentials listed below</p>
-              <p>3️⃣ Update .env.local with your credentials</p>
+              <p>3️⃣ Save your credentials on the Cloudflare setup page</p>
               <p>4️⃣ Restart application: <code className="bg-dark-lighter px-2 py-1 rounded">pm2 restart rhcsolutions --update-env</code></p>
               <p>5️⃣ Test Turnstile on contact form and check admin dashboard</p>
             </div>

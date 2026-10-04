@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@adminpanel/lib/auth/config';
-import fs from 'fs';
-import path from 'path';
 import { setSecrets, getSecret } from '@adminpanel/lib/env';
 
 export async function POST(request: NextRequest) {
@@ -21,25 +19,6 @@ export async function POST(request: NextRequest) {
       NEXT_PUBLIC_CLOUDFLARE_ZONE_ID,
       CLOUDFLARE_ACCOUNT_ID,
     } = body;
-
-    // Path to .env.local
-    const envPath = path.join(process.cwd(), '.env.local');
-    
-    // Read existing .env.local if it exists
-    let envContent = '';
-    if (fs.existsSync(envPath)) {
-      envContent = fs.readFileSync(envPath, 'utf-8');
-    }
-
-    // Update or add Cloudflare variables
-    const updateOrAddEnvVar = (content: string, key: string, value: string): string => {
-      const regex = new RegExp(`^${key}=.*$`, 'm');
-      if (regex.test(content)) {
-        return content.replace(regex, `${key}=${value}`);
-      } else {
-        return content + (content.endsWith('\n') ? '' : '\n') + `${key}=${value}\n`;
-      }
-    };
 
     // Validate credentials before saving
     const validationResults: any = {};
@@ -98,10 +77,8 @@ export async function POST(request: NextRequest) {
       CLOUDFLARE_ACCOUNT_ID,
     });
 
-    // NEXT_PUBLIC_* values are inlined into the client bundle at build time,
-    // so they still belong in .env.local and a rebuild is required to ship a
-    // change. Only touch .env.local if a NEXT_PUBLIC_* field was actually
-    // submitted.
+    // NEXT_PUBLIC_* values are saved to the database too; they're inlined into
+    // the client bundle when the site is built, so a rebuild ships a change.
     const publicSubmitted =
       (NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY !== undefined &&
         NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY.trim() !== '') ||
@@ -109,13 +86,7 @@ export async function POST(request: NextRequest) {
         NEXT_PUBLIC_CLOUDFLARE_ZONE_ID.trim() !== '');
 
     if (publicSubmitted) {
-      if (NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY !== undefined && NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY.trim() !== '') {
-        envContent = updateOrAddEnvVar(envContent, 'NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY', NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY.trim());
-      }
-      if (NEXT_PUBLIC_CLOUDFLARE_ZONE_ID !== undefined && NEXT_PUBLIC_CLOUDFLARE_ZONE_ID.trim() !== '') {
-        envContent = updateOrAddEnvVar(envContent, 'NEXT_PUBLIC_CLOUDFLARE_ZONE_ID', NEXT_PUBLIC_CLOUDFLARE_ZONE_ID.trim());
-      }
-      fs.writeFileSync(envPath, envContent);
+      setSecrets({ NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY, NEXT_PUBLIC_CLOUDFLARE_ZONE_ID });
     }
 
     let message = 'Configuration saved successfully!';

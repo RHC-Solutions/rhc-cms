@@ -157,8 +157,7 @@ export default function IntegrationsPage() {
       <div className="mb-8">
         <h1 className="heading-xl text-gradient mb-2">Integrations</h1>
         <p className="text-text-secondary">
-          Manage server-side credentials for third-party services. Saved values live in{' '}
-          <code className="bg-dark-lighter px-1.5 py-0.5 rounded text-xs">cms-data/secrets.json</code>{' '}
+          Manage server-side credentials for third-party services. Saved values are stored in the site database
           and take effect immediately — no <code>pm2 restart</code> required.
         </p>
       </div>

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import * as fs from 'fs';
-import * as path from 'path';
+import { getSecret, setSecrets } from '@adminpanel/lib/env';
 
 async function requireAdmin(request: NextRequest) {
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
@@ -18,51 +17,14 @@ interface GA4Config {
   projectId: string;
 }
 
-const ENV_FILE = path.join(process.cwd(), '.env.local');
-
+// Settings live in the site database (secrets table), not an .env file.
 function getEnvValue(key: string): string {
-  try {
-    const content = fs.readFileSync(ENV_FILE, 'utf-8');
-    const match = content.match(new RegExp(`^${key}=(.*)$`, 'm'));
-    if (!match) return '';
-    
-    let value = match[1].trim();
-    
-    // Remove surrounding quotes if present
-    if ((value.startsWith('"') && value.endsWith('"')) || 
-        (value.startsWith("'") && value.endsWith("'"))) {
-      value = value.slice(1, -1);
-    }
-    
-    // Convert literal \n to actual newlines (for private keys)
-    value = value.replace(/\\n/g, '\n');
-    
-    return value;
-  } catch {
-    return '';
-  }
+  // Private keys may be stored with literal \n sequences.
+  return getSecret(key).replace(/\\n/g, '\n');
 }
 
 function setEnvValue(key: string, value: string): void {
-  try {
-    let content = fs.readFileSync(ENV_FILE, 'utf-8');
-    
-    // If key exists, replace it
-    if (content.includes(`${key}=`)) {
-      content = content.replace(
-        new RegExp(`^${key}=.*$`, 'm'),
-        `${key}=${value}`
-      );
-    } else {
-      // If key doesn't exist, append it
-      content += `\n${key}=${value}`;
-    }
-    
-    fs.writeFileSync(ENV_FILE, content, 'utf-8');
-  } catch (error) {
-    console.error('Failed to write .env.local:', error);
-    throw error;
-  }
+  setSecrets({ [key]: value });
 }
 
 export async function GET(request: NextRequest) {
