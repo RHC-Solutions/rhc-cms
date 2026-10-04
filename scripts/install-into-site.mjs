@@ -170,7 +170,10 @@ console.log(`\nNext steps (one-time per site):
      node ${submoduleRel}/scripts/install-into-site.mjs --print-deps   (lists them)
    then \`npm i <those> --legacy-peer-deps\`.
 
-4) Env (.env.local): NEXTAUTH_SECRET, NEXTAUTH_URL, NEXT_PUBLIC_SITE_URL.
+4) Settings: NEXTAUTH_SECRET, NEXTAUTH_URL, NEXT_PUBLIC_SITE_URL live in the site
+   database (cms-data/cms.db, no .env file). Set them with
+   \`npx github:RHC-Solutions/rhc-cms settings\`, which also routes dev/build/start
+   through ${submoduleRel}/scripts/env-from-db.mjs.
 
 5) Data: the admin reads/writes ./cms-data in the host site (its own theme,
    pages, users, secrets). Nothing to share — each site keeps its own.
@@ -182,7 +185,7 @@ console.log(`\nNext steps (one-time per site):
 
 6) (Optional) Automation — the /admin/automation audit scheduler runs
    ${submoduleRel}/scripts/audit/*.sh. Because they live in the submodule, set
-   AUDIT_SCRIPTS_DIR in .env.local so the API can find them:
+   AUDIT_SCRIPTS_DIR in the process environment (e.g. PM2 env) so the API can find them:
      AUDIT_SCRIPTS_DIR=${submoduleRel}/scripts/audit
-   and AUDIT_GH_REPO=<owner/repo> if you want auto-fix PRs. See .env.local.example.
+   and AUDIT_GH_REPO=<owner/repo> if you want auto-fix PRs. See INSTALL.md step 4.
 `);
