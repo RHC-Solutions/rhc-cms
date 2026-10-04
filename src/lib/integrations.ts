@@ -135,6 +135,15 @@ export const INTEGRATIONS: Integration[] = [
     ],
   },
   {
+    id: 'hubspot',
+    name: 'HubSpot CRM',
+    description: 'Sends website leads to HubSpot as contacts (Lifecycle Stage "Lead", Lead Status "New") with a note holding each submission. In HubSpot, create a private app under Settings → Integrations → Private Apps with the crm.objects.contacts.read and crm.objects.contacts.write scopes, then paste its access token here.',
+    dashboardLink: 'https://developers.hubspot.com/docs/guides/apps/private-apps/overview',
+    fields: [
+      { envVar: 'HUBSPOT_ACCESS_TOKEN', label: 'Private app access token', type: 'secret', example: 'pat-eu1-…', description: 'Leave empty to keep the sync off. Leads are saved on the site either way.' },
+    ],
+  },
+  {
     id: 'misc',
     name: 'Miscellaneous',
     description: 'Other server-side values that aren\'t tied to a specific third-party.',

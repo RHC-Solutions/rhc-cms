@@ -456,6 +456,34 @@ async function testBrevo(): Promise<TestResult> {
   }
 }
 
+async function testHubSpot(): Promise<TestResult> {
+  const token = getSecret('HUBSPOT_ACCESS_TOKEN');
+  if (!token) {
+    return { ok: false, summary: 'Not configured', checks: [fail('Token', 'HUBSPOT_ACCESS_TOKEN not set')] };
+  }
+  try {
+    const res = await fetch('https://api.hubapi.com/crm/v3/objects/contacts?limit=1', {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      signal: AbortSignal.timeout(TIMEOUT),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return {
+        ok: false,
+        summary: res.status === 403 ? 'Token is missing the contacts scopes' : 'HubSpot rejected token',
+        checks: [fail('Auth', data?.message || `HTTP ${res.status}`)],
+      };
+    }
+    return {
+      ok: true,
+      summary: 'Connected to HubSpot',
+      checks: [ok('Contacts', 'The token can read contacts')],
+    };
+  } catch (e: any) {
+    return { ok: false, summary: 'HubSpot test failed', checks: [fail('Network', e?.message || 'Failed')] };
+  }
+}
+
 const HANDLERS: Record<string, () => Promise<TestResult>> = {
   telegram: testTelegram,
   smtp: testSmtp,
@@ -466,6 +494,7 @@ const HANDLERS: Record<string, () => Promise<TestResult>> = {
   aikido: testAikido,
   pagespeed: testPageSpeed,
   brevo: testBrevo,
+  hubspot: testHubSpot,
 };
 
 export async function POST(request: NextRequest) {
