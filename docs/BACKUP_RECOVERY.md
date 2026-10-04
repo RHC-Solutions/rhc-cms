@@ -14,7 +14,7 @@ cd restored
 npm install && npm run build && npm start
 ```
 
-**⚠️ CRITICAL**: Use `.env.local` from backup (contains NEXTAUTH_SECRET)
+**⚠️ CRITICAL**: Keep `cms-data/cms.db` from the backup. Its `secrets` table holds every setting and secret, including NEXTAUTH_SECRET (there is no .env file).
 
 ---
 
@@ -36,11 +36,7 @@ Benefits:
 Setup:
 1. Create bot with [@BotFather](https://t.me/botfather)
 2. Get bot token and chat ID
-3. Add to `.env.local`:
-   ```bash
-   TELEGRAM_BOT_TOKEN=your_token
-   TELEGRAM_CHAT_ID=-123456789
-   ```
+3. Enter them in /admin → Settings → Integrations → Telegram (`TELEGRAM_BACKUP_BOT_TOKEN` / `TELEGRAM_BACKUP_CHAT_ID`); they are stored in the site database
 4. Test from admin panel
 
 ---
@@ -58,7 +54,7 @@ cd /var/www/mysite
 
 # Step 2: Verify files present
 ls -la
-# Should see: cms-data/ src/ public/ package.json .env.local
+# Should see: cms-data/ src/ public/ package.json (settings are inside cms-data/cms.db)
 
 # Step 3: Install dependencies (2-5 minutes)
 npm install
@@ -85,6 +81,7 @@ Each backup ZIP contains:
 
 1. **SQLite Database** (`cms-data/cms.db`)
    - All content, users, settings, forms, submissions
+   - Every setting and secret, including NEXTAUTH_SECRET (`secrets` table)
    - Integrity verified before backup
 
 2. **Source Code** (`src/` directory)
@@ -94,7 +91,6 @@ Each backup ZIP contains:
    - Logo, uploaded media, static files
 
 4. **Configuration Files**
-   - `.env.local` - **CRITICAL for authentication**
    - `package.json` - Dependencies list
    - Build config files
 
@@ -166,10 +162,10 @@ npm start
 
 **Solution**:
 ```bash
-# Use .env.local from backup
-cat .env.local | grep NEXTAUTH_SECRET
-# Verify NEXTAUTH_SECRET matches original installation
-pm2 restart rhcsolutions
+# Use cms-data/cms.db from the backup: its secrets table holds NEXTAUTH_SECRET
+sqlite3 cms-data/cms.db "SELECT key, updatedAt FROM secrets WHERE key = 'NEXTAUTH_SECRET';"
+# The build reads it too, so rebuild after restoring
+npm run build && pm2 restart rhcsolutions
 ```
 
 ### Empty site or missing menu/footer
@@ -237,8 +233,8 @@ sqlite3 cms-data/cms.db "SELECT * FROM pages LIMIT 5;"
 # Check server logs
 pm2 logs rhcsolutions
 
-# Verify .env.local has correct DATABASE_PATH
-grep DATABASE_PATH .env.local
+# Settings live in the same database (names only)
+sqlite3 cms-data/cms.db "SELECT key FROM secrets ORDER BY key;"
 
 # Restart
 pm2 restart rhcsolutions
@@ -250,13 +246,13 @@ pm2 restart rhcsolutions
 
 ### NEXTAUTH_SECRET - EXTREMELY IMPORTANT ⚠️
 
-- Located in `.env.local`
+- Stored in the `secrets` table of `cms-data/cms.db`
 - **CRITICAL** for authentication
 - Without it: All logins fail, passwords invalid
-- **Always** use `.env.local` from backup
+- **Always** keep `cms-data/cms.db` from the backup
 - **Never** generate new NEXTAUTH_SECRET when restoring (breaks existing sessions)
 
-### Environment Variables in Backups
+### Settings and Secrets in Backups
 
 Backups contain sensitive data:
 - Database credentials
@@ -268,9 +264,9 @@ Backups contain sensitive data:
 
 **Protect backups accordingly!**
 - Store in secure location
-- Don't commit `.env.local` to git
+- Don't commit `cms-data/cms.db` to git
 - Encrypt before uploading to cloud
-- Restrict file permissions: `chmod 600 .env.local`
+- Restrict file permissions: `chmod 660 cms-data/cms.db` and the backup archives
 
 ---
 
@@ -304,11 +300,13 @@ curl https://yourdomain.com
 
 **Recovery**:
 ```bash
-# 1. Restore .env.local from backup
-cp backup/.env.local .env.local
+# 1. Check NEXTAUTH_SECRET is stored and when it last changed
+sqlite3 cms-data/cms.db "SELECT key, updatedAt FROM secrets WHERE key = 'NEXTAUTH_SECRET';"
+# If it is missing or was changed, copy just that row back from the backup's database
+sqlite3 cms-data/cms.db "ATTACH 'backup/cms-data/cms.db' AS b; INSERT OR REPLACE INTO secrets SELECT * FROM b.secrets WHERE key = 'NEXTAUTH_SECRET';"
 
-# 2. Restart (will have correct NEXTAUTH_SECRET)
-pm2 restart rhcsolutions
+# 2. Rebuild and restart (the build reads NEXTAUTH_SECRET)
+npm run build && pm2 restart rhcsolutions
 
 # 3. Try login again
 # Username: admin@rhcsolutions.com

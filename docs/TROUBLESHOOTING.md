@@ -4,12 +4,25 @@
 
 | Issue | Solution |
 |-------|----------|
-| **Can't login** | Check `.env.local` has `NEXTAUTH_SECRET`. Try incognito mode. Clear cookies. |
+| **Can't login** | Check `NEXTAUTH_SECRET` is stored (see *Checking stored settings*). Try incognito mode. Clear cookies. |
 | **Port in use** | `lsof -ti:3000 \| xargs kill -9` or use `npm run dev -- -p 3002` |
 | **Build fails** | `rm -rf .next && npm install && npm run build` |
 | **Database locked** | `pm2 restart rhcsolutions` |
 | **API not responding** | Check PM2 status: `pm2 logs rhcsolutions` |
 | **Missing pages/content** | Restore from backup (see Backup & Recovery guide) |
+
+## Checking stored settings
+
+Settings and secrets are rows in the `secrets` table of `cms-data/cms.db`; there is no
+.env file. List which ones are set (names only, never values):
+
+```bash
+sqlite3 cms-data/cms.db "SELECT key FROM secrets ORDER BY key;"
+```
+
+Change them in /admin → Settings, or the core ones (URLs, `NEXTAUTH_SECRET`, database)
+with `npx github:RHC-Solutions/rhc-cms settings`. `NEXT_PUBLIC_*` / `NEXTAUTH_*` changes
+need a rebuild + restart.
 
 ---
 
@@ -89,14 +102,14 @@ npm run build
 # 1. Check default credentials changed
 # admin@rhcsolutions.com / admin123
 
-# 2. Verify NEXTAUTH_SECRET in .env.local
-grep NEXTAUTH_SECRET .env.local
+# 2. Verify NEXTAUTH_SECRET is stored (prints the name only)
+sqlite3 cms-data/cms.db "SELECT key FROM secrets WHERE key = 'NEXTAUTH_SECRET';"
 
-# 3. If blank or missing, generate new
-openssl rand -base64 32
+# 3. If missing, set the core settings (generates a new secret)
+npx github:RHC-Solutions/rhc-cms settings
 
-# 4. Add to .env.local
-echo "NEXTAUTH_SECRET=<new-secret>" >> .env.local
+# 4. Rebuild: the admin middleware reads it at build time
+npm run build
 
 # 5. Restart
 pm2 restart rhcsolutions
@@ -110,8 +123,8 @@ pm2 restart rhcsolutions
 
 **Solution**:
 ```bash
-# 1. Verify NEXTAUTH_SECRET matches
-grep NEXTAUTH_SECRET .env.local
+# 1. Check when NEXTAUTH_SECRET last changed (a change signs everyone out)
+sqlite3 cms-data/cms.db "SELECT key, updatedAt FROM secrets WHERE key = 'NEXTAUTH_SECRET';"
 
 # 2. Clear browser cookies
 # Settings → Privacy → Clear browsing data
@@ -367,8 +380,8 @@ pm2 logs rhcsolutions --lines 100
 # - Database query error
 # - Unhandled exception
 
-# 4. Verify env vars
-grep API_KEY .env.local
+# 4. Verify the setting is stored
+sqlite3 cms-data/cms.db "SELECT key FROM secrets WHERE key LIKE '%API_KEY%';"
 
 # 5. Test database
 sqlite3 cms.db "SELECT 1;"
@@ -516,8 +529,7 @@ pm2 restart rhcsolutions
 **Solution**:
 ```bash
 # 1. Check credentials set
-grep GA_PROPERTY_ID .env.local
-grep CLOUDFLARE_API_TOKEN .env.local
+sqlite3 cms-data/cms.db "SELECT key FROM secrets WHERE key IN ('NEXT_PUBLIC_GA_PROPERTY_ID', 'CLOUDFLARE_API_TOKEN');"
 
 # 2. Test connection from admin panel
 # Go to /admin/analytics/setup or /admin/cloudflare/setup
@@ -527,7 +539,7 @@ grep CLOUDFLARE_API_TOKEN .env.local
 # GA4: https://analytics.google.com/ → Admin → Properties
 # Cloudflare: https://dash.cloudflare.com/ → Profile → API Tokens
 
-# 4. Update credentials in .env.local
+# 4. Update credentials in /admin → Settings → Integrations
 
 # 5. Restart
 pm2 restart rhcsolutions
@@ -544,7 +556,7 @@ pm2 restart rhcsolutions
 **Solution**:
 ```bash
 # 1. Check SMTP config
-grep SMTP .env.local
+sqlite3 cms-data/cms.db "SELECT key FROM secrets WHERE key LIKE 'SMTP%';"
 
 # 2. Verify credentials
 # For Gmail: Create App Password at https://myaccount.google.com/apppasswords
@@ -569,7 +581,7 @@ pm2 restart rhcsolutions
 **Solution**:
 ```bash
 # 1. Check keys configured
-grep RECAPTCHA .env.local
+sqlite3 cms-data/cms.db "SELECT key FROM secrets WHERE key LIKE '%RECAPTCHA%';"
 
 # 2. Verify at Google reCAPTCHA console
 # https://www.google.com/recaptcha/admin
@@ -577,9 +589,10 @@ grep RECAPTCHA .env.local
 # 3. Test with valid keys
 
 # 4. If using Cloudflare Turnstile instead:
-grep TURNSTILE .env.local
+sqlite3 cms-data/cms.db "SELECT key FROM secrets WHERE key LIKE '%TURNSTILE%';"
 
-# 5. Update .env.local and restart
+# 5. Update the keys in /admin → Settings → Integrations, then rebuild + restart
+npm run build
 pm2 restart rhcsolutions
 ```
 
@@ -639,7 +652,7 @@ pm2 logs rhcsolutions
 **Cause**: One of (most common first):
 
 1. **Consent banner not accepted** — by default the site uses [Consent Mode v2](./TECHNICAL.md#google-analytics-4--consent-mode-v2): `gtag.js` loads but consent starts as `denied`. Consenting visitors fire full hits; non‑consenting visitors fire cookieless pings only.
-2. **GA4 ID missing** — check `/admin/seo` → GA4 ID field is filled with a `G-XXXXXXXXXX` value, OR `NEXT_PUBLIC_GA4_ID` / `NEXT_PUBLIC_GA_ID` is set in `.env.local`.
+2. **GA4 ID missing** — check `/admin/seo` → GA4 ID field is filled with a `G-XXXXXXXXXX` value, OR `NEXT_PUBLIC_GA4_ID` / `NEXT_PUBLIC_GA_ID` is set in /admin → Settings (stored in `cms-data/cms.db`; rebuild after changing it).
 3. **Data stream mismatch** — the GA4 property's web data stream URL must point at `rhcsolutions.com`.
 4. **Ad blocker** on the test browser is silently dropping `collect` requests.
 
@@ -684,7 +697,7 @@ pm2 restart rhcsolutions
 
 ```
 Error: ENOENT: no such file or directory
-→ Missing file/directory. Check .env.local and paths
+→ Missing file/directory. Check paths (and SHARED_ROOT, if set)
 
 Error: connect ECONNREFUSED 127.0.0.1:5432
 → PostgreSQL not running (if using). Use SQLite instead.
@@ -723,7 +736,7 @@ Error: certificate verify failed
 
 1. **Check logs first**: `pm2 logs rhcsolutions`
 2. **Search this guide**: Use Ctrl+F to search
-3. **Check environment**: `grep VAR .env.local`
+3. **Check settings**: `sqlite3 cms-data/cms.db "SELECT key FROM secrets ORDER BY key;"` (names only)
 4. **Verify database**: `sqlite3 cms.db "PRAGMA integrity_check;"`
 5. **Test API**: `curl https://yourdomain.com/api/cms/settings`
 6. **Review code**: Check relevant file in src/

@@ -59,9 +59,10 @@ npx github:RHC-Solutions/rhc-cms init
 ```
 
 That adds the submodule, patches `tsconfig.json`, wires `adminAuthGate` into `middleware.ts`,
-generates the route wrappers, installs deps, and scaffolds `.env.local` with a fresh
-`NEXTAUTH_SECRET`. It's idempotent — safe to re-run. Then set `NEXTAUTH_URL` /
-`NEXT_PUBLIC_SITE_URL`, `npm run build`, and open `/admin`.
+generates the route wrappers, installs deps, and asks for the site URLs, storing them with a
+fresh `NEXTAUTH_SECRET` in the site database (`cms-data/cms.db` — no .env files). It's
+idempotent — safe to re-run. Then `npm run build` and open `/admin`; change the URLs later
+with `npx github:RHC-Solutions/rhc-cms settings`.
 Flags: `--no-install`, `--static-site`, `--submodule <path>`, `--url <git-url>`.
 
 📖 **Full step-by-step guide: [INSTALL.md](./INSTALL.md).**
