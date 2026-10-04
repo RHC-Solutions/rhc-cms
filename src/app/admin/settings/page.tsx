@@ -463,7 +463,12 @@ export default function SettingsPage() {
 
           {/* Hero headline */}
           <div>
-            <label className="block text-text-primary font-semibold mb-3">Hero</label>
+            <label className="block text-text-primary font-semibold mb-1">Hero</label>
+            <p className="text-xs text-text-muted mb-3">
+              The eyebrow and headline are edited in Pages → Home (hero block: Subtitle = eyebrow line,
+              Title = headline). These two fields only apply when that block leaves them empty.
+              The highlighted phrase is still set here.
+            </p>
             <div className="space-y-3">
               <input
                 type="text"
