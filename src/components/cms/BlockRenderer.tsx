@@ -626,6 +626,33 @@ function renderBlock(block: ContentBlock, opts: { priority?: boolean } = {}) {
       );
     }
 
+    case 'logos': {
+      const items: { name?: string; src?: string; text?: string }[] = Array.isArray(props?.items) ? props.items : [];
+      const visible = items.filter((it) => it && it.name && it.src);
+      if (!visible.length) return null;
+      const partners = props?.variant === 'partners';
+      return (
+        <section key={block.id} className="container-custom py-8">
+          <div className="flex flex-wrap justify-center gap-4">
+            {visible.map((it, idx) => (
+              <figure key={idx} className="m-0 flex flex-col items-center gap-2">
+                <div className={`w-40 h-20 rounded-lg flex items-center justify-center p-3 ${partners ? '' : 'bg-white'}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={it.src}
+                    alt={it.name}
+                    className="max-w-full max-h-full object-contain"
+                    style={partners ? { filter: 'brightness(0) invert(1)', opacity: 0.7 } : undefined}
+                  />
+                </div>
+                {!partners && it.text && <figcaption className="text-xs uppercase tracking-wider text-text-muted">{it.text}</figcaption>}
+              </figure>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
     default:
       return null;
   }

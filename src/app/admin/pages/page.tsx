@@ -13,7 +13,7 @@ import { BlockRenderer } from '@adminpanel/components/cms/BlockRenderer';
 
 interface ContentBlock {
   id: string;
-  type: 'heading' | 'paragraph' | 'image' | 'button' | 'list' | 'cards' | 'hero' | 'cta' | 'columns' | 'testimonial' | 'worldmap' | 'contactform' | 'servicescarousel' | 'testimonialscarousel' | 'clientsteaser' | 'aboutpreview' | 'ctasection' | 'richtext' | 'faq';
+  type: 'heading' | 'paragraph' | 'image' | 'button' | 'list' | 'cards' | 'hero' | 'cta' | 'columns' | 'testimonial' | 'worldmap' | 'contactform' | 'servicescarousel' | 'testimonialscarousel' | 'clientsteaser' | 'aboutpreview' | 'ctasection' | 'richtext' | 'faq' | 'logos';
   props: any;
   order: number;
 }
@@ -238,6 +238,9 @@ export default function CMSPagesEditor() {
             { question: 'Sample question 2?', answer: 'Sample answer 2.' },
           ],
         };
+        break;
+      case 'logos':
+        props = { variant: 'clients', items: [{ name: '', src: '', href: '', text: '' }] };
         break;
       case 'worldmap':
         props = {};
@@ -690,6 +693,88 @@ export default function CMSPagesEditor() {
             <p className="text-xs text-text-muted">HTML tags: &lt;h2&gt;, &lt;p&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;strong&gt;</p>
           </div>
         );
+      case 'logos': {
+        type LogoItem = { name?: string; src?: string; href?: string; text?: string };
+        const items: LogoItem[] = Array.isArray(block.props?.items) ? block.props.items : [];
+        const partners = block.props?.variant === 'partners';
+        const setItems = (next: LogoItem[]) => updateBlock(block.id, { props: { ...block.props, items: next } });
+        const setItem = (idx: number, patch: LogoItem) => setItems(items.map((x, i) => (i === idx ? { ...x, ...patch } : x)));
+        const move = (idx: number, dir: -1 | 1) => {
+          const j = idx + dir;
+          if (j < 0 || j >= items.length) return;
+          const next = [...items];
+          [next[idx], next[j]] = [next[j], next[idx]];
+          setItems(next);
+        };
+        const field = 'w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm';
+        return (
+          <div className="space-y-3">
+            <select
+              value={partners ? 'partners' : 'clients'}
+              onChange={(e) => updateBlock(block.id, { props: { ...block.props, variant: e.target.value } })}
+              className={field}
+            >
+              <option value="clients">Client logos: full colour on white tiles, with industry</option>
+              <option value="partners">Partner logos: white silhouettes</option>
+            </select>
+            <p className="text-xs text-text-muted">
+              The homepage {partners ? 'partner' : 'client'} strip shows this list too. Upload logo files in{' '}
+              <a href="/admin/media" target="_blank" rel="noopener" className="text-cyber-green underline">Media</a>, then
+              paste the file URL (for example /uploads/123.png).
+              {!partners && ' Tiles are white, so a logo made for dark backgrounds needs a dark version.'}
+            </p>
+            {items.map((it, idx) => (
+              <div key={idx} className="bg-dark-lighter border border-dark-border rounded p-3 space-y-2">
+                <div className="flex items-center justify-between text-xs text-text-muted">
+                  <span>Logo {idx + 1}</span>
+                  <div className="flex items-center gap-3">
+                    <button type="button" onClick={() => move(idx, -1)} disabled={idx === 0} className="hover:text-text-primary disabled:opacity-30" aria-label="Move up">
+                      <FaArrowUp />
+                    </button>
+                    <button type="button" onClick={() => move(idx, 1)} disabled={idx === items.length - 1} className="hover:text-text-primary disabled:opacity-30" aria-label="Move down">
+                      <FaArrowDown />
+                    </button>
+                    <button type="button" onClick={() => setItems(items.filter((_, i) => i !== idx))} className="text-cyber-red hover:text-red-400">
+                      Remove
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className={`w-28 h-14 shrink-0 rounded flex items-center justify-center p-2 ${partners ? 'bg-dark border border-dark-border' : 'bg-white'}`}>
+                    {it.src ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={it.src} alt="" className="max-w-full max-h-full object-contain" style={partners ? { filter: 'brightness(0) invert(1)' } : undefined} />
+                    ) : (
+                      <span className="text-[10px] text-text-muted">No image</span>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={it.src || ''}
+                    onChange={(e) => setItem(idx, { src: e.target.value })}
+                    placeholder="Logo file URL (/uploads/... or /logos/...)"
+                    className={field}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="text" value={it.name || ''} onChange={(e) => setItem(idx, { name: e.target.value })} placeholder="Company name" className={field} />
+                  <input type="text" value={it.href || ''} onChange={(e) => setItem(idx, { href: e.target.value })} placeholder="Website (https://...)" className={field} />
+                </div>
+                {!partners && (
+                  <input type="text" value={it.text || ''} onChange={(e) => setItem(idx, { text: e.target.value })} placeholder="Industry, shown under the logo (e.g. Online trading)" className={field} />
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setItems([...items, { name: '', src: '', href: '', text: '' }])}
+              className="w-full bg-dark border border-dashed border-cyber-cyan text-cyber-cyan rounded py-2 text-sm hover:bg-dark-lighter"
+            >
+              + Add logo
+            </button>
+          </div>
+        );
+      }
       case 'faq': {
         const items: { question: string; answer: string }[] = Array.isArray(block.props?.items) ? block.props.items : [];
         const setItems = (next: { question: string; answer: string }[]) =>
@@ -1146,6 +1231,9 @@ export default function CMSPagesEditor() {
                       </button>
                       <button onClick={() => addBlock('cards')} className="px-2 py-1 bg-dark-card hover:bg-dark-lighter border border-dark-border rounded text-text-secondary text-xs">
                         Cards
+                      </button>
+                      <button onClick={() => addBlock('logos')} className="px-2 py-1 bg-dark-card hover:bg-dark-lighter border border-dark-border rounded text-text-secondary text-xs">
+                        Logos
                       </button>
                       <button onClick={() => addBlock('cta')} className="px-2 py-1 bg-dark-card hover:bg-dark-lighter border border-dark-border rounded text-text-secondary text-xs">
                         CTA
