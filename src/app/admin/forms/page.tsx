@@ -42,7 +42,7 @@ interface FormSubmission {
   formName: string;
   data: Record<string, string>;
   email?: string;
-  status: 'new' | 'reviewed' | 'replied';
+  status: 'new' | 'reviewed' | 'replied' | 'not_a_lead';
   submittedAt: string;
   notes?: string;
 }
@@ -55,7 +55,7 @@ export default function FormsManagement() {
   const [loading, setLoading] = useState(true);
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<FormSubmission | null>(null);
-  const [filter, setFilter] = useState<'all' | 'new' | 'reviewed' | 'replied'>('all');
+  const [filter, setFilter] = useState<'all' | 'new' | 'reviewed' | 'replied' | 'not_a_lead'>('all');
   const [editingForm, setEditingForm] = useState<FormDefinition | null>(null);
   const [isCreatingForm, setIsCreatingForm] = useState(false);
 
@@ -244,6 +244,7 @@ export default function FormsManagement() {
     new: submissions.filter((s) => s.status === 'new').length,
     reviewed: submissions.filter((s) => s.status === 'reviewed').length,
     replied: submissions.filter((s) => s.status === 'replied').length,
+    notALead: submissions.filter((s) => s.status === 'not_a_lead').length,
   };
 
   return (
@@ -441,12 +442,13 @@ export default function FormsManagement() {
       {/* Submissions Tab */}
       {activeTab === 'submissions' && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
             {[
               { label: 'Total', value: stats.total, color: 'cyber-cyan' },
               { label: 'New', value: stats.new, color: 'cyber-green' },
               { label: 'Reviewed', value: stats.reviewed, color: 'cyber-yellow' },
               { label: 'Replied', value: stats.replied, color: 'cyber-red' },
+              { label: 'Not a lead', value: stats.notALead, color: 'text-muted' },
             ].map((stat) => (
               <div key={stat.label} className="card-cyber p-6">
                 <p className="text-text-secondary mb-2">{stat.label}</p>
@@ -481,7 +483,7 @@ export default function FormsManagement() {
             </div>
 
             <div className="mb-4 flex space-x-2">
-              {(['all', 'new', 'reviewed', 'replied'] as const).map((f) => (
+              {(['all', 'new', 'reviewed', 'replied', 'not_a_lead'] as const).map((f) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
@@ -491,7 +493,7 @@ export default function FormsManagement() {
                       : 'bg-dark-lighter text-text-secondary hover:text-text-primary'
                   }`}
                 >
-                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                  {f === 'not_a_lead' ? 'Not a lead' : f.charAt(0).toUpperCase() + f.slice(1)}
                 </button>
               ))}
             </div>
@@ -539,6 +541,7 @@ export default function FormsManagement() {
                             <option value="new">New</option>
                             <option value="reviewed">Reviewed</option>
                             <option value="replied">Replied</option>
+                            <option value="not_a_lead">Not a lead</option>
                           </select>
                         </td>
                         <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
@@ -611,6 +614,7 @@ export default function FormsManagement() {
                   <option value="new">New</option>
                   <option value="reviewed">Reviewed</option>
                   <option value="replied">Replied</option>
+                            <option value="not_a_lead">Not a lead</option>
                 </select>
               </div>
               <button

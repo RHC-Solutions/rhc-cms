@@ -9,7 +9,7 @@ interface FormSubmission {
   formName: string;
   data: Record<string, string>;
   email?: string;
-  status: 'new' | 'reviewed' | 'replied';
+  status: 'new' | 'reviewed' | 'replied' | 'not_a_lead';
   submittedAt: string;
   submittedBy?: string;
   notes?: string;

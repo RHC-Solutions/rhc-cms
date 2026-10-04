@@ -338,13 +338,22 @@ export default function CMSPagesEditor() {
         );
       case 'heading':
         return (
-          <input
-            type="text"
-            value={readProp(block.props, 'text')}
-            onChange={(e) => updateBlock(block.id, { props: writeProp(block.props, 'text', e.target.value) })}
-            placeholder="Heading text"
-            className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
-          />
+          <div className="space-y-2">
+            <input
+              type="text"
+              value={(block.props && typeof block.props === 'object' && block.props.eyebrow) || ''}
+              onChange={(e) => updateBlock(block.id, { props: writeProp(block.props, 'eyebrow', e.target.value) })}
+              placeholder="Eyebrow: small label above the heading (optional)"
+              className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
+            />
+            <input
+              type="text"
+              value={readProp(block.props, 'text')}
+              onChange={(e) => updateBlock(block.id, { props: writeProp(block.props, 'text', e.target.value) })}
+              placeholder="Heading text"
+              className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
+            />
+          </div>
         );
       case 'paragraph':
         return (
@@ -754,6 +763,7 @@ export default function CMSPagesEditor() {
         const level = block.props?.level || 2;
         return (
           <div className={`text-text-primary font-bold ${alignClass}`}>
+            {block.props?.eyebrow && <div className="text-xs font-mono uppercase tracking-wider text-cyber-green mb-1">{block.props.eyebrow}</div>}
             {level === 1 ? <div className="text-4xl">{block.props.text || block.props}</div> :
              level === 2 ? <div className="text-3xl">{block.props.text || block.props}</div> :
              <div className="text-2xl">{block.props.text || block.props}</div>}
