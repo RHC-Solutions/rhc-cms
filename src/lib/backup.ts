@@ -83,6 +83,8 @@ async function createBackupZip(targetPath: string): Promise<boolean> {
     const archive = new ZipArchive({ zlib: { level: 9 } });
 
     output.on('close', () => {
+      // Archives contain cms.db, which holds every setting and secret: owner+group only.
+      try { fs.chmodSync(targetPath, 0o660); } catch { /* best effort */ }
       console.log(`[BACKUP] Created FULL backup: ${(archive.pointer() / 1024 / 1024).toFixed(2)} MB`);
       resolve(true);
     });
