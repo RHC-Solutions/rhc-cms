@@ -103,7 +103,7 @@ export default function AikidoPage() {
               <a href="/admin/integrations" className="text-cyber-cyan underline">
                 /admin/integrations
               </a>{' '}
-              — it saves to <code className="text-cyber-green">cms-data/secrets.json</code> and
+              — it saves to the site database and
               takes effect immediately (no pm2 restart).
             </div>
           )}

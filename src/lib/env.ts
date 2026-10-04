@@ -1,207 +1,176 @@
 /**
- * Utility for reading environment variables with caching
- * Reduces file I/O for .env.local reads
+ * Site configuration and secrets. Everything lives in the `secrets` table of
+ * cms-data/cms.db (managed in /admin/settings → Integrations and Environment),
+ * never in an .env file. Values Next.js needs as environment variables
+ * (NEXT_PUBLIC_*, NEXTAUTH_*, the database connection) are loaded from the same
+ * table by scripts/env-from-db.mjs when the site is built and started.
  *
- * Also exposes `getSecret`/`setSecrets`/`listSecrets` for admin-managed runtime
- * secrets (cms-data/secrets.json) which take precedence over .env values so
- * admins can update credentials without a pm2 restart.
+ * The table is always in the local SQLite file, also when CMS content runs on
+ * Postgres. A cms-data/secrets.json left by an older version is moved into it
+ * on first use.
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { cache } from './cache';
-import { encryptSecret, decryptSecret } from './crypto/secret-box';
+import Database from 'better-sqlite3';
+import { decryptSecret } from './crypto/secret-box';
 
-const ENV_PATH = path.join(process.cwd(), '.env.local');
-const SECRETS_PATH = path.join((process.env.SHARED_ROOT || process.cwd()), 'cms-data', 'secrets.json');
-const ENV_CACHE_TTL = 60 * 1000; // 1 minute cache
+const DATA_DIR = path.join(process.env.SHARED_ROOT || process.cwd(), 'cms-data');
+const DB_PATH = path.join(DATA_DIR, 'cms.db');
+const LEGACY_SECRETS_PATH = path.join(DATA_DIR, 'secrets.json');
+// Short cache: an admin save applies within seconds without a restart, including
+// in other module instances that keep their own cache.
+const CACHE_TTL_MS = 5000;
 
-// Mtime-based cache for cms-data/secrets.json. Picks up admin saves without a
-// pm2 restart while still avoiding a disk read on every request.
-let secretsCache: Record<string, string> | null = null;
-let secretsCacheMtime = 0;
+const ENV_KEYS = ['NEXTAUTH_SECRET', 'NEXTAUTH_URL', 'REVALIDATE_SECRET', 'DATABASE_URL', 'DB_DRIVER', 'PGSSLMODE'];
 
-function loadSecrets(): Record<string, string> {
-  try {
-    const stat = fs.statSync(SECRETS_PATH);
-    if (secretsCache && stat.mtimeMs === secretsCacheMtime) {
-      return secretsCache;
-    }
-    const raw = fs.readFileSync(SECRETS_PATH, 'utf-8');
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      // Decrypt at-rest values transparently. Legacy plaintext entries (no
-      // enc:v1: prefix) pass through unchanged; callers see plaintext either way.
-      const decrypted: Record<string, string> = {};
-      for (const [k, v] of Object.entries(parsed)) {
-        decrypted[k] = typeof v === 'string' ? decryptSecret(v) : (v as string);
-      }
-      secretsCache = decrypted;
-      secretsCacheMtime = stat.mtimeMs;
-      return secretsCache;
-    }
-  } catch {
-    // ENOENT or malformed JSON — fall through to empty
+/** Keys Next.js reads as environment variables at build and start time. */
+export function isEnvKey(key: string): boolean {
+  return key.startsWith('NEXT_PUBLIC_') || ENV_KEYS.includes(key);
+}
+
+let db: Database.Database | null = null;
+function store(): Database.Database {
+  if (!db) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    db = new Database(DB_PATH);
+    db.exec('CREATE TABLE IF NOT EXISTS secrets (key TEXT PRIMARY KEY, value TEXT NOT NULL, updatedAt TEXT NOT NULL)');
+    importLegacySecrets(db);
   }
-  secretsCache = {};
-  secretsCacheMtime = 0;
-  return secretsCache;
+  return db;
 }
 
-/**
- * Escape special regex characters in a string
- */
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// Older versions kept admin-managed secrets in cms-data/secrets.json, encrypted
+// with a key derived from NEXTAUTH_SECRET. Move them into the table once (values
+// already in the table win), then delete the file. If any value can't be
+// decrypted, the file is kept so nothing is lost.
+function importLegacySecrets(conn: Database.Database): void {
+  let legacy: unknown;
+  try {
+    legacy = JSON.parse(fs.readFileSync(LEGACY_SECRETS_PATH, 'utf-8'));
+  } catch {
+    return; // no legacy file: the normal case
+  }
+  if (!legacy || typeof legacy !== 'object' || Array.isArray(legacy)) return;
+  const insert = conn.prepare('INSERT OR IGNORE INTO secrets (key, value, updatedAt) VALUES (?, ?, ?)');
+  const now = new Date().toISOString();
+  let unreadable = 0;
+  conn.transaction(() => {
+    for (const [key, stored] of Object.entries(legacy as Record<string, unknown>)) {
+      if (typeof stored !== 'string' || stored === '') continue;
+      const value = decryptSecret(stored);
+      if (value === '') unreadable++;
+      else insert.run(key, value, now);
+    }
+  })();
+  if (unreadable) {
+    console.error(`[env] ${unreadable} value(s) in cms-data/secrets.json could not be decrypted; the file was kept.`);
+    return;
+  }
+  try {
+    fs.unlinkSync(LEGACY_SECRETS_PATH);
+    console.log('[env] Moved cms-data/secrets.json into the database and removed the file.');
+  } catch {
+    /* another process removed it first */
+  }
 }
 
+let cached: Record<string, string> | null = null;
+let cachedAt = 0;
+
+function loadAll(): Record<string, string> {
+  if (cached && Date.now() - cachedAt < CACHE_TTL_MS) return cached;
+  try {
+    const rows = store().prepare('SELECT key, value FROM secrets').all() as { key: string; value: string }[];
+    cached = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  } catch (err) {
+    console.error('[env] Failed to read the secrets table:', err);
+    cached = cached || {};
+  }
+  cachedAt = Date.now();
+  return cached;
+}
+
+const UPSERT =
+  'INSERT INTO secrets (key, value, updatedAt) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updatedAt = excluded.updatedAt';
+
 /**
- * Get an environment variable value with caching
- * First checks process.env, then falls back to reading .env.local
+ * Get a configuration value: the real process environment first (set at build /
+ * start from the database), then the database itself.
  */
 export function getEnvValue(key: string): string {
-  // Check process.env first (always fresh)
-  if (process.env[key]) {
-    return process.env[key] as string;
-  }
-
-  // Try cache
-  const cacheKey = `env:${key}`;
-  const cached = cache.get<string>(cacheKey);
-  if (cached !== null) {
-    return cached;
-  }
-
-  // Read from file
-  try {
-    const content = fs.readFileSync(ENV_PATH, 'utf-8');
-    // Escape special regex characters in the key
-    const escapedKey = escapeRegex(key);
-    const match = content.match(new RegExp(`^${escapedKey}=(.*)$`, 'm'));
-    const value = match ? match[1].trim() : '';
-    
-    // Cache for 1 minute
-    cache.set(cacheKey, value, ENV_CACHE_TTL);
-    
-    return value;
-  } catch {
-    return '';
-  }
+  if (process.env[key]) return process.env[key] as string;
+  return loadAll()[key] ?? '';
 }
 
 /**
- * Write a single KEY=value into .env.local (replace the line if present, else
- * append). Shared by the environment admin route and the first-run provisioning
- * endpoint. NOTE: NEXT_PUBLIC_* and auth URLs only take effect after a restart.
+ * Store a single configuration value. Shared by the environment admin route and
+ * the first-run provisioning endpoint. NOTE: NEXT_PUBLIC_* and NEXTAUTH_* values
+ * only take effect after the next build and restart.
  */
 export function setEnvValue(key: string, value: string): void {
-  // Reject control chars: a newline in `value` would inject a second KEY=VALUE line
-  // (e.g. overwrite NEXTAUTH_SECRET); a newline/`=` in `key` is nonsense. Fail loudly.
-  if (/[\r\n]/.test(value) || /[\r\n=]/.test(key)) {
-    throw new Error('Invalid characters in environment key/value (newline or "=" not allowed).');
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) {
+    throw new Error(`Invalid setting name: ${JSON.stringify(key)}`);
   }
-  let content = '';
-  try {
-    content = fs.readFileSync(ENV_PATH, 'utf-8');
-  } catch {
-    // new .env.local
-  }
-  const line = `${key}=${value}`;
-  const re = new RegExp(`^${escapeRegex(key)}=.*$`, 'm');
-  content = re.test(content)
-    ? content.replace(re, () => line) // function replacer: avoids $&/$1/$` interpretation in `value`
-    : `${content}${content && !content.endsWith('\n') ? '\n' : ''}${line}\n`;
-  fs.mkdirSync(path.dirname(ENV_PATH), { recursive: true });
-  fs.writeFileSync(ENV_PATH, content, 'utf-8');
-  cache.delete(`env:${key}`);
+  store().prepare(UPSERT).run(key, value, new Date().toISOString());
+  cached = null;
 }
 
-/**
- * Get multiple environment variables at once
- */
+/** Get several configuration values at once. */
 export function getEnvValues(keys: string[]): Record<string, string> {
   const result: Record<string, string> = {};
-  
-  for (const key of keys) {
-    result[key] = getEnvValue(key);
-  }
-  
+  for (const key of keys) result[key] = getEnvValue(key);
   return result;
 }
 
-/**
- * Check if environment variable exists and has a value
- */
+/** Whether a configuration value exists and is non-empty. */
 export function hasEnvValue(key: string): boolean {
   return getEnvValue(key) !== '';
 }
 
-/**
- * Clear environment variable cache
- * Useful when .env.local is updated
- */
+/** Drop the cache so the next read hits the database. */
 export function clearEnvCache(): void {
-  const stats = cache.getStats();
-  stats.keys.forEach(key => {
-    if (key.startsWith('env:')) {
-      cache.delete(key);
-    }
-  });
+  cached = null;
 }
 
 /**
- * Read a runtime-managed secret. Prefers cms-data/secrets.json (admin-editable
- * without a restart), then falls back to .env.local / process.env. Returns ''
- * when neither has a value.
+ * Read a secret from the database (admin-editable without a restart), falling
+ * back to the process environment. Returns '' when neither has a value.
  */
 export function getSecret(key: string): string {
-  const fromStore = loadSecrets()[key];
-  if (typeof fromStore === 'string' && fromStore.trim() !== '') {
-    return fromStore.trim();
-  }
-  return getEnvValue(key);
+  const fromStore = loadAll()[key];
+  if (typeof fromStore === 'string' && fromStore.trim() !== '') return fromStore.trim();
+  return process.env[key] ? String(process.env[key]).trim() : '';
 }
 
 /**
- * Write secrets to cms-data/secrets.json. Only entries whose value is a
- * non-empty trimmed string are written — empty/undefined entries are ignored
- * so the form-pre-fill round-trip doesn't blank out unrelated secrets.
+ * Write secrets to the database. Only entries whose value is a non-empty trimmed
+ * string are written; empty/undefined entries are ignored so the form pre-fill
+ * round-trip doesn't blank out unrelated secrets.
  */
 export function setSecrets(updates: Record<string, string | undefined>): void {
-  const current = loadSecrets();
-  const next: Record<string, string> = { ...current };
-  for (const [k, v] of Object.entries(updates)) {
-    if (typeof v === 'string' && v.trim() !== '') {
-      next[k] = v.trim();
+  const conn = store();
+  const upsert = conn.prepare(UPSERT);
+  const now = new Date().toISOString();
+  conn.transaction(() => {
+    for (const [k, v] of Object.entries(updates)) {
+      if (typeof v === 'string' && v.trim() !== '') upsert.run(k, v.trim(), now);
     }
-  }
-  fs.mkdirSync(path.dirname(SECRETS_PATH), { recursive: true });
-  // Encrypt every value for at-rest storage (AES-256-GCM). This also
-  // opportunistically migrates any legacy plaintext entries to ciphertext.
-  const encrypted: Record<string, string> = {};
-  for (const [k, v] of Object.entries(next)) {
-    encrypted[k] = encryptSecret(v);
-  }
-  fs.writeFileSync(SECRETS_PATH, JSON.stringify(encrypted, null, 2));
-  try {
-    fs.chmodSync(SECRETS_PATH, 0o660);
-  } catch {
-    // Permission-tightening is best-effort; non-fatal if it fails (e.g. on
-    // platforms where the file already has tighter perms).
-  }
-  secretsCache = next;
-  try {
-    secretsCacheMtime = fs.statSync(SECRETS_PATH).mtimeMs;
-  } catch {
-    secretsCacheMtime = 0;
-  }
+  })();
+  cached = null;
+}
+
+/** Remove a secret from the database. */
+export function deleteSecret(key: string): void {
+  store().prepare('DELETE FROM secrets WHERE key = ?').run(key);
+  cached = null;
 }
 
 /**
- * Return a shallow copy of every secret currently stored in
- * cms-data/secrets.json. Does NOT include .env fallbacks — callers that want
- * the merged view should iterate keys and use `getSecret` for each.
+ * Return a shallow copy of every value stored in the database. Does NOT include
+ * process-environment fallbacks; callers that want the merged view should use
+ * `getSecret` per key.
  */
 export function listSecrets(): Record<string, string> {
-  return { ...loadSecrets() };
+  return { ...loadAll() };
 }

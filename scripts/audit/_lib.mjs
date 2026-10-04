@@ -3,58 +3,39 @@
  *
  * Deliberately dependency-light and self-contained: these run from cron via the
  * `claude` CLI orchestrators, so they must work without a Next.js runtime.
- * Secret resolution mirrors src/lib/env.ts:getSecret (secrets.json wins, then
- * .env.local) so the same SMTP/PSI credentials work here.
+ * Secret resolution mirrors src/lib/env.ts:getSecret (the site database's
+ * secrets table, then process.env) so the same SMTP/PSI credentials work here.
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = path.resolve(__dirname, '..', '..');
 
-const SECRETS_PATH = path.join(REPO_ROOT, 'cms-data', 'secrets.json');
-const ENV_PATH = path.join(REPO_ROOT, '.env.local');
+const SECRETS_DB = path.join(process.env.SHARED_ROOT || REPO_ROOT, 'cms-data', 'cms.db');
+const require = createRequire(import.meta.url);
 
 let _secrets = null;
 function loadSecrets() {
   if (_secrets) return _secrets;
-  try {
-    const raw = fs.readFileSync(SECRETS_PATH, 'utf-8');
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      _secrets = parsed;
-      return _secrets;
-    }
-  } catch {
-    /* missing/malformed — fall through */
-  }
   _secrets = {};
+  try {
+    const Database = require('better-sqlite3');
+    const db = new Database(SECRETS_DB, { readonly: true, fileMustExist: true });
+    for (const { key, value } of db.prepare('SELECT key, value FROM secrets').all()) _secrets[key] = value;
+    db.close();
+  } catch {
+    /* no database yet — fall through to the process env */
+  }
   return _secrets;
 }
 
-let _env = null;
-function loadEnv() {
-  if (_env) return _env;
-  _env = {};
-  try {
-    const raw = fs.readFileSync(ENV_PATH, 'utf-8');
-    for (const line of raw.split('\n')) {
-      const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
-      if (m) _env[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
-    }
-  } catch {
-    /* no .env.local — fine */
-  }
-  return _env;
-}
-
-/** secrets.json → .env.local → process.env, first non-empty wins. */
+/** The site database (`secrets` table) → process.env, first non-empty wins. */
 export function getSecret(key) {
   const s = loadSecrets()[key];
   if (typeof s === 'string' && s.trim() !== '') return s.trim();
-  const e = loadEnv()[key];
-  if (typeof e === 'string' && e.trim() !== '') return e.trim();
   return process.env[key] ? String(process.env[key]).trim() : '';
 }
 

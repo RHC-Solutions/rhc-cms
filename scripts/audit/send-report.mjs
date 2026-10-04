@@ -1,7 +1,7 @@
 /**
  * Standalone audit-report emailer. Reads the day's artifacts (seo/ai/perf/deps
  * JSON + an optional agent-written summary markdown) and sends an HTML+text
- * digest via the same SMTP credentials the app uses (secrets.json).
+ * digest via the same SMTP credentials the app uses (the site database).
  *
  * Usage:  node scripts/audit/send-report.mjs <date>
  * Env:    AUDIT_MODE=daily|weekly   (default daily)

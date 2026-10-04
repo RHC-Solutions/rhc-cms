@@ -4,7 +4,7 @@
  * notifies via Telegram (backup channel) + email (Brevo), then exits. Applying an
  * update is a deliberate, backed-up action from /admin/automation, never unattended.
  *
- * Reuses ../audit/_lib.mjs getSecret (secrets.json → .env.local → env) for creds,
+ * Reuses ../audit/_lib.mjs getSecret (the site database, then the process env) for creds,
  * matching the existing audit/backup cron conventions.
  *
  * Run:  node scripts/auto-update/check-updates.mjs

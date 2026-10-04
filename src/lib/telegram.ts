@@ -45,7 +45,7 @@ export async function sendTelegramMessage(opts: {
 }
 
 // Named notification channels — each maps to a TELEGRAM_<X>_BOT_TOKEN/CHAT_ID pair
-// in secrets.json (see INTEGRATIONS in lib/integrations.ts), with a legacy
+// in the site database (see INTEGRATIONS in lib/integrations.ts), with a legacy
 // single-bot fallback (TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID).
 export type TelegramChannel = 'backup' | 'login' | 'contact' | 'forms' | 'resume';
 

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import * as fs from 'fs';
-import * as path from 'path';
-import { setEnvValue } from '@adminpanel/lib/env';
+import { getSecret, setEnvValue } from '@adminpanel/lib/env';
 
 async function requireAdmin(request: NextRequest) {
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
@@ -50,8 +48,6 @@ interface EnvSettings {
   ipinfoToken: string;
 }
 
-const ENV_FILE = path.join(process.cwd(), '.env.local');
-
 const ENV_VAR_MAPPING: Record<keyof EnvSettings, string> = {
   nextauthUrl: 'NEXTAUTH_URL',
   nextauthSecret: 'NEXTAUTH_SECRET',
@@ -91,16 +87,6 @@ const ENV_VAR_MAPPING: Record<keyof EnvSettings, string> = {
   ipinfoToken: 'IPINFO_TOKEN',
 };
 
-function getEnvValue(key: string): string {
-  try {
-    const content = fs.readFileSync(ENV_FILE, 'utf-8');
-    const match = content.match(new RegExp(`^${key}=(.*)$`, 'm'));
-    return match ? match[1].trim() : '';
-  } catch {
-    return '';
-  }
-}
-
 export async function GET(request: NextRequest) {
   if (!(await requireAdmin(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -109,7 +95,7 @@ export async function GET(request: NextRequest) {
     const settings: EnvSettings = {} as EnvSettings;
 
     for (const [key, envVar] of Object.entries(ENV_VAR_MAPPING)) {
-      settings[key as keyof EnvSettings] = getEnvValue(envVar);
+      settings[key as keyof EnvSettings] = getSecret(envVar);
     }
 
     return NextResponse.json(settings);
@@ -138,7 +124,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: '✓ All settings saved successfully. Remember to restart the application.',
+      message: '✓ All settings saved. Changes to NEXT_PUBLIC_* and NEXTAUTH_* values apply after the next build and restart.',
     });
   } catch (error) {
     console.error('Failed to save environment settings:', error);
