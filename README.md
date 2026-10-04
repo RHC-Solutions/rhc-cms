@@ -19,7 +19,7 @@ your-site/
 ```
 
 - **Per-site theme & data**: the admin reads/writes `./cms-data` in the host
-  site (`theme.json`, `pages.json`, `users.json`, `secrets.json`, `cms.db`).
+  site (`theme.json`, `pages.json`, `users.json`, and `cms.db`, which also holds the settings and secrets).
   Each site keeps its own — nothing is shared between sites.
 - **In-process**: no separate service, no cross-app webhook; `revalidatePath`
   invalidates the host site's cache directly.
@@ -36,8 +36,9 @@ node vendor/admin-panel/scripts/install-into-site.mjs   # generates route wrappe
 
 Then follow the checklist the script prints: add the `@adminpanel/*` tsconfig
 path, compose `adminAuthGate` in `middleware.ts`, install the listed deps
-(`--print-deps`), and set `NEXTAUTH_SECRET` / `NEXTAUTH_URL` /
-`NEXT_PUBLIC_SITE_URL` in `.env.local`. Build and you have `/admin`.
+(`--print-deps`), and store `NEXTAUTH_SECRET` / `NEXTAUTH_URL` /
+`NEXT_PUBLIC_SITE_URL` in the secrets table of `cms-data/cms.db` (no .env file; the host's
+build and start load them). Build and you have `/admin`.
 
 ## Pull updates into every site
 

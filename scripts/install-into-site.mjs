@@ -116,7 +116,9 @@ console.log(`\nNext steps (one-time per site):
      node ${submoduleRel}/scripts/install-into-site.mjs --print-deps   (lists them)
    then \`npm i <those> --legacy-peer-deps\`.
 
-4) Env (.env.local): NEXTAUTH_SECRET, NEXTAUTH_URL, NEXT_PUBLIC_SITE_URL.
+4) Settings: NEXTAUTH_SECRET, NEXTAUTH_URL, NEXT_PUBLIC_SITE_URL go in the secrets
+   table of the host's cms-data/cms.db (no .env file). The host's build and start
+   must load them into the environment (rhcsolutions.com: scripts/env-from-db.mjs).
 
 5) Data: the admin reads/writes ./cms-data in the host site (its own theme,
    pages, users, secrets). Nothing to share — each site keeps its own.

@@ -98,7 +98,7 @@ These were the source of real "edits don't show / wrong preview" bugs — keep t
 - `middleware.ts` enforces NextAuth JWT + role + MFA gate **only** for `/admin/*` and `/api/cms/*`. **`/api/admin/*` is NOT covered by middleware** — every handler under `src/app/api/admin/*` must call `getToken` and check `role === 'admin'` itself (see [src/app/api/admin/environment/route.ts](src/app/api/admin/environment/route.ts) for the canonical pattern). The 2026‑05‑13 audit found multiple unauthenticated `/api/admin/*` handlers leaking secrets — see [docs/SECURITY_REMEDIATION.md](./docs/SECURITY_REMEDIATION.md).
 - Routes whitelisted in `publicApiEndpoints` are public on **GET only**. The same handler's `POST`/`PUT`/`DELETE` must enforce auth in‑body (the middleware whitelist is method‑agnostic). Pattern to copy: [src/app/api/cms/footer/route.ts](src/app/api/cms/footer/route.ts).
 - CSP is set in middleware. Adding a new third‑party requires updating both `script-src` and `connect-src` allow‑lists. Don't use `'unsafe-eval'` — it's intentionally removed.
-- Never commit `.env.local`. `NEXTAUTH_SECRET` rotation invalidates all sessions (intended after any leak).
+- No .env files: settings and secrets live in the `secrets` table of `cms-data/cms.db` (never commit it). `NEXTAUTH_SECRET` rotation invalidates all sessions (intended after any leak).
 - `cms-data/users.json` holds bcrypt password hashes; `cms-data/cms.db` holds CMS content. Both must be `chmod 660` (group `rhcsolutions`), not world‑readable.
 
 ## Filesystem layout & permissions
@@ -107,7 +107,7 @@ The site runs as user `rhcsolutions_com`; SFTP / git access uses user `rhcsoluti
 
 | Path | Mode | Why |
 |---|---|---|
-| `.env.local`, `cms-data/*.json`, `cms-data/cms.db*` | `660` | Secrets / password hashes — owner+group only |
+| `cms-data/*.json`, `cms-data/cms.db*` | `660` | Settings and secrets (cms.db) / password hashes — owner+group only |
 | `cms-data/`, `cms-data/backups/` | `770` | Same; dirs need `+x` |
 | `public/uploads/` | `2775` | Setgid so admin‑UI uploads stay in group `rhcsolutions`; world‑read so Next can serve them |
 | Source code dirs (`src/**`, `.git/`, `.vscode/`) | `g+w,o-w` | Group write, no world write — fixes shared‑host tenant exposure |
@@ -125,7 +125,7 @@ If you `git pull` or `npm install` and group write is stripped, restore with `fi
 | Symptom | Start here |
 |---|---|
 | Build fails | `rm -rf .next && npm install && npm run build` |
-| Admin can't log in | `.env.local` has `NEXTAUTH_SECRET`? Cookies cleared? After a secret rotation **all** existing sessions are invalidated — that is expected. |
+| Admin can't log in | `NEXTAUTH_SECRET` row in the `secrets` table of `cms-data/cms.db`, and the host built/started through its settings loader? Cookies cleared? After a secret rotation **all** existing sessions are invalidated — that is expected. |
 | SFTP upload fails (permission denied) | `cms-data/` and `public/uploads/` need `g+w` for the `rhcsolutions` group. See the permissions table above. |
 | GA dashboard empty | [docs/TROUBLESHOOTING.md → Google Analytics Shows No Data](./docs/TROUBLESHOOTING.md#google-analytics-shows-no-data) |
 | Pages not updating | Check `cms-data/pages.json` was actually written; restart pm2 |

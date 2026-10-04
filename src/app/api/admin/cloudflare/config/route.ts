@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Runtime server secrets go to cms-data/secrets.json — picked up
+    // Runtime server secrets go to the secrets table (cms.db) — picked up
     // immediately by getSecret() without a pm2 restart.
     setSecrets({
       CLOUDFLARE_API_TOKEN,
@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Return current configuration (actual values for editing). Server secrets
-    // come from cms-data/secrets.json (admin store) with .env fallback; the
+    // come from the secrets table (admin store) with a process-env fallback; the
     // NEXT_PUBLIC_* ones are build-time inlined and live only in process.env.
     const config = {
       NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY || '',

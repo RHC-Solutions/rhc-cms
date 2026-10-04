@@ -35,7 +35,8 @@ git push origin main
 ssh user@your-server-ip
 cd /var/www && git clone <repo-url> rhcsolutions.com && cd rhcsolutions.com
 npm install
-nano .env.local  # Add all env variables
+# Settings live in cms-data/cms.db (no .env file): restore cms-data/ from a backup,
+# or finish /admin/setup after the first start
 npm run build
 pm2 start ecosystem.config.js
 pm2 startup && pm2 save
@@ -44,49 +45,32 @@ pm2 startup && pm2 save
 ### Docker
 ```bash
 docker build -t rhcsolutions .
-docker run -p 3001:3001 --env-file .env.local -v $(pwd)/cms-data:/app/cms-data rhcsolutions
+docker run -p 3001:3001 -v $(pwd)/cms-data:/app/cms-data rhcsolutions   # settings travel in cms-data/cms.db
 ```
 
 ---
 
-## Environment Variables Required
+## Settings
 
-```bash
-# Authentication (REQUIRED)
-NEXTAUTH_URL=https://yourdomain.com
-NEXTAUTH_SECRET=<openssl rand -base64 32>
+Every setting and secret is a row in the `secrets` table of `cms-data/cms.db`, edited in
+/admin → Settings (Integrations, and Advanced → Environment). There is no .env file;
+`npm run build` / `npm start` load the build-time ones through `scripts/env-from-db.mjs`.
 
-# Google Analytics 4
-NEXT_PUBLIC_GA_PROPERTY_ID=123456789
-NEXT_PUBLIC_GA_SERVICE_ACCOUNT_EMAIL=...@iam.gserviceaccount.com
-GA_PRIVATE_KEY=-----BEGIN RSA PRIVATE KEY-----\n...
-
-# Cloudflare
-CLOUDFLARE_API_TOKEN=<token>
-NEXT_PUBLIC_CLOUDFLARE_ZONE_ID=<zone-id>
-CLOUDFLARE_ACCOUNT_ID=<account-id>
-NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY=...
-CLOUDFLARE_TURNSTILE_SECRET_KEY=...
-
-# Email (SMTP)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-
-# Hotjar
-NEXT_PUBLIC_HOTJAR_SITE_ID=1234567
-
-# Telegram Backups (optional)
-TELEGRAM_BOT_TOKEN=...
-TELEGRAM_CHAT_ID=-123456789
+```text
+Authentication (required)  NEXTAUTH_URL, NEXTAUTH_SECRET (openssl rand -base64 32)
+Google Analytics 4         NEXT_PUBLIC_GA_PROPERTY_ID, NEXT_PUBLIC_GA_SERVICE_ACCOUNT_EMAIL, GA_PRIVATE_KEY
+Cloudflare                 CLOUDFLARE_API_TOKEN, NEXT_PUBLIC_CLOUDFLARE_ZONE_ID, CLOUDFLARE_ACCOUNT_ID,
+                           NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY, CLOUDFLARE_TURNSTILE_SECRET_KEY
+Email (SMTP)               SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
+Hotjar                     NEXT_PUBLIC_HOTJAR_SITE_ID
+Telegram backups           TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID (optional)
 ```
 
 ---
 
 ## Post-Deployment Checklist
 
-- [ ] Environment variables configured
+- [ ] Settings configured (/admin → Settings)
 - [ ] Database auto-initialized
 - [ ] HTTPS/SSL enabled
 - [ ] Homepage loads: `curl https://yourdomain.com`
@@ -121,13 +105,11 @@ cd rhcsolutions.com
 npm install
 ```
 
-### Step 2: Configure Environment
-```bash
-# Create .env.local with all required variables
-nano .env.local
-```
-
-Add all variables from the list above.
+### Step 2: Settings
+Settings live in `cms-data/cms.db`, not in an .env file. Restore `cms-data/` from a
+backup (it carries every setting and secret, including `NEXTAUTH_SECRET`), or on a fresh
+install finish `/admin/setup` after the first start and fill in the list above in
+/admin → Settings.
 
 ### Step 3: Build for Production
 ```bash

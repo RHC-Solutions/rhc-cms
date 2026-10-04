@@ -84,7 +84,7 @@ Required variables (see [TECHNICAL.md](./TECHNICAL.md#environment-configuration)
 
 | Issue | Solution |
 |-------|----------|
-| Can't login | Check NEXTAUTH_SECRET in .env.local |
+| Can't login | Check the `NEXTAUTH_SECRET` row in the `secrets` table of `cms-data/cms.db` |
 | Port in use | `lsof -ti:3001 \| xargs kill -9` |
 | Build fails | `rm -rf .next && npm install && npm run build` |
 | Slow performance | Check CDN status and cache headers |
@@ -141,7 +141,7 @@ Last updated: **January 9, 2026**
 - **Search**: Use Ctrl+F to search within documents
 - **Code blocks**: Copy code examples with the copy button
 - **Terminal commands**: Replace `yourdomain.com` with your actual domain
-- **Sensitive data**: Never commit `.env.local` to git
+- **Sensitive data**: Never commit `cms-data/cms.db` (it holds every setting and secret) to git
 - **Backups**: Test restoration quarterly
 
 ---

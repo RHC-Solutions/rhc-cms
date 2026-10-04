@@ -3,12 +3,12 @@
 #
 # Code-only rollback (default): resets master to the tag, rebuilds, restarts.
 # Full rollback (--with-data): also unpacks the filesystem zip, restoring
-#   cms-data/, .env.local, and other config files. USE WITH CARE — this wipes
+#   cms-data/ (cms.db holds every setting and secret) and other config files. USE WITH CARE — this wipes
 #   any CMS edits or password rotations made after the checkpoint.
 #
 # Usage:
 #   scripts/restore-to-checkpoint.sh              # code only
-#   scripts/restore-to-checkpoint.sh --with-data  # code + data + .env.local
+#   scripts/restore-to-checkpoint.sh --with-data  # code + data (incl. settings in cms.db)
 
 set -euo pipefail
 
@@ -42,7 +42,7 @@ git reset --hard "$TAG"
 
 if [[ "$WITH_DATA" == "1" ]]; then
   [[ -f "$ZIP" ]] || { echo "!! Missing $ZIP"; exit 1; }
-  read -r -p "Overwrite cms-data/ and .env.local from $ZIP? [y/N] " ans
+  read -r -p "Overwrite cms-data/ (content, settings and secrets) from $ZIP? [y/N] " ans
   [[ "$ans" == "y" || "$ans" == "Y" ]] || { echo "Skipping data restore."; WITH_DATA=0; }
 fi
 
