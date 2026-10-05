@@ -1,6 +1,11 @@
 // @ts-check
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
+// Both come with eslint-config-next. Registered so the inline
+// `eslint-disable` directives that name their rules resolve (an unknown rule
+// in a directive is a lint error).
+import nextPlugin from '@next/eslint-plugin-next';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 export default [
   {
@@ -18,6 +23,10 @@ export default [
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    plugins: {
+      '@next/next': nextPlugin,
+      'react-hooks': reactHooks,
+    },
     languageOptions: {
       globals: {
         // Browser + Node + React globals used across this app.
@@ -60,6 +69,10 @@ export default [
       'no-constant-binary-expression': 'off',
       'no-useless-assignment': 'off',
       'prefer-const': 'warn',
+      // Plain <img> is only used at a few intentional sites, each with an
+      // explicit disable directive. This flags any other stray <img>.
+      '@next/next/no-img-element': 'warn',
+      'react-hooks/exhaustive-deps': 'warn',
     },
   },
 ];
