@@ -75,7 +75,20 @@ setfacl -m u:rhcsolutions_com:r /home/clp/htdocs/app/data/db.sq3-wal /home/clp/h
 If you would rather not grant any access, leave it — every write action still
 works, and the sites table simply reports that the database is unreadable.
 
-### 4. Enable the module
+### 4. (Only for imports and custom certificates) create the import directory
+
+`db:import` and `site:install:certificate` read their files from one fixed,
+root-owned directory. Create it once, as root, and copy files into it there:
+
+```bash
+install -d -o root -g root -m 0700 /var/lib/rhc-clpctl/import
+cp acme.sql.gz site.key site.crt /var/lib/rhc-clpctl/import/
+```
+
+`db:export` writes to `/var/backups/rhc-clpctl/`, which the wrapper creates
+(root-owned, `0700`) on first use. See [File arguments](#file-arguments).
+
+### 5. Enable the module
 
 `/admin/cloudpanel` → **Enable**. Destructive commands need a **second**,
 separate switch (see below).
@@ -110,7 +123,11 @@ Every value that reaches root passes three independent gates:
 3. **The wrapper** (`scripts/cloudpanel/rhc-clpctl`) — re-derives the same
    allowlist on the root side, because the panel's validation is a usability
    layer and the wrapper is the actual security boundary. It assumes its caller
-   is hostile.
+   is hostile. Each verb may only use its own flags (`--file` is valid on
+   `db:export`, refused everywhere else), every value is checked against the
+   same shape as the panel's validators, and a flag may appear only once.
+   `bash scripts/cloudpanel/test-rhc-clpctl.sh` runs its allowlist tests against
+   a stub `clpctl`; run it after any change to the wrapper.
 
 Other properties:
 
@@ -130,6 +147,30 @@ Other properties:
   (`/admin/audit`, action `cloudpanel.<command>`) **and** to host syslog
   (`logger -t rhc-clpctl`), so the trail survives loss of either system.
 
+### File arguments
+
+clpctl reads and writes files **as root**. A file flag that took any absolute
+path would let a hijacked admin session have root overwrite any file
+(`db:export --file=/etc/passwd`) or read one (`--privateKey=/etc/shadow`). So
+every file flag is confined to one fixed directory:
+
+| Flag | Directory | Access |
+|---|---|---|
+| `db:export --file` | `/var/backups/rhc-clpctl/` | root writes the dump |
+| `db:import --file` | `/var/lib/rhc-clpctl/import/` | root reads it |
+| `site:install:certificate --privateKey / --certificate / --certificateChain` | `/var/lib/rhc-clpctl/import/` | root reads them |
+
+- Only a **bare file name** is accepted (letters, digits, `.`, `_`, `-`; no
+  subdirectories). In the UI you can type just the name; the panel prefixes the
+  directory.
+- The wrapper refuses to run unless the directory is a real directory (not a
+  symlink), **owned by root** and **not group- or world-writable**, so the web
+  user can never plant a symlink in it. It also refuses a target that is a
+  symlink, and a read target that is not an existing regular file.
+- The directories are fixed in the wrapper (like the `clpctl` path) and mirrored
+  as `EXPORT_DIR` / `IMPORT_DIR` in `src/lib/cloudpanel/clpctl.ts`. To move them,
+  change both.
+
 ### Commands deliberately not exposed
 
 | Command | Why |
@@ -139,10 +180,11 @@ Other properties:
 
 ## Configuration
 
-Precedence is **env var > admin UI setting > default**, so an operator can pin
-paths in `.env.local` and stop the UI from moving them.
+Precedence is **setting > the module's own form > default**. A setting lives in
+the `secrets` table (set it with `admin-panel settings` or on the environment
+page), so an operator can pin paths and stop the module's form from moving them.
 
-| Setting | Env var | Default |
+| Setting | Setting key | Default |
 |---|---|---|
 | Enabled | `CLOUDPANEL_ENABLED` | `false` |
 | CloudPanel DB path | `CLOUDPANEL_DB_PATH` | `/home/clp/htdocs/app/data/db.sq3` |

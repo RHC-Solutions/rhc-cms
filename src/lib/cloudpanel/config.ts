@@ -12,10 +12,12 @@
  * are not CloudPanel servers, so nothing here may assume RHC's layout — every
  * path is configurable and the defaults are only CloudPanel's documented ones.
  *
- * Precedence: env var > module_settings row > default. Env wins so an operator
- * can pin paths in .env.local and stop the admin UI from moving them.
+ * Precedence: setting > module_settings row > default. A setting (the `secrets`
+ * table, via `admin-panel settings` or the environment page) wins so an operator
+ * can pin paths and stop the module's own admin form from moving them.
  */
 
+import { getSecret } from '../env';
 import { getModuleSetting, setModuleSetting } from '../module-settings';
 
 export const CLOUDPANEL_SETTING_KEY = 'cloudpanel.config';
@@ -53,7 +55,7 @@ export const DEFAULT_CONFIG: CloudPanelConfig = {
 };
 
 function envBool(key: string): boolean | undefined {
-  const raw = process.env[key];
+  const raw = getSecret(key);
   if (raw === undefined || raw === '') return undefined;
   return raw === '1' || raw.toLowerCase() === 'true';
 }
@@ -75,9 +77,9 @@ export async function getCloudPanelConfig(): Promise<CloudPanelConfig> {
   const timeout = Number(stored.timeoutMs);
   return {
     enabled: envBool('CLOUDPANEL_ENABLED') ?? stored.enabled ?? DEFAULT_CONFIG.enabled,
-    dbPath: cleanPath(process.env.CLOUDPANEL_DB_PATH || stored.dbPath, DEFAULT_CONFIG.dbPath),
+    dbPath: cleanPath(getSecret('CLOUDPANEL_DB_PATH') || stored.dbPath, DEFAULT_CONFIG.dbPath),
     wrapperPath: cleanPath(
-      process.env.CLOUDPANEL_WRAPPER_PATH || stored.wrapperPath,
+      getSecret('CLOUDPANEL_WRAPPER_PATH') || stored.wrapperPath,
       DEFAULT_CONFIG.wrapperPath,
     ),
     useSudo: envBool('CLOUDPANEL_USE_SUDO') ?? stored.useSudo ?? DEFAULT_CONFIG.useSudo,

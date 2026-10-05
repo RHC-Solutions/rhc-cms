@@ -39,6 +39,8 @@ export interface FlagSpec {
   secret?: boolean;
   /** Valueless flag, emitted as a bare `--force`. */
   boolean?: boolean;
+  /** Applied to the trimmed value before `validate`, e.g. a bare file name -> full path. */
+  normalize?: (value: string) => string;
   hint: string;
 }
 
@@ -123,15 +125,39 @@ const isHttpUrl: Validator = (v) => {
   return (u.protocol === 'http:' || u.protocol === 'https:') && !!u.hostname;
 };
 
-/**
- * Absolute path, no traversal, conservative charset. Used for db dump files and
- * certificate material. The wrapper re-checks this on the root side.
+/*
+ * File arguments. clpctl reads and writes them AS ROOT, so "any absolute path"
+ * meant `db:export --file=/etc/passwd` overwrote any file on the host, and a
+ * certificate or import path could make root read any file. Each is confined to
+ * one fixed directory holding bare file names only. These MUST match
+ * EXPORT_DIR / IMPORT_DIR in scripts/cloudpanel/rhc-clpctl, which enforces the
+ * same rule root-side (plus root ownership of the directory and no symlinks).
  */
-const isSafePath: Validator = (v) => {
-  if (typeof v !== 'string' || !v.startsWith('/') || v.length > 1024 || v.includes('\0')) return false;
-  if (!/^[A-Za-z0-9._/-]+$/.test(v)) return false;
-  return !v.split('/').includes('..');
-};
+export const EXPORT_DIR = '/var/backups/rhc-clpctl';
+export const IMPORT_DIR = '/var/lib/rhc-clpctl/import';
+const FILE_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+
+/** A bare file name may be given; it is placed in `dir`. */
+const inDir = (dir: string) => (v: string) => (v.includes('/') ? v : `${dir}/${v}`);
+
+const isFileIn =
+  (dir: string): Validator =>
+  (v) =>
+    typeof v === 'string' && v.startsWith(`${dir}/`) && FILE_NAME_RE.test(v.slice(dir.length + 1));
+
+const exportFile = (hint: string): Omit<FlagSpec, 'name'> => ({
+  required: true,
+  normalize: inDir(EXPORT_DIR),
+  validate: isFileIn(EXPORT_DIR),
+  hint: `${hint}, written to ${EXPORT_DIR}/`,
+});
+
+const importFile = (hint: string, required = true): Omit<FlagSpec, 'name'> => ({
+  required,
+  normalize: inDir(IMPORT_DIR),
+  validate: isFileIn(IMPORT_DIR),
+  hint: `${hint}, read from ${IMPORT_DIR}/`,
+});
 
 /* ----------------------------------------------------------------- commands */
 
@@ -217,12 +243,7 @@ export const COMMANDS: Record<string, CommandSpec> = {
     summary: 'Export a database to a dump file',
     flags: [
       { name: 'databaseName', required: true, validate: isDbIdent, hint: 'database to export' },
-      {
-        name: 'file',
-        required: true,
-        validate: isSafePath,
-        hint: 'absolute path, e.g. /home/clp/backups/acme.sql.gz',
-      },
+      { name: 'file', ...exportFile('file name, e.g. acme.sql.gz') },
     ],
   },
   'user:add': {
@@ -285,7 +306,7 @@ export const COMMANDS: Record<string, CommandSpec> = {
     destructive: true,
     flags: [
       { name: 'databaseName', required: true, validate: isDbIdent, hint: 'target database' },
-      { name: 'file', required: true, validate: isSafePath, hint: 'absolute path to the dump' },
+      { name: 'file', ...importFile('dump file name') },
     ],
   },
   'site:install:certificate': {
@@ -294,9 +315,9 @@ export const COMMANDS: Record<string, CommandSpec> = {
     destructive: true,
     flags: [
       { name: 'domainName', required: true, validate: isDomain, hint: 'example.com' },
-      { name: 'privateKey', required: true, validate: isSafePath, hint: 'absolute path to the key file' },
-      { name: 'certificate', required: true, validate: isSafePath, hint: 'absolute path to the cert file' },
-      { name: 'certificateChain', validate: isSafePath, hint: 'absolute path to the chain file' },
+      { name: 'privateKey', ...importFile('key file name') },
+      { name: 'certificate', ...importFile('certificate file name') },
+      { name: 'certificateChain', ...importFile('chain file name', false) },
     ],
   },
 };
@@ -390,7 +411,8 @@ export function buildCommand(command: string, params: Record<string, unknown>): 
     if (typeof raw !== 'string' && typeof raw !== 'number') {
       throw new ClpctlValidationError(`Flag --${flag.name} must be a string`);
     }
-    const value = String(raw).trim();
+    const trimmed = String(raw).trim();
+    const value = flag.normalize ? flag.normalize(trimmed) : trimmed;
     if (!flag.validate(value)) {
       throw new ClpctlValidationError(`Invalid value for --${flag.name} (expected ${flag.hint})`);
     }
