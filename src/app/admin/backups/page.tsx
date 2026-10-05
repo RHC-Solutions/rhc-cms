@@ -95,7 +95,7 @@ export default function BackupsPage() {
   }, []);
 
   const handleCreateBackup = async () => {
-    const confirmed = confirm('Create a COMPLETE full site backup? This will archive:\n\n✓ CMS Data (SQLite database, all content)\n✓ Source Code (src/ - complete application)\n✓ Public Assets (public/ - uploads, images)\n✓ Scripts & Functions (utility and serverless)\n✓ Documentation (docs_archived/)\n✓ Configuration Files (ALL - package.json, .env.local, middleware.ts, etc)\n✓ Build Configs (tailwind, typescript, postcss)\n✓ Deployment Configs (wrangler, ecosystem, headers, redirects)\n✓ VS Code Settings (.vscode/)\n\nThis is a COMPLETE portable backup ready for disaster recovery.\nAfter extraction, run: npm install && npm run build\n\nBackups under 50MB will be sent to Telegram.\nLarger backups are stored locally only.');
+    const confirmed = confirm('Create a COMPLETE full site backup? This will archive:\n\n✓ CMS Data (SQLite database, all content)\n✓ Source Code (src/ - complete application)\n✓ Public Assets (public/ - uploads, images)\n✓ Scripts & Functions (utility and serverless)\n✓ Documentation (docs_archived/)\n✓ Configuration Files (ALL - package.json, middleware.ts, etc; settings and secrets are in the database)\n✓ Build Configs (tailwind, typescript, postcss)\n✓ Deployment Configs (wrangler, ecosystem, headers, redirects)\n✓ VS Code Settings (.vscode/)\n\nThis is a COMPLETE portable backup ready for disaster recovery.\nAfter extraction, run: npm install && npm run build\n\nBackups under 50MB will be sent to Telegram.\nLarger backups are stored locally only.');
     if (!confirmed) return;
 
     setCreating(true);

@@ -26,10 +26,6 @@ const BACKUP_SOURCES = [
 
 // Root level config files to include
 const CONFIG_FILES = [
-  '.env.local',        // CRITICAL: Contains NEXTAUTH_SECRET for authentication
-  '.env.example',
-  '.env.local.example',
-  '.env.local.cloudflare.example',
   'package.json',
   'package-lock.json',
   'package.scripts.json',
@@ -311,7 +307,7 @@ async function createBackupZip(targetPath: string): Promise<boolean> {
         'functions: Serverless functions (Cloudflare)',
         'docs_archived: Documentation and guides',
         '.vscode: VS Code workspace settings',
-        'config: ALL configuration files (package.json, next.config.mjs, .env.local, middleware.ts, etc)',
+        'config: ALL configuration files (package.json, next.config.mjs, middleware.ts, etc). Settings and secrets are inside cms-data/cms.db',
         'config: Build configs (tailwind.config.ts, tsconfig.json, postcss.config.mjs)',
         'config: Deployment configs (wrangler.toml, ecosystem.config.js, _headers, _redirects)',
         'config: Documentation (README.md, BACKUP_SYSTEM.md, CHANGELOG.md, etc)',
@@ -326,7 +322,7 @@ async function createBackupZip(targetPath: string): Promise<boolean> {
         '4. Verify you are in the correct directory: dir (Windows) or ls (Linux/Mac)',
         '   You should see: package.json, src/, public/, cms-data/, scripts/, functions/',
         '5. Install dependencies: npm install',
-        '6. Verify .env.local exists and contains NEXTAUTH_SECRET',
+        '6. Keep cms-data/cms.db from this backup: it holds all settings and secrets, including NEXTAUTH_SECRET',
         '7. Build the application: npm run build',
         '8. Start the server: npm start (or pm2 start ecosystem.config.js)',
         '',
@@ -352,12 +348,13 @@ async function createBackupZip(targetPath: string): Promise<boolean> {
 ### 1. NEXTAUTH_SECRET Must Match Original
 **⚠️ IF YOU CHANGE NEXTAUTH_SECRET, YOU CANNOT LOG IN WITH EXISTING USERS!**
 
-This backup includes your original \`.env.local\` file with the correct \`NEXTAUTH_SECRET\`.
+All settings and secrets, including \`NEXTAUTH_SECRET\`, live in the \`secrets\` table of
+\`cms-data/cms.db\`. This site uses no .env file.
 - DO NOT generate a new secret
 - DO NOT modify the NEXTAUTH_SECRET value
-- Use the exact .env.local file from this backup
+- Use the cms-data/cms.db file from this backup
 
-If you lost the .env.local file:
+If you lost cms-data/cms.db:
 - You MUST delete cms-data/users.json
 - Run the setup wizard to create a new admin user
 - Old user passwords will NOT work with a different secret
@@ -391,18 +388,15 @@ you are running commands from the WRONG directory!
    
    Run: \`ls\` (Linux/Mac) or \`dir\` (Windows) to check
 
-4. **VERIFY .env.local file exists**
+4. **VERIFY cms-data/cms.db exists**
    \`\`\`bash
-   # Check if .env.local was extracted
-   ls -la .env.local
-   # or on Windows:
-   dir .env.local
+   ls -la cms-data/cms.db
    \`\`\`
    
-   **CRITICAL:** This file contains your NEXTAUTH_SECRET.
+   **CRITICAL:** Its \`secrets\` table holds every setting and secret, including NEXTAUTH_SECRET.
    - ✅ If it exists: DO NOT MODIFY IT
    - ❌ If missing: You cannot use existing user accounts
-     - Option A: Find the original .env.local from your old installation
+     - Option A: Restore cms-data/cms.db from another backup
      - Option B: Delete cms-data/users.json and run setup wizard
 
 5. **Install dependencies**
@@ -449,10 +443,10 @@ node verify-restore.js
 ### ❌ "Can't login with my username/password/2FA"
 **Problem:** NEXTAUTH_SECRET is different from the original
 **Solution:**
-1. Check if .env.local exists in the extracted backup
-2. If YES: Make sure you didn't modify NEXTAUTH_SECRET
+1. Check that cms-data/cms.db exists in the extracted backup
+2. If YES: Make sure you didn't modify NEXTAUTH_SECRET in its secrets table
 3. If NO: You have two options:
-   - Find your original .env.local file and copy it here
+   - Restore cms-data/cms.db from another backup
    - OR delete cms-data/users.json and run http://localhost:3000/admin/setup
      to create a new admin account
 

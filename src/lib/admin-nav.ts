@@ -67,7 +67,7 @@ export const ADMIN_NAV: AdminNavEntry[] = [
     name: 'Settings', href: '/admin/settings', iconName: 'FaCog', roles: ['admin', 'editor'],
     description: 'Site identity, branding, integrations, infrastructure', keywords: ['settings', 'configuration', 'general', 'site', 'domain', 'identity', 'branding'],
     children: [
-      { name: 'Environment', href: '/admin/settings/environment', iconName: 'FaCog', roles: ['admin'], description: 'Environment variables (.env.local)', keywords: ['environment', 'env', 'variables', 'config', 'nextauth', 'database'] },
+      { name: 'Environment', href: '/admin/settings/environment', iconName: 'FaCog', roles: ['admin'], description: 'Build-time settings (stored in the site database)', keywords: ['environment', 'env', 'variables', 'config', 'nextauth', 'database'] },
     ],
   },
 

@@ -260,7 +260,7 @@ export default function SettingsPage() {
         <div className="card-cyber p-8 space-y-3">
           <h2 className="text-xl font-bold text-text-primary mb-1">Advanced</h2>
           <p className="text-text-secondary text-sm mb-4">Infrastructure and lower-level configuration.</p>
-          <Link href="/admin/settings/environment" className="block text-cyber-cyan hover:text-cyber-green">Environment variables (.env.local) →</Link>
+          <Link href="/admin/settings/environment" className="block text-cyber-cyan hover:text-cyber-green">Environment settings →</Link>
           <Link href="/admin/cloudflare" className="block text-cyber-cyan hover:text-cyber-green">Cloudflare dashboard (cache, DNS, WAF) →</Link>
         </div>
       )}

@@ -12,8 +12,8 @@ import { getSecret } from '@adminpanel/lib/env';
  *   we only acknowledge its presence so admins know an IDE has been
  *   wired up.
  *
- * Both tokens are managed at /admin/integrations and stored in
- * cms-data/secrets.json; they never reach the browser — the admin
+ * Both tokens are managed at /admin/integrations and stored in the
+ * site database; they never reach the browser — the admin
  * page calls this route, this route signs the outbound request.
  */
 

@@ -1,6 +1,6 @@
 /**
  * Schema describing every runtime server-side integration whose credentials
- * live in cms-data/secrets.json (managed via /admin/integrations).
+ * live in the secrets table of cms-data/cms.db (managed via /admin/integrations).
  *
  * Adding a new integration: append an entry below, then in the consumer code
  * replace `process.env.X` with `getSecret('X')` from '@adminpanel/lib/env'. No UI or API
@@ -10,7 +10,7 @@
 export type IntegrationFieldType = 'text' | 'secret' | 'longtext';
 
 export interface IntegrationField {
-  /** Env-var name; also the key used inside cms-data/secrets.json */
+  /** Env-var name; also the key in the secrets table of cms-data/cms.db */
   envVar: string;
   /** Human-readable label rendered in the form */
   label: string;
@@ -191,7 +191,7 @@ export const INTEGRATIONS: Integration[] = [
 
 /** Every env-var name listed across all integrations — used as the allow-list
  *  by the save endpoint so a stray field name in the request body can't
- *  poison cms-data/secrets.json. */
+ *  poison the secrets table. */
 export const MANAGED_SECRET_KEYS: ReadonlySet<string> = new Set(
   INTEGRATIONS.flatMap((i) => i.fields.map((f) => f.envVar)),
 );

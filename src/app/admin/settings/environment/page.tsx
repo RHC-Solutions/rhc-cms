@@ -188,7 +188,7 @@ export default function EnvironmentSettingsPage() {
     <AdminShell title="Environment Settings">
       <div className="mb-8">
         <h1 className="heading-xl text-gradient mb-2">Environment Configuration</h1>
-        <p className="text-text-secondary">Manage all application settings from .env.local</p>
+        <p className="text-text-secondary">Application settings are stored in the site database. Changes to NEXT_PUBLIC_* and NEXTAUTH_* values apply after the next build and restart.</p>
       </div>
 
       {/* Tabs */}
@@ -666,7 +666,7 @@ export default function EnvironmentSettingsPage() {
       {/* Warning */}
       <div className="card-cyber p-4 mt-8 border-l-4 border-red-500">
         <p className="text-sm text-red-400">
-          ⚠️ <strong>Warning:</strong> All settings are sensitive credentials. Change these carefully and never share them. After saving, remember to restart the application.
+          ⚠️ <strong>Warning:</strong> All settings are sensitive credentials. Change these carefully and never share them. After saving NEXT_PUBLIC_* or NEXTAUTH_* values, rebuild and restart the application.
         </p>
       </div>
     </AdminShell>

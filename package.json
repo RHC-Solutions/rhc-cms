@@ -9,15 +9,15 @@
     "admin-panel": "bin/admin-panel.mjs"
   },
   "scripts": {
-    "dev": "next dev -p 3003 -H 0.0.0.0",
-    "build": "next build && node scripts/inline-critical-css.mjs",
-    "start": "NODE_ENV=production next start -p 3003 -H 0.0.0.0",
+    "dev": "node scripts/env-from-db.mjs next dev -p 3003 -H 0.0.0.0",
+    "build": "node scripts/env-from-db.mjs next build && node scripts/inline-critical-css.mjs",
+    "start": "NODE_ENV=production node scripts/env-from-db.mjs next start -p 3003 -H 0.0.0.0",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "init-into-site": "node bin/admin-panel.mjs init"
   },
   "dependencies": {
     "@types/better-sqlite3": "^7.6.13",
-    "adm-zip": "^0.5.17",
+    "adm-zip": "^0.6.1",
     "archiver": ">=8.0.0",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.11.1",

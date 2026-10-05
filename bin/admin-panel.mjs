@@ -3,6 +3,7 @@
 //
 //   npx github:RHC-Solutions/rhc-cms init     # bootstrap into the current site
 //   npx github:RHC-Solutions/rhc-cms update   # pull a newer panel + refresh wrappers + sync deps
+//   npx github:RHC-Solutions/rhc-cms settings # change the core settings (URLs, secret, database)
 //   npx github:RHC-Solutions/rhc-cms apply-pack <zip|url>   # apply a design pack to the running site
 //
 // Prerequisites (checked at runtime by checkPrerequisites): Node >= 20.9 (init/update/
@@ -17,22 +18,25 @@
 //   3. creates middleware.ts wired to adminAuthGate (or prints the snippet if one exists)
 //   4. generates the Next route wrappers (install-into-site.mjs)
 //   5. installs the runtime deps           (skip with --no-install)
-//   6. runs an interactive .env.local wizard (asks for the admin/site URLs, secret,
-//      Postgres URL, and optionally every other setting); --yes skips it for automation
-//      and writes defaults + a generated NEXTAUTH_SECRET. Also updates .gitignore.
+//   6. runs an interactive settings wizard (admin/site URLs, secret, Postgres URL) and
+//      stores the answers in the site database (cms-data/cms.db, never an .env file);
+//      --yes skips the prompts for automation, taking those values from the process
+//      environment and generating NEXTAUTH_SECRET. Routes the site's dev/build/start
+//      scripts through the panel's settings loader and updates .gitignore.
 //   7. drops a renovate.json so the site auto-updates the panel + deps (--no-renovate)
 //
 // Flags: --submodule <path> (default vendor/admin-panel) · --url <git-url>
 //        --branch <name> (submodule tracking branch, default main)
 //        --no-install · --no-renovate · --yes (assume defaults) · --help
 //
-// Uses Node built-ins only — no dependencies.
+// Uses Node built-ins only — no dependencies (the settings database is opened with the
+// host's better-sqlite3, or Node's built-in node:sqlite).
 
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { runEnvWizard, renderEnv } from './lib/env-wizard.mjs';
+import { CORE_KEYS, looksPlaceholder, openSettingsDb, runSettingsWizard, wrapNextScript } from './lib/settings-wizard.mjs';
 
 const DEFAULT_URL = 'https://github.com/RHC-Solutions/rhc-cms.git';
 const SITE = process.cwd();
@@ -53,7 +57,7 @@ const BRANCH = opt('branch', 'main');
 const NO_INSTALL = flag('no-install');
 const NO_RENOVATE = flag('no-renovate');
 const STATIC_SITE = flag('static-site'); // scaffold the root catch-all that serves design packs
-const YES = flag('yes'); // non-interactive: skip the .env.local wizard, write defaults + generated secret
+const YES = flag('yes'); // non-interactive: skip the settings prompts, use the process env + a generated secret
 
 // ---------- tiny logger ----------
 const c = (n, s) => (process.stdout.isTTY ? `\x1b[${n}m${s}\x1b[0m` : s);
@@ -317,46 +321,83 @@ function checkNextConfig() {
   }
 }
 
-// Interactive .env.local wizard. In a TTY (and without --yes) it asks for the core
-// settings (admin/site URL, secret, Postgres URL) and, optionally, every other var in
-// .env.local.example. Non-interactive (piped/CI or --yes) it writes the template with a
-// generated secret — same as before — so automation keeps working.
-async function scaffoldEnv(abs) {
-  const envPath = path.join(SITE, '.env.local');
-  if (fs.existsSync(envPath)) {
-    skip('.env.local (present — verify NEXTAUTH_URL / NEXTAUTH_SECRET / NEXT_PUBLIC_SITE_URL)');
+// Settings wizard. Settings live in the site database (the secrets table of
+// cms-data/cms.db), never in an .env file. In a TTY (and without --yes) it asks for the
+// core settings (admin/site URL, secret, Postgres URL). Non-interactive (piped/CI or
+// --yes) it takes them from the process environment and generates NEXTAUTH_SECRET, so
+// automation keeps working. `init` skips it once settings exist; `settings` re-runs it.
+async function scaffoldSettings({ rerun = false } = {}) {
+  let db;
+  try {
+    db = await openSettingsDb({ siteRoot: SITE, dataRoot: process.env.SHARED_ROOT || SITE });
+  } catch (e) {
+    warn(`${e.message}\n      Then run: npx github:RHC-Solutions/rhc-cms settings`);
     return;
   }
-  const examplePath = path.join(abs, '.env.local.example');
-  const template = fs.existsSync(examplePath)
-    ? fs.readFileSync(examplePath, 'utf8')
-    : 'NEXTAUTH_URL=https://your-domain.com\nNEXTAUTH_SECRET=\nNEXT_PUBLIC_SITE_URL=https://your-domain.com\n';
-  const secret = crypto.randomBytes(32).toString('base64');
-  const interactive = process.stdin.isTTY && process.stdout.isTTY && !YES;
-  let answers = {};
-  if (interactive) {
-    answers = await runEnvWizard({
-      template, secret, input: process.stdin, output: process.stdout,
-      banner: () => console.log('\n' + c(1, 'Configure .env.local') + ' — Enter accepts the [default]; a blank skips an optional. Edit it anytime.\n'),
-    });
-    // readline doesn't release the TTY on close, which can keep the event loop alive and
-    // hang the CLI after init finishes — unref stdin so the process can exit normally.
-    if (process.stdin.isTTY) process.stdin.unref();
-  } else if (YES) {
-    info('--yes: writing .env.local with template defaults + a generated NEXTAUTH_SECRET (edit before building).');
+  try {
+    const current = Object.fromEntries(CORE_KEYS.map((k) => [k, db.get(k)]));
+    if (current.NEXTAUTH_SECRET && !rerun) {
+      skip('settings in cms-data/cms.db (change them with `admin-panel settings` or in /admin → Settings)');
+      return;
+    }
+    const secret = crypto.randomBytes(32).toString('base64');
+    const interactive = process.stdin.isTTY && process.stdout.isTTY && !YES;
+    let answers;
+    if (interactive) {
+      answers = await runSettingsWizard({
+        current, secret, input: process.stdin, output: process.stdout,
+        banner: () => console.log('\n' + c(1, 'Configure the site') + ' — Enter accepts the [default]. Stored in cms-data/cms.db; change it anytime in /admin → Settings.\n'),
+      });
+      // readline doesn't release the TTY on close, which can keep the event loop alive and
+      // hang the CLI after init finishes — unref stdin so the process can exit normally.
+      if (process.stdin.isTTY) process.stdin.unref();
+    } else {
+      answers = Object.fromEntries(CORE_KEYS.map((k) => [k, process.env[k] || current[k] || '']));
+      if (!answers.NEXTAUTH_SECRET) answers.NEXTAUTH_SECRET = secret;
+      if (YES) info('--yes: settings taken from the process environment, with a generated NEXTAUTH_SECRET where none was set.');
+    }
+    // Example domains are prompt defaults only; never store them.
+    for (const k of Object.keys(answers)) if (looksPlaceholder(answers[k])) delete answers[k];
+    db.set(answers);
+    ok(`settings stored in ${path.relative(SITE, db.file) || db.file}: ${Object.keys(answers).filter((k) => answers[k]).join(', ')}`);
+    // The app won't work until the domain URLs are real (covers --yes/CI and an
+    // interactive run where the user accepted the example default).
+    const missing = ['NEXTAUTH_URL', 'NEXT_PUBLIC_SITE_URL'].filter((k) => !db.get(k));
+    if (missing.length) {
+      warn(`${missing.join(' and ')} not set yet — run \`npx github:RHC-Solutions/rhc-cms settings\` with your real domain before \`npm run build\`.`);
+    }
+  } finally {
+    db.close();
   }
-  // Create with 0o600 from the start (no group-readable window for the secret), then
-  // chmod as a belt-and-suspenders in case the platform widened the create mode.
-  fs.writeFileSync(envPath, renderEnv(template, answers, secret), { mode: 0o600 });
-  fs.chmodSync(envPath, 0o600);
-  ok(interactive
-    ? '.env.local written from your answers (chmod 600).'
-    : '.env.local scaffolded with a fresh NEXTAUTH_SECRET.');
-  // The app won't work until the domain URLs are real — warn if they're still placeholders
-  // (covers --yes/CI and an interactive run where the user accepted the example default).
-  const written = fs.readFileSync(envPath, 'utf8');
-  if (/^(?:NEXTAUTH_URL|NEXT_PUBLIC_SITE_URL)=.*your-domain\.com/m.test(written)) {
-    warn('.env.local still has placeholder URL(s) — set NEXTAUTH_URL and NEXT_PUBLIC_SITE_URL to your real domain before `npm run build`.');
+}
+
+// Route the site's dev/build/start scripts through the panel's settings loader, so Next.js
+// gets NEXT_PUBLIC_* / NEXTAUTH_* / DATABASE_URL from the database at build and start.
+// Idempotent; a script it can't rewrite gets a manual hint.
+function wireSettingsLoader() {
+  const pkgPath = path.join(SITE, 'package.json');
+  let pkg;
+  try { pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')); } catch { return; }
+  const loader = `node ${SUBMODULE}/scripts/env-from-db.mjs`;
+  const scripts = pkg.scripts || {};
+  const wired = [];
+  const manual = [];
+  for (const name of ['dev', 'build', 'start']) {
+    const before = scripts[name];
+    if (typeof before !== 'string' || before.includes('env-from-db.mjs')) continue;
+    const after = wrapNextScript(before, loader);
+    if (after === before) manual.push(name);
+    else { scripts[name] = after; wired.push(name); }
+  }
+  if (wired.length) {
+    pkg.scripts = scripts;
+    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+    ok(`package.json: ${wired.join('/')} load settings from the database (${loader})`);
+  } else if (!manual.length) {
+    skip('package.json settings loader');
+  }
+  if (manual.length) {
+    warn(`Couldn't rewrite the ${manual.join('/')} script(s) — put this in front of their \`next\` command:\n      ${loader}`);
   }
 }
 
@@ -381,11 +422,11 @@ function provisionPublicAssets(abs) {
 
 function updateGitignore() {
   const giPath = path.join(SITE, '.gitignore');
-  const needed = ['.env.local', 'cms-data/secrets.json', 'cms-data/users.json', 'cms-data/cms.db'];
+  const needed = ['cms-data/cms.db', 'cms-data/cms.db-shm', 'cms-data/cms.db-wal', 'cms-data/users.json'];
   let body = fs.existsSync(giPath) ? fs.readFileSync(giPath, 'utf8') : '';
   const missing = needed.filter((e) => !body.split(/\r?\n/).includes(e));
   if (!missing.length) { skip('.gitignore secrets'); return; }
-  body += (body.endsWith('\n') || body === '' ? '' : '\n') + '\n# admin-panel: never commit secrets\n' + missing.join('\n') + '\n';
+  body += (body.endsWith('\n') || body === '' ? '' : '\n') + '\n# admin-panel: never commit settings, secrets or password hashes\n' + missing.join('\n') + '\n';
   fs.writeFileSync(giPath, body);
   ok(`.gitignore: ignoring ${missing.join(', ')}`);
 }
@@ -455,14 +496,15 @@ async function runInit() {
   installDeps(abs);
   checkPeers(abs);
   checkNextConfig();
-  await scaffoldEnv(abs);
+  await scaffoldSettings();
+  wireSettingsLoader();
   provisionPublicAssets(abs);
   updateGitignore();
   writeRenovateConfig();
   console.log(`
 ${c(32, '✔ Admin panel installed.')} Next:
 
-  1) Review ${c(1, '.env.local')} — the wizard asked for the core values; fill any you skipped (NEXTAUTH_URL / NEXT_PUBLIC_SITE_URL).
+  1) Settings live in ${c(1, 'cms-data/cms.db')} (never commit it). Change the URLs or secret with ${c(1, 'npx github:RHC-Solutions/rhc-cms settings')}; everything else in /admin → Settings.
   2) ${c(1, 'npm run build && npm start')}   (or pm2/systemd in production)
   3) Open ${c(1, '/admin')} → the setup wizard creates your admin account, then enroll MFA.
   4) Enable the ${c(1, 'Renovate')} app on this repo so renovate.json keeps the panel + deps current.
@@ -489,9 +531,23 @@ function runUpdate() {
   // `new ZipArchive`) while still resolving an older dep, and crash at runtime.
   installDeps(abs);
   checkPeers(abs);
+  wireSettingsLoader(); // hosts created before settings moved into the database
+  if (fs.existsSync(path.join(SITE, '.env.local'))) {
+    warn('.env.local found — settings now live in the site database (cms-data/cms.db). Its values still load as a fallback; enter them in /admin → Settings (or run `admin-panel settings`), then delete the file.');
+  }
   provisionPublicAssets(abs); // backfill /logo.png for hosts created before this existed
   writeRenovateConfig(); // backfill auto-updates for hosts created before this existed
   ok('Panel updated. Rebuild: npm run build && restart your server.');
+}
+
+// Re-run the settings wizard on a site that is already set up (no .env file to edit).
+async function runSettings() {
+  if (!fs.existsSync(path.join(SITE, 'package.json'))) {
+    die(`No package.json in ${SITE} — run \`settings\` from the site's root folder.`);
+  }
+  await scaffoldSettings({ rerun: true });
+  wireSettingsLoader();
+  ok('URL and secret changes apply after a rebuild and restart: npm run build && restart your server.');
 }
 
 // Apply a design pack to the RUNNING site via its HTTP API. Works during first-run
@@ -545,6 +601,11 @@ Prerequisites:
 Usage (from your site's root):
   npx github:RHC-Solutions/rhc-cms init [options]
   npx github:RHC-Solutions/rhc-cms update
+  npx github:RHC-Solutions/rhc-cms settings
+
+Settings and secrets are stored in the site database (cms-data/cms.db), never in an
+.env file. init asks for the core ones (admin/site URL, NEXTAUTH_SECRET, Postgres URL);
+settings changes them later; everything else is in /admin → Settings.
 
 init bootstraps the panel into the CURRENT Next.js app. update upgrades a site that
 ALREADY embedded the panel — it pulls the newest panel source, regenerates the route
@@ -560,7 +621,8 @@ init options:
   --no-renovate        don't write a renovate.json
   --static-site        scaffold a root catch-all that serves design packs at clean
                        routes (for single-purpose pack hosts; remove your own / page)
-  --yes                assume defaults, no prompts
+  --yes                no prompts: NEXTAUTH_URL / NEXT_PUBLIC_SITE_URL / DATABASE_URL
+                       come from the environment, NEXTAUTH_SECRET is generated
   --help               this help
 
 renovate.json (written on init/update unless --no-renovate) enables Renovate's
@@ -578,6 +640,7 @@ try {
   switch (cmd) {
     case 'init': await runInit(); break;
     case 'update': runUpdate(); break;
+    case 'settings': await runSettings(); break;
     case 'apply-pack': await runApplyPack(); break;
     case 'help': case '--help': runHelp(); break;
     default: warn(`Unknown command "${cmd}".`); runHelp(); process.exit(1);

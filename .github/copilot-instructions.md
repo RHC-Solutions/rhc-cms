@@ -159,8 +159,8 @@ scripts/                     # Utility scripts
 
 ## Security Best Practices
 
-- **Never commit** `.env.local` or sensitive credentials
-- **Use environment variables** for all secrets
+- **Never commit** `cms-data/cms.db` (it holds every setting and secret) or other credentials
+- **Keep secrets in the site database** — read them with `getSecret()` from `src/lib/env.ts`; no .env files
 - **Validate user input** on both client and server
 - **Sanitize HTML** when rendering user content
 - **Use CSRF tokens** for state-changing operations
@@ -168,11 +168,13 @@ scripts/                     # Utility scripts
 - **SQL injection prevention** - always use parameterized queries
 - **XSS prevention** - React handles this by default, but be careful with dangerouslySetInnerHTML
 
-## Environment Variables
+## Settings
 
-Required environment variables (see `.env.local.example`):
+Settings and secrets are rows in the `secrets` table of `cms-data/cms.db`, not an .env file
+(see INSTALL.md step 4); `SHARED_ROOT` is the one set in the process environment. Names and
+example values:
 
-```bash
+```text
 # Required
 NEXTAUTH_SECRET=<generate-with: openssl rand -base64 32>
 NEXTAUTH_URL=https://admin.yourdomain.com    # the ADMIN url; provision never overwrites it

@@ -66,17 +66,18 @@ does **all** of steps 2–4 and 6 for you, idempotently:
   already have one — it won't overwrite yours)
 - generates the Next route wrappers
 - installs the runtime deps (`--no-install` to skip)
-- runs an interactive **`.env.local` wizard** — prompts for the admin/site URLs, offers
-  to auto-generate `NEXTAUTH_SECRET`, asks for an optional Postgres `DATABASE_URL`, then
-  optionally walks every other setting (GA, SMTP, Telegram, Cloudflare…). Press Enter to
-  accept a `[default]`; a blank skips an optional. Pass `--yes` (or run non-interactively,
-  e.g. piped/CI) to skip the wizard and write defaults + a generated secret instead. Also
+- runs an interactive **settings wizard** — prompts for the admin/site URLs, offers to
+  auto-generate `NEXTAUTH_SECRET`, asks for an optional Postgres `DATABASE_URL`, and stores
+  the answers in the site database (`cms-data/cms.db`; no .env file is written). Press Enter
+  to accept a `[default]`. Pass `--yes` (or run non-interactively, e.g. piped/CI) to skip the
+  prompts: the URLs then come from the environment and the secret is generated.
+- routes your `dev`/`build`/`start` scripts through the panel's settings loader, and
   updates `.gitignore`.
 
 Flags: `--no-install` · `--static-site` (scaffold the root catch-all that serves a
 design pack at clean routes — single-purpose pack hosts only) · `--submodule <path>`
 (default `vendor/admin-panel`) · `--url <git-url>` · `--no-renovate` · `--help`. Then
-jump to **step 4** to fill in the 3 required env vars, and **step 6** to run.
+see **step 4** for how settings work, and **step 6** to run.
 
 > The first `npx` run clones the panel once to execute the CLI; that's expected.
 
@@ -174,96 +175,61 @@ CSP `script-src`/`connect-src` allow them. The panel ships a reference
 
 ---
 
-## 4. Environment (`.env.local`)
+## 4. Settings (stored in the database)
 
-Copy the template and fill it in:
+The panel keeps **no .env file**. Every setting and secret lives in the `secrets` table
+of the site database, `cms-data/cms.db` (also when CMS content runs on Postgres), and is
+edited in **/admin → Settings** (Integrations, and Advanced → Environment).
 
-```bash
-cp vendor/admin-panel/.env.local.example .env.local
-```
-
-**Two ways to set credentials.** Server-side secrets are read via `getSecret()`,
-which checks **`cms-data/secrets.json` first** (written by the admin UI →
-Integrations / Environment pages) **then `.env.local`**. So anything in the
-"Server secrets" group below can be entered in the admin UI *after* first login
-instead of here. The **Required** and **Public** groups must be in `.env.local`
-because they're needed at build/boot.
-
-### Required (must be in `.env.local`)
-
-| Var | Notes |
-|---|---|
-| `NEXTAUTH_SECRET` | `openssl rand -base64 32`. Rotating it invalidates all sessions. |
-| `NEXTAUTH_URL` | Full site URL, e.g. `https://your-domain.com`. |
-| `NEXT_PUBLIC_SITE_URL` | Same canonical URL; drives white-labeled strings (Telegram alerts, Cloudflare hints, seed emails, audit digests). |
-
-### Public — build-time, must be env (inlined into the bundle)
-
-| Var | Purpose |
-|---|---|
-| `NEXT_PUBLIC_GA_ID` | GA4 measurement ID `G-XXXX`. |
-| `NEXT_PUBLIC_GA_PROPERTY_ID` | Numeric GA4 property ID (admin dashboard charts). |
-| `NEXT_PUBLIC_GTM_ID` | Google Tag Manager `GTM-XXXX`. |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile (contact form). |
-| `NEXT_PUBLIC_AHREFS_KEY` | Ahrefs (SEO panel). |
-| `NEXT_PUBLIC_BOOKING_URL` | Booking link used in CTAs. |
-| `NEXT_PUBLIC_PM2_APP_NAME` | PM2 process name shown in setup hints (default: site-domain first label). |
-
-### Server secrets — env **or** admin UI (`cms-data/secrets.json`)
-
-| Var | Purpose |
-|---|---|
-| `ADMIN_EMAIL` | Default recipient for form/audit notifications. |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` / `SMTP_USER` / `SMTP_PASS` | Email delivery. Port 465 ⇒ implicit TLS; 587 ⇒ STARTTLS. |
-| `TELEGRAM_FORMS_BOT_TOKEN` / `TELEGRAM_FORMS_CHAT_ID` | Contact-form delivery to Telegram. |
-| `TELEGRAM_CONTACT_BOT_TOKEN` / `TELEGRAM_CONTACT_CHAT_ID` | Contact route + login-attempt alerts. |
-| `WHATSAPP_TOKEN` / `WHATSAPP_PHONE_ID` / `WHATSAPP_DESTINATION` | WhatsApp Cloud API fallback (E.164 destination). |
-| `TURNSTILE_SECRET_KEY` | Server-side Turnstile verification. |
-| `AIKIDO_API_TOKEN` (preferred; alias: `AIKIDO_IDE_TOKEN`) | Aikido security panel. |
-| `IPINFO_TOKEN` | Visitor geolocation. |
-| `BREVO_API_KEY` / `BREVO_SENDER_EMAIL` | Brevo email integration (optional). |
-| `CLOUDFLARE_API_TOKEN` / `NEXT_PUBLIC_CLOUDFLARE_ZONE_ID` / `CLOUDFLARE_ACCOUNT_ID` | Cloudflare panel (cache/DNS/analytics). |
-| `NEXT_PUBLIC_GA_SERVICE_ACCOUNT_EMAIL` / `GA_PRIVATE_KEY` | Google service account for the Analytics dashboard. |
+- **Core settings** (`NEXTAUTH_URL`, `NEXT_PUBLIC_SITE_URL`, `NEXTAUTH_SECRET`, optional
+  `DATABASE_URL`) are asked for by `init`. Change them later from the terminal with
+  `npx github:RHC-Solutions/rhc-cms settings`, or in /admin → Settings → Environment.
+- **Build-time values** (`NEXT_PUBLIC_*`, `NEXTAUTH_*`, `REVALIDATE_SECRET`, `DATABASE_URL`,
+  `DB_DRIVER`, `PGSSLMODE`) reach Next.js through the settings loader: `init` routes your
+  `dev`/`build`/`start` scripts through `node vendor/admin-panel/scripts/env-from-db.mjs`.
+  Changing one needs a rebuild + restart.
+- **Server secrets** (email, Telegram, Cloudflare, Analytics…) are read at runtime via
+  `getSecret()` and apply within seconds of saving — no restart.
 
 > ⚠️ **Never hardcode a token in source.** Committed secrets get leaked
-> (GitHub secret-scanning will flag them). Use env or the admin UI only.
+> (GitHub secret-scanning will flag them). Never commit `cms-data/cms.db` either: it
+> holds every secret. `init` adds it to `.gitignore`.
 
-### Initial admin seed (rarely needed — the setup wizard is the normal path)
+### Core settings
+
+| Setting | Notes |
+|---|---|
+| `NEXTAUTH_SECRET` | Generated by `init` (or `openssl rand -base64 32`). Rotating it invalidates all sessions. |
+| `NEXTAUTH_URL` | Full site URL, e.g. `https://your-domain.com`. |
+| `NEXT_PUBLIC_SITE_URL` | Same canonical URL; drives white-labeled strings (Telegram alerts, Cloudflare hints, seed emails, audit digests). |
+| `DATABASE_URL` | Use **Postgres** instead of SQLite, e.g. `postgres://user:pass@host:5432/db` (`?sslmode=require` for managed PG). Unset → SQLite (`cms-data/cms.db`, the default). Schema + seed auto-create on first run. PG backups use `pg_dump` (file-based backup/restore is SQLite-only). `DB_DRIVER` (`sqlite` / `postgres`) forces the backend. |
+
+### Everything else: /admin → Settings
+
+Public build-time values such as `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_GA_PROPERTY_ID`,
+`NEXT_PUBLIC_GTM_ID` and `NEXT_PUBLIC_BOOKING_URL`, and every integration credential
+(SMTP, Brevo, Telegram, WhatsApp, Cloudflare and Turnstile, Aikido, IPinfo, the Google
+service account). The Integrations tab lists each one with its exact name.
+
+### Process environment (deployment and automation only)
+
+A few values describe how the process runs rather than the site, so they come from the
+process manager (PM2 `env`, systemd, CI), never from a file:
 
 | Var | Purpose |
 |---|---|
-| `SEED_ADMIN_PASSWORD` | Used only if `cms-data/users.json` is auto-seeded; falls back to `admin123` with a warning. |
-| `SEED_ADMIN_EMAIL` | Default seed email; default to `admin@<site-domain>`. |
-
-### Automation / audit (all optional — see step 7)
-
-| Var | Default |
-|---|---|
-| `AUDIT_SCRIPTS_DIR` | path to the audit scripts; **set this in embedded mode** → `vendor/admin-panel/scripts/audit` |
-| `AUDIT_REPO_DIR` | repo the audit runs against (default: repo root containing the scripts) |
-| `AUDIT_GIT_REMOTE` | `origin` |
-| `AUDIT_BASE_BRANCH` | `main` |
-| `AUDIT_GH_REPO` | `owner/repo` for `gh pr create` — required to open auto-fix PRs |
-| `AUDIT_WORKTREE_DIR` | `$HOME/audit-worktrees` |
-| `AUDIT_REPORT_TO` | digest recipient (default: `ADMIN_EMAIL`) |
-| `AUDIT_LOCAL_BASE` | local server base for collectors (default `http://localhost:3001`) |
-| `CLAUDE_BIN` | path to the headless `claude` CLI for auto-fix passes |
-
-### Advanced
-
-| Var | Purpose |
-|---|---|
-| `SHARED_ROOT` | Override the base dir for `cms-data/` (default: `process.cwd()`). Useful when the server runs from a different working directory. |
-| `DATABASE_URL` | Use **Postgres** instead of SQLite, e.g. `postgres://user:pass@host:5432/db` (`?sslmode=require` for managed PG). Unset → SQLite (`cms-data/cms.db`, the default). Schema + seed auto-create on first run. PG backups use `pg_dump` (file-based backup/restore is SQLite-only). |
-| `DB_DRIVER` | Force the backend: `sqlite` or `postgres` (overrides the `DATABASE_URL` heuristic). |
+| `SHARED_ROOT` | Base dir for `cms-data/` (default: `process.cwd()`). An admin that runs on its own address against another site's data sets this, plus its own `NEXTAUTH_URL`, which then wins over the shared table's. |
+| `AUDIT_SCRIPTS_DIR` | Path to the audit scripts; **set this in embedded mode** → `vendor/admin-panel/scripts/audit`. |
+| `AUDIT_REPO_DIR` / `AUDIT_GIT_REMOTE` / `AUDIT_BASE_BRANCH` / `AUDIT_GH_REPO` / `AUDIT_WORKTREE_DIR` / `AUDIT_REPORT_TO` / `AUDIT_LOCAL_BASE` / `CLAUDE_BIN` | Automation (step 7), all optional with sane defaults. `AUDIT_GH_REPO` (`owner/repo`) is required to open auto-fix PRs. |
+| `SEED_ADMIN_PASSWORD` / `SEED_ADMIN_EMAIL` | Only when `cms-data/users.json` is auto-seeded instead of using the setup wizard; the password falls back to `admin123` with a warning. |
 
 ---
 
 ## 5. Data & filesystem permissions
 
 The admin reads/writes **`./cms-data`** in the host site (its own
-`theme.json`, `settings.json`, `pages.json`, `users.json`, `secrets.json`,
-`cms.db`). Nothing is shared between sites — each keeps its own. You don't need
+`theme.json`, `settings.json`, `pages.json`, `users.json`, and `cms.db`, which also
+holds the settings and secrets). Nothing is shared between sites — each keeps its own. You don't need
 to pre-create these; the setup wizard makes `cms-data/` and the loaders create
 sane defaults on first read.
 
@@ -271,12 +237,12 @@ On a shared host, lock down secret files (owner+group only):
 
 | Path | Mode | Why |
 |---|---|---|
-| `.env.local`, `cms-data/*.json`, `cms-data/cms.db*` | `660` | secrets / password hashes |
+| `cms-data/*.json`, `cms-data/cms.db*` | `660` | settings and secrets (cms.db) / password hashes |
 | `cms-data/`, `cms-data/backups/` | `770` | dirs need `+x` |
 | `public/uploads/` | `2775` | setgid so UI uploads stay in-group; world-read so Next serves them |
 
-Never commit `.env.local`, `cms-data/secrets.json`, or `cms-data/users.json`
-(add them to `.gitignore`).
+Never commit `cms-data/cms.db` or `cms-data/users.json` (`init` adds them to
+`.gitignore`).
 
 ---
 
@@ -312,8 +278,9 @@ The `/admin/automation` page schedules a **daily site audit** (SEO / AI-readines
 
 To enable:
 
-1. In `.env.local` set `AUDIT_SCRIPTS_DIR=vendor/admin-panel/scripts/audit` (so
-   the API finds the scripts in embedded mode) and, for auto-fix PRs,
+1. In the process environment (e.g. PM2 `env`) set
+   `AUDIT_SCRIPTS_DIR=vendor/admin-panel/scripts/audit` (so the API finds the
+   scripts in embedded mode) and, for auto-fix PRs,
    `AUDIT_GH_REPO=owner/repo`. Ensure `gh` is authenticated and (for AI auto-fix)
    `CLAUDE_BIN` points at the headless `claude` CLI.
 2. Add cron jobs (adjust paths/times):
@@ -393,7 +360,7 @@ npm run build && pm2 restart your-app
 | `better-sqlite3` build fails | install build tools (`build-essential`, `python3`) and reinstall. |
 | `npm warn deprecated` during install (`prebuild-install`, `node-domexception`, `glob`) | Harmless. These are **transitive** deps of `better-sqlite3` / `node-fetch` / `googleapis`, each already the latest version its parent allows (`npm audit` = 0). They clear only when those upstreams update — not panel-controllable. `init` already pins `uuid` forward (next-auth ships a deprecated `uuid@8`) via a propagated `overrides` entry, so that one won't appear. |
 | Automation "Script not found" | set `AUDIT_SCRIPTS_DIR` to `vendor/admin-panel/scripts/audit`. |
-| Secrets not taking effect | `getSecret` caches ~1 min; admin-UI saves win over `.env.local`. |
+| Secrets not taking effect | `getSecret` caches ~5 s; `NEXT_PUBLIC_*` / `NEXTAUTH_*` changes need a rebuild + restart, and the `build`/`start` scripts must run through `scripts/env-from-db.mjs`. |
 | GA dashboard empty | set `NEXT_PUBLIC_GA_SERVICE_ACCOUNT_EMAIL` / `GA_PRIVATE_KEY` and `NEXT_PUBLIC_GA_PROPERTY_ID`. |
 
 Standalone sanity build of the panel itself: `cd vendor/admin-panel && npm i && npm run build`.

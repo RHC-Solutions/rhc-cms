@@ -397,7 +397,7 @@ export default function SetupWizard() {
                 <li><strong>Cloudflare</strong> &mdash; optional. With an API token + zone ID the wizard validates access; add a server IP and it can also create the <span className="font-mono">A</span> (and optionally <span className="font-mono">www</span>) DNS records automatically.</li>
               </ul>
               <p className="text-blue-100/70 text-xs pt-1">
-                Every field is optional &mdash; you can configure or change any of this later under <span className="font-mono">/admin/settings</span>. <strong>Domain or Cloudflare changes write to <span className="font-mono">.env.local</span></strong>, so they only take effect after an application restart (e.g.&nbsp;<span className="font-mono">pm2 reload</span>).
+                Every field is optional &mdash; you can configure or change any of this later under <span className="font-mono">/admin/settings</span>. <strong>Domain and Cloudflare settings are stored in the site database</strong> and take effect after the next build and restart (e.g.&nbsp;<span className="font-mono">pm2 reload</span>).
               </p>
             </div>
 
@@ -464,7 +464,7 @@ export default function SetupWizard() {
             </div>
 
             {/* Optional: connect any other integration now. Same catalog as
-                Settings → Integrations; values are saved to secrets.json by provision. */}
+                Settings → Integrations; provision saves the values to the site database. */}
             <div className="border-t border-gray-700 pt-4">
               <label className="block text-gray-300 font-semibold mb-2 text-sm">More integrations (optional)</label>
               <p className="text-xs text-text-muted mb-3">Telegram, Stripe, reCAPTCHA, analytics and more — add any now, or later in Settings → Integrations.</p>

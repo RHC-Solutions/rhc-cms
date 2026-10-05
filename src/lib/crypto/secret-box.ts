@@ -1,14 +1,15 @@
 import crypto from 'crypto';
 
 /**
- * Transparent AES-256-GCM encryption for at-rest secrets (cms-data/secrets.json).
+ * AES-256-GCM encryption that older versions applied to cms-data/secrets.json.
+ * Settings now live in the secrets table of cms-data/cms.db, and src/lib/env.ts
+ * uses decryptSecret() only to move a legacy secrets.json into that table.
  *
  * Key material is derived once (scrypt) from SECRETS_ENCRYPTION_KEY, falling back
  * to NEXTAUTH_SECRET. Encrypted values are stored as `enc:v1:<base64(iv|tag|ct)>`.
  *
  * Degradation is deliberate so a host can't brick itself:
- *  - No key material yet (pre-provision first run) → encrypt() returns plaintext;
- *    the next write (after NEXTAUTH_SECRET exists) re-encrypts everything.
+ *  - No key material yet (pre-provision first run) → encrypt() returns plaintext.
  *  - Plaintext value (legacy secrets.json, no prefix) → decrypt() passes it through.
  *  - Wrong/rotated key or corrupted ciphertext → decrypt() returns '' and warns
  *    (treated as "unset" so a bad key never leaks ciphertext as a credential).

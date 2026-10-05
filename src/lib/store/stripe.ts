@@ -4,7 +4,7 @@ import { getSecret } from '../env';
 /**
  * Minimal Stripe client over the REST API (no SDK dependency — the panel ships
  * to arbitrary hosts and we avoid native/heavy deps). Secret key is read via
- * getSecret() so it lives encrypted in cms-data/secrets.json and is editable
+ * getSecret() so it lives in the site database and is editable
  * from /admin/integrations without a restart.
  */
 

@@ -1,7 +1,7 @@
 /**
  * Performance collector via Google PageSpeed Insights API (runs Lighthouse in
  * Google's cloud against the live, Cloudflare-fronted URL — no local Chrome).
- * Uses GOOGLE_PAGESPEED_API_KEY from secrets.json. Degrades gracefully on
+ * Uses GOOGLE_PAGESPEED_API_KEY from the site database. Degrades gracefully on
  * rate-limit / network errors so the daily run never hard-fails on perf.
  *
  * Run: node scripts/audit/collect-perf.mjs

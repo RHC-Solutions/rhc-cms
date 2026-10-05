@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     warnings.push(`Could not seed SEO defaults: ${(e as Error).message}`);
   }
 
-  // --- Public site URL -> .env.local (restart to apply). NOTE: we intentionally do
+  // --- Public site URL -> the site database (rebuild + restart to apply). NOTE: we intentionally do
   // NOT touch NEXTAUTH_URL — the admin panel often runs on a separate subdomain
   // (e.g. admin.example.com) and overwriting it would break admin auth callbacks.
   if (siteUrl) {
@@ -84,11 +84,11 @@ export async function POST(request: NextRequest) {
       saved.env.push('NEXT_PUBLIC_SITE_URL');
       restartRequired = true;
     } catch (e) {
-      warnings.push(`Could not write domain to .env.local: ${(e as Error).message}`);
+      warnings.push(`Could not save the domain: ${(e as Error).message}`);
     }
   }
 
-  // --- Cloudflare -> .env.local (token read via getSecret's env fallback; zone via process.env) ---
+  // --- Cloudflare -> the site database (token read via getSecret; zone via process.env after restart) ---
   const cf = body?.cloudflare || {};
   const cfMap: Record<string, string | undefined> = {
     CLOUDFLARE_API_TOKEN: cf.apiToken,
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // --- Secrets (Brevo/SMTP/...) -> cms-data/secrets.json, allow-listed ---
+  // --- Secrets (Brevo/SMTP/...) -> the site database, allow-listed ---
   const secrets = body?.secrets && typeof body.secrets === 'object' ? body.secrets : {};
   const filtered: Record<string, string> = {};
   for (const [k, v] of Object.entries(secrets)) {
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // --- Database driver selection -> .env.local (restart to apply) ---
+  // --- Database driver selection -> the site database (restart to apply) ---
   // SQLite is the zero-config default; Postgres is validated before we commit
   // it so a bad URL can't brick the app on restart.
   const dbReq = body?.database || {};
