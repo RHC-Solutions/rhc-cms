@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { getBackupTelegramConfig } from '@adminpanel/lib/backup-telegram';
 import { cmsDb } from '@adminpanel/lib/cms/database';
 
 // Check if user is admin
@@ -13,6 +14,23 @@ async function checkAdmin(request: NextRequest) {
     };
   }
   return { authorized: true };
+}
+
+// GET /api/cms/telegram - Whether backups can reach Telegram, with masked values.
+// The public settings response no longer carries bot tokens, so the Backups page
+// asks here. Credentials resolve the way the backup sender resolves them
+// (Integrations keys, then the values saved below, then the general bot).
+export async function GET(request: NextRequest) {
+  const auth = await checkAdmin(request);
+  if (!auth.authorized) return auth.response;
+
+  const { telegramBotToken, telegramChatId } = await getBackupTelegramConfig();
+  const mask = (v?: string) => (v ? `…${v.slice(-4)}` : '');
+  return NextResponse.json({
+    configured: !!(telegramBotToken && telegramChatId),
+    botToken: mask(telegramBotToken),
+    chatId: mask(telegramChatId),
+  });
 }
 
 // POST /api/cms/telegram - Save Telegram settings

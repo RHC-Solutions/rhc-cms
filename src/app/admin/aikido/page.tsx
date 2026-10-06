@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaShieldAlt, FaExternalLinkAlt, FaCheckCircle, FaExclamationTriangle, FaSync } from 'react-icons/fa';
+import { FaExternalLinkAlt, FaCheckCircle, FaExclamationTriangle, FaSync } from 'react-icons/fa';
 
 type AikidoStatus = {
   ideTokenConfigured?: boolean;
@@ -53,14 +53,11 @@ export default function AikidoPage() {
 
   return (
     <AdminShell title="Security (Aikido)">
-      <div className="max-w-5xl mx-auto p-6 space-y-6">
-        <header className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <FaShieldAlt className="text-3xl text-cyber-green" aria-hidden="true" />
-            <div>
-              <h1 className="text-2xl font-bold text-text-primary">Security (Aikido)</h1>
-              <p className="text-sm text-text-secondary">Dependency and code vulnerability scanner</p>
-            </div>
+      <div className="max-w-5xl space-y-6">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="heading-xl">Security (Aikido)</h1>
+            <p className="text-text-secondary text-sm mt-1">Dependency and code vulnerability scanner</p>
           </div>
           <button
             onClick={load}
@@ -71,7 +68,7 @@ export default function AikidoPage() {
             <FaSync className={loading ? 'animate-spin' : ''} aria-hidden="true" />
             Refresh
           </button>
-        </header>
+        </div>
 
         {/* Token status */}
         <section className="card-cyber p-6 space-y-3">
@@ -89,7 +86,7 @@ export default function AikidoPage() {
             />
           </div>
           {!status?.apiTokenConfigured && (
-            <div className="border border-yellow-500/30 bg-yellow-500/5 rounded p-4 text-sm text-text-secondary">
+            <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-text-secondary">
               No Public API token configured. To display live issue counts here, generate one at{' '}
               <a
                 href="https://app.aikido.dev/settings/api"
@@ -123,8 +120,8 @@ export default function AikidoPage() {
             {loading ? (
               <p className="text-text-secondary">Loading…</p>
             ) : status?.fetchError ? (
-              <div className="border border-red-500/30 bg-red-500/5 rounded p-4 text-sm">
-                <p className="font-semibold text-red-400 flex items-center gap-2">
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm">
+                <p className="text-sm font-semibold text-red-300 flex items-center gap-2">
                   <FaExclamationTriangle aria-hidden="true" /> Aikido API call failed
                 </p>
                 <p className="text-text-secondary mt-2 break-all">{status.fetchError}</p>

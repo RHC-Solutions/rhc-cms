@@ -71,7 +71,7 @@ export default function TypographyManagement() {
         if (res.ok) {
           const updated = await res.json();
           setTypography(updated);
-          addToast('success', '✓ Typography saved successfully!');
+          addToast('success', 'Typography saved successfully!');
         } else {
           addToast('error', 'Failed to save typography');
         }
@@ -142,7 +142,7 @@ export default function TypographyManagement() {
                 : 'bg-dark-card text-text-secondary hover:bg-dark-lighter'
             }`}
           >
-            <Icon className="text-sm" />
+            <Icon className="text-sm" aria-hidden="true" />
             {label}
           </button>
         ))}
@@ -444,14 +444,16 @@ export default function TypographyManagement() {
         )}
 
         {/* Save Button */}
-        <button
-          type="submit"
-          disabled={saving}
-          className="btn-primary w-full flex items-center justify-center gap-2 py-3"
-        >
-          <FaSave />
-          <span>{saving ? 'Saving...' : 'Save Typography Settings'}</span>
-        </button>
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={saving}
+            className="btn-primary flex items-center gap-2"
+          >
+            <FaSave aria-hidden="true" />
+            <span>{saving ? 'Saving...' : 'Save Typography Settings'}</span>
+          </button>
+        </div>
       </form>
 
       <div className="text-xs text-text-muted mt-8 p-4 bg-dark-card rounded border border-dark-border">

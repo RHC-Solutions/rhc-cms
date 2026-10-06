@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaConciergeBell, FaSpinner, FaPlus, FaTrash, FaEdit, FaTimes, FaSave } from 'react-icons/fa';
+import { FaSpinner, FaPlus, FaTrash, FaEdit, FaTimes, FaSave, FaCheckCircle } from 'react-icons/fa';
 
 interface Service {
   id: string;
@@ -98,21 +98,21 @@ export default function BookingServicesPage() {
 
   return (
     <AdminShell title="Booking — Services">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <FaConciergeBell className="text-2xl text-cyber-green" />
-            <h2 className="text-2xl font-bold">Bookable Services</h2>
+      <div className="max-w-4xl">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="heading-xl">Bookable Services</h1>
+            <p className="text-text-secondary text-sm mt-1">Services customers can book, with their duration, buffer time and price.</p>
           </div>
-          <button onClick={() => setEditing({ ...emptyForm })} className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-linear-to-r from-cyber-green to-cyber-cyan text-dark font-semibold">
-            <FaPlus />
+          <button onClick={() => setEditing({ ...emptyForm })} className="btn-primary">
+            <FaPlus aria-hidden="true" />
             <span>New service</span>
           </button>
         </div>
 
-        {error && <div className="mb-4 px-4 py-3 rounded-lg bg-cyber-red/10 border border-cyber-red/40 text-cyber-red text-sm">{error}</div>}
+        {error && <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">{error}</div>}
 
-        <div className="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
+        <div className="bg-dark-card border border-dark-border rounded-xl overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-dark-lighter text-text-muted text-left">
               <tr>
@@ -125,7 +125,7 @@ export default function BookingServicesPage() {
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-text-muted"><FaSpinner className="animate-spin inline mr-2" />Loading…</td></tr>
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-text-muted"><FaSpinner className="animate-spin inline mr-2" aria-hidden="true" />Loading…</td></tr>
               )}
               {!loading && services.length === 0 && (
                 <tr><td colSpan={5} className="px-4 py-8 text-center text-text-muted">No services yet.</td></tr>
@@ -135,10 +135,10 @@ export default function BookingServicesPage() {
                   <td className="px-4 py-3 font-medium">{s.name}</td>
                   <td className="px-4 py-3 text-text-secondary">{s.durationMins} min{s.bufferMins ? ` (+${s.bufferMins} buffer)` : ''}</td>
                   <td className="px-4 py-3">{s.priceCents ? new Intl.NumberFormat(undefined, { style: 'currency', currency: s.currency.toUpperCase() }).format(s.priceCents / 100) : 'Free'}</td>
-                  <td className="px-4 py-3">{s.active ? '✓' : '—'}</td>
+                  <td className="px-4 py-3">{s.active ? <><FaCheckCircle className="text-green-400" aria-hidden="true" /><span className="sr-only">Yes</span></> : '—'}</td>
                   <td className="px-4 py-3 text-right space-x-2">
-                    <button onClick={() => setEditing({ id: s.id, name: s.name, description: s.description || '', durationMins: String(s.durationMins), bufferMins: String(s.bufferMins), price: (s.priceCents / 100).toString(), currency: s.currency, active: s.active })} className="text-cyber-cyan hover:text-cyber-green"><FaEdit /></button>
-                    <button onClick={() => remove(s)} className="text-cyber-red/80 hover:text-cyber-red"><FaTrash /></button>
+                    <button onClick={() => setEditing({ id: s.id, name: s.name, description: s.description || '', durationMins: String(s.durationMins), bufferMins: String(s.bufferMins), price: (s.priceCents / 100).toString(), currency: s.currency, active: s.active })} className="text-cyber-cyan hover:text-cyber-green" aria-label={`Edit ${s.name}`}><FaEdit aria-hidden="true" /></button>
+                    <button onClick={() => remove(s)} className="text-cyber-red/80 hover:text-cyber-red" aria-label={`Delete ${s.name}`}><FaTrash aria-hidden="true" /></button>
                   </td>
                 </tr>
               ))}
@@ -149,38 +149,38 @@ export default function BookingServicesPage() {
 
       {editing && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4">
-          <div className="bg-dark-card border border-dark-border rounded-xl w-full max-w-lg my-8">
+          <div role="dialog" aria-modal="true" aria-labelledby="service-form-title" className="bg-dark-card border border-dark-border rounded-xl w-full max-w-lg my-8">
             <div className="flex items-center justify-between p-4 border-b border-dark-border">
-              <h3 className="text-lg font-bold">{editing.id ? 'Edit service' : 'New service'}</h3>
-              <button onClick={() => setEditing(null)} className="text-text-muted hover:text-cyber-red"><FaTimes /></button>
+              <h2 id="service-form-title" className="heading-md">{editing.id ? 'Edit service' : 'New service'}</h2>
+              <button onClick={() => setEditing(null)} className="text-text-muted hover:text-cyber-red" aria-label="Close"><FaTimes aria-hidden="true" /></button>
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-xs text-text-muted mb-1">Name</label>
-                <input className={input} value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+                <label htmlFor="service-name" className="block text-sm font-medium text-text-secondary mb-1.5">Name</label>
+                <input id="service-name" className={input} value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs text-text-muted mb-1">Description</label>
-                <textarea className={input} rows={2} value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
+                <label htmlFor="service-description" className="block text-sm font-medium text-text-secondary mb-1.5">Description</label>
+                <textarea id="service-description" className={input} rows={2} value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-text-muted mb-1">Duration (min)</label>
-                  <input className={input} type="number" value={editing.durationMins} onChange={(e) => setEditing({ ...editing, durationMins: e.target.value })} />
+                  <label htmlFor="service-duration" className="block text-sm font-medium text-text-secondary mb-1.5">Duration (min)</label>
+                  <input id="service-duration" className={input} type="number" value={editing.durationMins} onChange={(e) => setEditing({ ...editing, durationMins: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-xs text-text-muted mb-1">Buffer after (min)</label>
-                  <input className={input} type="number" value={editing.bufferMins} onChange={(e) => setEditing({ ...editing, bufferMins: e.target.value })} />
+                  <label htmlFor="service-buffer" className="block text-sm font-medium text-text-secondary mb-1.5">Buffer after (min)</label>
+                  <input id="service-buffer" className={input} type="number" value={editing.bufferMins} onChange={(e) => setEditing({ ...editing, bufferMins: e.target.value })} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-text-muted mb-1">Price ({editing.currency.toUpperCase()})</label>
-                  <input className={input} type="number" step="0.01" value={editing.price} onChange={(e) => setEditing({ ...editing, price: e.target.value })} />
+                  <label htmlFor="service-price" className="block text-sm font-medium text-text-secondary mb-1.5">Price ({editing.currency.toUpperCase()})</label>
+                  <input id="service-price" className={input} type="number" step="0.01" value={editing.price} onChange={(e) => setEditing({ ...editing, price: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-xs text-text-muted mb-1">Currency</label>
-                  <input className={input} value={editing.currency} onChange={(e) => setEditing({ ...editing, currency: e.target.value })} />
+                  <label htmlFor="service-currency" className="block text-sm font-medium text-text-secondary mb-1.5">Currency</label>
+                  <input id="service-currency" className={input} value={editing.currency} onChange={(e) => setEditing({ ...editing, currency: e.target.value })} />
                 </div>
               </div>
               <label className="flex items-center space-x-2 text-sm">
@@ -189,9 +189,9 @@ export default function BookingServicesPage() {
               </label>
             </div>
             <div className="flex items-center justify-end space-x-2 p-4 border-t border-dark-border">
-              <button onClick={() => setEditing(null)} className="px-4 py-2 rounded-lg bg-dark-lighter text-text-secondary">Cancel</button>
-              <button onClick={save} disabled={saving || !editing.name.trim()} className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-linear-to-r from-cyber-green to-cyber-cyan text-dark font-semibold disabled:opacity-50">
-                {saving ? <FaSpinner className="animate-spin" /> : <FaSave />}
+              <button onClick={() => setEditing(null)} className="btn-secondary">Cancel</button>
+              <button onClick={save} disabled={saving || !editing.name.trim()} className="btn-primary">
+                {saving ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaSave aria-hidden="true" />}
                 <span>Save</span>
               </button>
             </div>

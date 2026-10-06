@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, Fragment } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaShoppingCart, FaSpinner, FaSyncAlt } from 'react-icons/fa';
+import { FaSpinner, FaSyncAlt } from 'react-icons/fa';
 
 interface OrderItem {
   name: string;
@@ -76,25 +76,25 @@ export default function StoreOrdersPage() {
 
   return (
     <AdminShell title="Store — Orders">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <FaShoppingCart className="text-2xl text-cyber-green" />
-            <h2 className="text-2xl font-bold">Orders</h2>
+      <div className="max-w-6xl">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="heading-xl">Orders</h1>
+            <p className="text-text-secondary text-sm mt-1">Store orders. Click a row to see its items, and update the status as you fulfil it.</p>
           </div>
-          <button onClick={load} disabled={loading} className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-dark-lighter text-text-secondary hover:text-cyber-green disabled:opacity-50">
-            {loading ? <FaSpinner className="animate-spin" /> : <FaSyncAlt />}
+          <button onClick={load} disabled={loading} className="btn-secondary">
+            {loading ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaSyncAlt aria-hidden="true" />}
             <span>Refresh</span>
           </button>
         </div>
 
         {error && (
-          <div className="mb-4 px-4 py-3 rounded-lg bg-cyber-red/10 border border-cyber-red/40 text-cyber-red text-sm">
+          <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
             {error}
           </div>
         )}
 
-        <div className="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
+        <div className="bg-dark-card border border-dark-border rounded-xl overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-dark-lighter text-text-muted text-left">
               <tr>
@@ -122,6 +122,7 @@ export default function StoreOrdersPage() {
                       <select
                         value={o.status}
                         onChange={(e) => changeStatus(o, e.target.value)}
+                        aria-label={`Status of order ${o.orderNumber}`}
                         className={`px-2 py-1 rounded text-xs border-0 ${statusColor[o.status] || 'bg-dark-lighter'}`}
                       >
                         {STATUSES.map((s) => (

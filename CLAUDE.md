@@ -118,6 +118,19 @@ These were the source of real "edits don't show / wrong preview" bugs — keep t
 - **Notifications.** `src/lib/notify.ts` `notifyOps({subject,text})` fans out to email (Brevo→SMTP via `sendOpsEmail`) **and** Telegram (`src/lib/telegram.ts`). Use it for new ops alerts rather than hand-rolling a `fetch` to `api.telegram.org`.
 - **Panel self-update.** `src/lib/panel-update.ts`: `checkForUpdate()` (read-only GitHub compare) and `applyUpdate()` (full backup → `git --ff-only` the `vendor/admin-panel` submodule → changelog → rebuild-required). Exposed as admin-gated `check-updates`/`run-update` actions on `/api/admin/automation` and a "Panel updates" card on `/admin/automation`. The daily `scripts/auto-update/check-updates.mjs` (+ `daily-update.sh`) is **check-only and opt-in** (`automation.json` `autoUpdate.enabled`, default false) — it notifies, never auto-applies. Applying self-mutates the running submodule, so it stays a deliberate, backed-up, rebuild-gated action.
 
+## Admin UI conventions (2026-10 redesign)
+
+- **One scoped stylesheet:** `src/styles/admin.css`, applied through the `.adm` wrapper in `src/app/admin/layout.tsx` (and on `AdminShell`), so a host site's public pages are untouched. It:
+  - re-points the legacy theme tokens (neon green becomes the mint accent `#46E5A0`, cyan `#6FD3E6`, plus calmer card and text colours);
+  - caps the type scale (`text-3xl` to `7xl` render at 26px or less);
+  - sets the Tailwind `--spacing` unit to 87.5% inside `.adm-main`, so page paddings and gaps tighten in proportion;
+  - restyles `card-cyber`/`card-dark`, `heading-*`, `btn-primary`/`btn-secondary`/`btn-danger`, and defines `.input`/`.input-cyber`.
+
+  It relies on Tailwind 4 reading `var(--spacing)` and `var(--text-*)` at runtime.
+- **Pages use the shared pieces:** the standard header (`heading-xl` plus a one-line `text-sm text-text-secondary` description, actions on the right), one filled `btn-primary` per section, and tinted callouts (`border-<hue>-500/30 bg-<hue>-500/10`). Avoid neon gradients, glows, hover lifts and emoji in UI text (use react-icons/fa).
+- **Sidebar groups** come from the `section` field on top-level entries in `src/lib/admin-nav.ts` (`ADMIN_NAV_SECTIONS` order). A new page needs a nav entry with a section.
+- **Public `GET /api/cms/settings` never returns secrets** (token, secret, password, apiKey and chatId fields are scrubbed). Admin screens that need to know whether a credential is set ask an admin-only endpoint for masked values, as Backups does with `GET /api/cms/telegram`.
+
 ## Security & auth
 
 - `middleware.ts` enforces NextAuth JWT + role + MFA gate **only** for `/admin/*` and `/api/cms/*`. **`/api/admin/*` is NOT covered by middleware** — every handler under `src/app/api/admin/*` must call `getToken` and check `role === 'admin'` itself (see [src/app/api/admin/environment/route.ts](src/app/api/admin/environment/route.ts) for the canonical pattern). The 2026‑05‑13 audit found multiple unauthenticated `/api/admin/*` handlers leaking secrets — see [docs/SECURITY_REMEDIATION.md](./docs/SECURITY_REMEDIATION.md).

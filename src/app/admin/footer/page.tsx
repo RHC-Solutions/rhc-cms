@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaSave, FaPlus, FaTimes, FaLink, FaArrowUp, FaArrowDown, FaLinkedin, FaFacebook, FaInstagram, FaTelegram } from 'react-icons/fa';
+import { FaSave, FaPlus, FaTimes, FaLink, FaArrowUp, FaArrowDown, FaLinkedin, FaFacebook, FaInstagram, FaTelegram, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 
 interface Link {
   name: string;
@@ -31,6 +31,7 @@ export default function FooterManagement() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<'success' | 'error'>('success');
 
   useEffect(() => {
     fetchFooter();
@@ -62,14 +63,17 @@ export default function FooterManagement() {
       });
 
       if (res.ok) {
-        setMessage('✓ Footer saved successfully');
+        setMessageType('success');
+        setMessage('Footer saved successfully');
         setTimeout(() => setMessage(''), 3000);
       } else {
-        setMessage('✗ Failed to save footer');
+        setMessageType('error');
+        setMessage('Failed to save footer');
       }
     } catch (error) {
       console.error('Save error:', error);
-      setMessage('✗ Error saving footer');
+      setMessageType('error');
+      setMessage('Error saving footer');
     } finally {
       setSaving(false);
     }
@@ -131,7 +135,10 @@ export default function FooterManagement() {
       </div>
 
       {message && (
-        <div className={`mb-6 p-4 rounded-lg ${message.startsWith('✓') ? 'bg-emerald-900/30 border border-emerald-700 text-emerald-100' : 'bg-red-900/30 border border-red-700 text-red-100'}`}>
+        <div className={`mb-6 flex items-center gap-2 rounded-lg border p-4 text-sm ${messageType === 'success' ? 'border-green-500/30 bg-green-500/10 text-green-100' : 'border-red-500/30 bg-red-500/10 text-red-100'}`}>
+          {messageType === 'success'
+            ? <FaCheckCircle className="shrink-0 text-green-400" aria-hidden="true" />
+            : <FaTimesCircle className="shrink-0 text-red-400" aria-hidden="true" />}
           {message}
         </div>
       )}
@@ -160,7 +167,7 @@ export default function FooterManagement() {
                       onClick={() => addLink(sIndex)}
                       className="btn-secondary px-3 py-1 text-sm flex items-center gap-2"
                     >
-                      <FaPlus /> Add Link
+                      <FaPlus aria-hidden="true" /> Add Link
                     </button>
                   )}
                 </div>
@@ -197,8 +204,9 @@ export default function FooterManagement() {
                                 : 'text-cyber-cyan hover:bg-dark-lighter'
                             }`}
                             title="Move up"
+                            aria-label="Move link up"
                           >
-                            <FaArrowUp size={12} />
+                            <FaArrowUp size={12} aria-hidden="true" />
                           </button>
                           <button
                             type="button"
@@ -210,8 +218,9 @@ export default function FooterManagement() {
                                 : 'text-cyber-cyan hover:bg-dark-lighter'
                             }`}
                             title="Move down"
+                            aria-label="Move link down"
                           >
-                            <FaArrowDown size={12} />
+                            <FaArrowDown size={12} aria-hidden="true" />
                           </button>
                         </div>
                         <input
@@ -232,8 +241,9 @@ export default function FooterManagement() {
                         type="button"
                         onClick={() => removeLink(sIndex, lIndex)}
                         className="bg-cyber-red/20 hover:bg-cyber-red/30 text-cyber-red px-3 py-2 rounded transition-colors"
+                        aria-label={`Remove link ${link.name || lIndex + 1}`}
                       >
-                        <FaTimes />
+                        <FaTimes aria-hidden="true" />
                       </button>
                     </div>
                   ))}
@@ -289,6 +299,7 @@ export default function FooterManagement() {
                         value={section.socials?.linkedin || ''}
                         onChange={(e) => updateSection(sIndex, { ...section, socials: { ...section.socials, linkedin: e.target.value } })}
                         placeholder="https://www.linkedin.com/company/your-company"
+                        aria-label="LinkedIn URL"
                         className="flex-1 bg-dark border border-dark-border rounded px-4 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
                       />
                     </div>
@@ -300,6 +311,7 @@ export default function FooterManagement() {
                         value={section.socials?.facebook || ''}
                         onChange={(e) => updateSection(sIndex, { ...section, socials: { ...section.socials, facebook: e.target.value } })}
                         placeholder="https://www.facebook.com/your-page"
+                        aria-label="Facebook URL"
                         className="flex-1 bg-dark border border-dark-border rounded px-4 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
                       />
                     </div>
@@ -311,6 +323,7 @@ export default function FooterManagement() {
                         value={section.socials?.instagram || ''}
                         onChange={(e) => updateSection(sIndex, { ...section, socials: { ...section.socials, instagram: e.target.value } })}
                         placeholder="https://www.instagram.com/your-handle"
+                        aria-label="Instagram URL"
                         className="flex-1 bg-dark border border-dark-border rounded px-4 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
                       />
                     </div>
@@ -322,6 +335,7 @@ export default function FooterManagement() {
                         value={section.telegram || ''}
                         onChange={(e) => updateSection(sIndex, { ...section, telegram: e.target.value })}
                         placeholder="username (without @)"
+                        aria-label="Telegram username"
                         className="flex-1 bg-dark border border-dark-border rounded px-4 py-2 text-text-primary focus:outline-none focus:border-cyber-cyan"
                       />
                     </div>
@@ -395,14 +409,16 @@ export default function FooterManagement() {
         ))}
       </div>
 
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="btn-primary mt-8 w-full flex items-center justify-center gap-2"
-      >
-        <FaSave />
-        {saving ? 'Saving...' : 'Save Footer'}
-      </button>
+      <div className="mt-8 flex justify-end">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="btn-primary flex items-center gap-2"
+        >
+          <FaSave aria-hidden="true" />
+          {saving ? 'Saving...' : 'Save Footer'}
+        </button>
+      </div>
     </AdminShell>
   );
 }
