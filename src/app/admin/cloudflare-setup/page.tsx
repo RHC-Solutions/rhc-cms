@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaCloudflare, FaKey, FaLink, FaCheck, FaCopy, FaExclamationTriangle } from 'react-icons/fa';
+import { FaCloudflare, FaKey, FaLink, FaCheck, FaCopy, FaExclamationTriangle, FaGlobe, FaRocket, FaChevronDown, FaChevronRight, FaTimesCircle } from 'react-icons/fa';
 
 interface Credential {
   id: string;
@@ -49,8 +49,8 @@ export default function CloudflareSetupPage() {
         'Go to Cloudflare Dashboard → Turnstile',
         'View your created site settings',
         'Copy the Secret Key (not the Site Key)',
-        '⚠️ Never expose this in frontend code',
-        '⚠️ Never commit to git',
+        'Never expose this in frontend code',
+        'Never commit to git',
       ],
       example: '1x0000000000000000000000000000000000000AA',
     },
@@ -130,26 +130,26 @@ export default function CloudflareSetupPage() {
     <AdminShell title="Cloudflare Setup">
       <div className="mb-8">
         <h1 className="heading-xl text-gradient mb-2 flex items-center gap-3">
-          <FaCloudflare />
+          <FaCloudflare aria-hidden="true" />
           Cloudflare Integration Setup
         </h1>
         <p className="text-text-secondary">Step-by-step guide to configure all required Cloudflare credentials</p>
       </div>
 
       {/* Quick Start Card */}
-      <div className="card-cyber p-6 mb-8 bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border-l-4 border-l-blue-500">
-        <div className="flex items-start gap-4">
-          <div className="text-4xl">🚀</div>
+      <div className="mb-8 rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4 text-sm">
+        <div className="flex items-start gap-3">
+          <FaRocket className="mt-0.5 shrink-0 text-cyan-300" aria-hidden="true" />
           <div>
-            <h3 className="text-lg font-bold text-text-primary mb-2">Quick Start</h3>
-            <p className="text-text-muted mb-3">You need to collect 5 credentials from Cloudflare dashboard and save them in the admin (they're stored in the site database)</p>
-            <div className="space-y-1 text-sm text-text-secondary">
-              <p>1️⃣ Visit Cloudflare Dashboard (see links below)</p>
-              <p>2️⃣ Copy the 5 credentials listed below</p>
-              <p>3️⃣ Save your credentials on the Cloudflare setup page</p>
-              <p>4️⃣ Restart application: <code className="bg-dark-lighter px-2 py-1 rounded">pm2 restart rhcsolutions --update-env</code></p>
-              <p>5️⃣ Test Turnstile on contact form and check admin dashboard</p>
-            </div>
+            <h3 className="text-sm font-semibold text-cyan-300 mb-1">Quick Start</h3>
+            <p className="text-text-primary mb-2">You need to collect 5 credentials from Cloudflare dashboard and save them in the admin (they're stored in the site database)</p>
+            <ol className="list-decimal pl-5 space-y-1 text-text-secondary">
+              <li>Visit Cloudflare Dashboard (see links below)</li>
+              <li>Copy the 5 credentials listed below</li>
+              <li>Save your credentials on the Cloudflare setup page</li>
+              <li>Secret keys apply immediately. The public site key (NEXT_PUBLIC_…) is read at build time, so it applies after the next deploy.</li>
+              <li>Test Turnstile on contact form and check admin dashboard</li>
+            </ol>
           </div>
         </div>
       </div>
@@ -161,14 +161,15 @@ export default function CloudflareSetupPage() {
             {/* Header */}
             <button
               onClick={() => setExpandedCard(expandedCard === cred.id ? null : cred.id)}
+              aria-expanded={expandedCard === cred.id}
               className="w-full p-6 flex items-start justify-between hover:bg-dark-lighter transition-colors"
             >
               <div className="flex items-start gap-4 text-left flex-1">
-                <div className="text-3xl">
-                  {cred.isPublic ? '🟢' : '🔴'}
+                <div className="w-8 shrink-0 flex justify-center text-2xl text-cyber-cyan" aria-hidden="true">
+                  {cred.isPublic ? <FaGlobe /> : <FaKey />}
                 </div>
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h3 className="heading-md text-text-primary">{cred.name}</h3>
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${cred.isPublic ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                       {cred.isPublic ? 'Public' : 'Secret'}
@@ -177,8 +178,8 @@ export default function CloudflareSetupPage() {
                   <p className="text-text-muted text-sm">{cred.description}</p>
                 </div>
               </div>
-              <div className="text-xl text-text-secondary ml-4">
-                {expandedCard === cred.id ? '▼' : '▶'}
+              <div className="text-sm text-text-secondary ml-4 pt-1" aria-hidden="true">
+                {expandedCard === cred.id ? <FaChevronDown /> : <FaChevronRight />}
               </div>
             </button>
 
@@ -196,8 +197,9 @@ export default function CloudflareSetupPage() {
                       onClick={() => copyToClipboard(cred.envVar, cred.id)}
                       className="btn-secondary px-3 py-2 flex items-center gap-1"
                       title="Copy environment variable name"
+                      aria-label="Copy environment variable name"
                     >
-                      {copiedText === cred.id ? <FaCheck className="text-green-400" /> : <FaCopy />}
+                      {copiedText === cred.id ? <FaCheck className="text-green-400" aria-hidden="true" /> : <FaCopy aria-hidden="true" />}
                     </button>
                   </div>
                 </div>
@@ -221,9 +223,9 @@ export default function CloudflareSetupPage() {
                     href={cred.dashboardLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-cyber-cyan/20 text-cyber-cyan hover:bg-cyber-cyan/30 rounded-lg transition-colors font-semibold"
+                    className="btn-secondary"
                   >
-                    <FaLink />
+                    <FaLink aria-hidden="true" />
                     Go to Cloudflare Dashboard
                   </a>
                 </div>
@@ -238,11 +240,11 @@ export default function CloudflareSetupPage() {
 
                 {/* Security Note */}
                 {!cred.isPublic && (
-                  <div className="flex gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-                    <FaExclamationTriangle className="text-red-400 mt-1 flex-shrink-0" />
-                    <div className="text-sm">
-                      <p className="text-red-400 font-semibold mb-1">⚠️ Keep This Secret!</p>
-                      <ul className="text-red-300/80 space-y-1 text-xs list-disc list-inside">
+                  <div className="flex gap-3 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm">
+                    <FaExclamationTriangle className="text-red-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                    <div>
+                      <p className="text-sm font-semibold text-red-300 mb-1">Keep This Secret!</p>
+                      <ul className="text-text-secondary space-y-1 list-disc list-inside">
                         <li>Never share this credential</li>
                         <li>Never commit to git</li>
                         <li>Never expose in frontend code</li>
@@ -260,7 +262,7 @@ export default function CloudflareSetupPage() {
       {/* Variable names */}
       <div className="card-cyber p-6 mb-8">
         <h3 className="heading-md text-text-primary mb-4 flex items-center gap-2">
-          <FaKey />
+          <FaKey aria-hidden="true" />
           Variable names
         </h3>
         <p className="text-text-muted text-sm mb-4">Copy this template and fill in your credentials:</p>
@@ -275,20 +277,22 @@ CLOUDFLARE_ACCOUNT_ID=your-account-id`}
           <button
             onClick={() => copyToClipboard(`NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY=your-site-key\nCLOUDFLARE_TURNSTILE_SECRET_KEY=your-secret-key\nCLOUDFLARE_API_TOKEN=your-api-token\nNEXT_PUBLIC_CLOUDFLARE_ZONE_ID=your-zone-id\nCLOUDFLARE_ACCOUNT_ID=your-account-id`, 'template')}
             className="btn-secondary px-3 py-2 flex items-center gap-1 flex-shrink-0"
+            title="Copy template"
+            aria-label="Copy template"
           >
-            {copiedText === 'template' ? <FaCheck className="text-green-400" /> : <FaCopy />}
+            {copiedText === 'template' ? <FaCheck className="text-green-400" aria-hidden="true" /> : <FaCopy aria-hidden="true" />}
           </button>
         </div>
       </div>
 
       {/* Verification Checklist */}
       <div className="card-cyber p-6 mb-8">
-        <h3 className="heading-md text-text-primary mb-4">✅ Setup Verification Checklist</h3>
+        <h3 className="heading-md text-text-primary mb-4">Setup Verification Checklist</h3>
         <div className="space-y-3">
           {[
             'Gathered all 5 credentials from Cloudflare dashboard',
             'Saved the values in the admin',
-            'Restarted application (pm2 restart rhcsolutions --update-env)',
+            'Deployed once after saving the public site key (it is read at build time)',
             'Contact form shows Turnstile widget',
             'Can complete Turnstile challenge on contact form',
             'Can submit contact form successfully',
@@ -313,18 +317,18 @@ CLOUDFLARE_ACCOUNT_ID=your-account-id`}
 
       {/* Troubleshooting */}
       <div className="card-cyber p-6">
-        <h3 className="heading-md text-text-primary mb-4">🔍 Troubleshooting</h3>
+        <h3 className="heading-md text-text-primary mb-4">Troubleshooting</h3>
         <div className="space-y-4">
           <div>
-            <p className="font-semibold text-text-primary mb-2">❌ Turnstile widget not appearing on contact form</p>
+            <p className="font-semibold text-text-primary mb-2 flex items-center gap-2"><FaTimesCircle className="shrink-0 text-red-400" aria-hidden="true" />Turnstile widget not appearing on contact form</p>
             <ul className="text-text-muted text-sm space-y-1 list-disc list-inside">
               <li>Verify NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY is correct</li>
               <li>Check it's saved in the admin and the site was rebuilt</li>
-              <li>Restart: pm2 restart rhcsolutions --update-env</li>
+              <li>Deploy once after changing the public site key: it is read at build time</li>
             </ul>
           </div>
           <div>
-            <p className="font-semibold text-text-primary mb-2">❌ "Turnstile verification failed" error</p>
+            <p className="font-semibold text-text-primary mb-2 flex items-center gap-2"><FaTimesCircle className="shrink-0 text-red-400" aria-hidden="true" />"Turnstile verification failed" error</p>
             <ul className="text-text-muted text-sm space-y-1 list-disc list-inside">
               <li>Verify CLOUDFLARE_TURNSTILE_SECRET_KEY is correct</li>
               <li>Check secret key matches the site key's account</li>
@@ -332,7 +336,7 @@ CLOUDFLARE_ACCOUNT_ID=your-account-id`}
             </ul>
           </div>
           <div>
-            <p className="font-semibold text-text-primary mb-2">❌ Admin dashboard shows no data</p>
+            <p className="font-semibold text-text-primary mb-2 flex items-center gap-2"><FaTimesCircle className="shrink-0 text-red-400" aria-hidden="true" />Admin dashboard shows no data</p>
             <ul className="text-text-muted text-sm space-y-1 list-disc list-inside">
               <li>Verify CLOUDFLARE_API_TOKEN is correct</li>
               <li>Check API token has required permissions</li>
@@ -341,7 +345,7 @@ CLOUDFLARE_ACCOUNT_ID=your-account-id`}
             </ul>
           </div>
           <div>
-            <p className="font-semibold text-text-primary mb-2">❌ Admin dashboard shows "Unauthorized"</p>
+            <p className="font-semibold text-text-primary mb-2 flex items-center gap-2"><FaTimesCircle className="shrink-0 text-red-400" aria-hidden="true" />Admin dashboard shows "Unauthorized"</p>
             <ul className="text-text-muted text-sm space-y-1 list-disc list-inside">
               <li>API Token doesn't have proper permissions</li>
               <li>Create new token with all required scopes</li>

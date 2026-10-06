@@ -275,15 +275,16 @@ export default function JobApplications() {
                             onClick={() => setSelectedApplication(app)}
                             className="btn-secondary py-2 px-4 text-sm flex items-center space-x-2"
                           >
-                            <FaEye />
+                            <FaEye aria-hidden="true" />
                             <span>View</span>
                           </button>
                           <button
                             onClick={() => handleDeleteApplication(app.id)}
                             className="bg-cyber-red/20 hover:bg-cyber-red/30 text-cyber-red py-2 px-4 rounded-lg text-sm flex items-center space-x-2 transition-colors"
                             title="Delete application"
+                            aria-label={`Delete application from ${app.firstName} ${app.lastName}`}
                           >
-                            <FaTrash />
+                            <FaTrash aria-hidden="true" />
                           </button>
                         </div>
                       </td>
@@ -314,8 +315,9 @@ export default function JobApplications() {
               <button
                 onClick={() => setSelectedApplication(null)}
                 className="text-text-secondary hover:text-cyber-red text-2xl"
+                aria-label="Close"
               >
-                <FaTimes />
+                <FaTimes aria-hidden="true" />
               </button>
             </div>
 
@@ -382,7 +384,7 @@ export default function JobApplications() {
                   }}
                   className="flex-1 btn-primary py-3 flex items-center justify-center space-x-2"
                 >
-                  <FaCheck />
+                  <FaCheck aria-hidden="true" />
                   <span>Move to Interview</span>
                 </button>
                 <button
@@ -390,20 +392,18 @@ export default function JobApplications() {
                     handleStatusChange(selectedApplication.id, 'rejected');
                     setSelectedApplication(null);
                   }}
-                  className="flex-1 bg-cyber-red/20 text-cyber-red hover:bg-cyber-red/30 py-3 rounded-lg font-semibold 
-                           flex items-center justify-center space-x-2 transition-colors"
+                  className="flex-1 btn-secondary py-3 flex items-center justify-center space-x-2"
                 >
-                  <FaTimes />
+                  <FaTimes aria-hidden="true" />
                   <span>Reject</span>
                 </button>
                 <button
                   onClick={() => {
                     handleDeleteApplication(selectedApplication.id);
                   }}
-                  className="flex-1 bg-dark-lighter text-cyber-red hover:bg-cyber-red/20 hover:text-cyber-red py-3 rounded-lg font-semibold 
-                           flex items-center justify-center space-x-2 transition-colors border-2 border-transparent hover:border-cyber-red"
+                  className="flex-1 btn-danger py-3 flex items-center justify-center space-x-2"
                 >
-                  <FaTrash />
+                  <FaTrash aria-hidden="true" />
                   <span>Delete</span>
                 </button>
               </div>

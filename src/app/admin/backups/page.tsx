@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FaDownload, FaTrash, FaSync, FaUpload, FaCheck, FaTimes, FaDatabase, FaClock } from 'react-icons/fa';
+import { FaDownload, FaTrash, FaSync, FaUpload, FaCheck, FaTimes, FaDatabase, FaClock, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
 import { useToast } from '@adminpanel/components/admin/Toast';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
 
@@ -105,8 +105,8 @@ export default function BackupsPage() {
 
       if (response.ok) {
         const telegramStatus = data.backup.telegram?.sent 
-          ? `✅ Sent to Telegram (${data.backup.telegram.message})`
-          : `⚠️ Telegram: ${data.backup.telegram?.message || 'Not sent'}`;
+          ? `Sent to Telegram (${data.backup.telegram.message})`
+          : `Telegram: ${data.backup.telegram?.message || 'Not sent'}`;
         
         addToast('success', `Backup created: ${data.backup.name}\n${telegramStatus}`);
         fetchBackups();
@@ -175,7 +175,7 @@ export default function BackupsPage() {
       const data = await response.json();
 
       if (response.ok) {
-        addToast('success', `✅ Backup restored: ${backupName}\n\n${data.message}`);
+        addToast('success', `Backup restored: ${backupName}\n\n${data.message}`);
         setShowRestoreModal(false);
         // Refresh page after restore to load new data
         setTimeout(() => window.location.reload(), 2000);
@@ -216,13 +216,13 @@ export default function BackupsPage() {
           message: data.message,
           botName: data.botName,
         });
-        addToast('success', `✅ Telegram test successful!\nBot: ${data.botName}`);
+        addToast('success', `Telegram test successful!\nBot: ${data.botName}`);
       } else {
         setTelegramStatus({ 
           success: false, 
           message: data.message,
         });
-        addToast('error', `❌ Telegram test failed: ${data.message}`);
+        addToast('error', `Telegram test failed: ${data.message}`);
       }
     } catch (error) {
       console.error('Error testing Telegram:', error);
@@ -257,7 +257,7 @@ export default function BackupsPage() {
 
       if (response.ok) {
         setTelegramConfigured(true);
-        addToast('success', '✅ Telegram settings saved successfully!');
+        addToast('success', 'Telegram settings saved successfully!');
       } else {
         addToast('error', data.error || 'Failed to save Telegram settings');
       }
@@ -285,7 +285,7 @@ export default function BackupsPage() {
       const data = await response.json();
 
       if (response.ok) {
-        addToast('success', '✅ Scheduler settings saved successfully!');
+        addToast('success', 'Scheduler settings saved successfully!');
       } else {
         addToast('error', data.error || 'Failed to save scheduler settings');
       }
@@ -301,80 +301,83 @@ export default function BackupsPage() {
     <AdminShell title="System Backups">
       <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="heading-xl text-gradient mb-2">System Backups</h1>
-          <p className="text-gray-400 mt-2">Manage CMS data backups and recovery archives</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="heading-xl">System Backups</h1>
+          <p className="text-text-secondary text-sm mt-1">Manage CMS data backups and recovery archives</p>
         </div>
         <button
           onClick={handleCreateBackup}
           disabled={creating}
-          className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-600 text-black rounded-lg font-semibold transition"
+          className="btn-primary"
         >
-          <FaSync className={creating ? 'animate-spin' : ''} />
+          <FaSync className={creating ? 'animate-spin' : ''} aria-hidden="true" />
           {creating ? 'Creating...' : 'Create Backup'}
         </button>
       </div>
 
       {/* Info Box */}
-      <div className="bg-blue-900 border border-blue-700 rounded-lg p-4">
-        <h3 className="text-blue-200 font-semibold mb-2">🚀 Full Site Backups</h3>
-        <ul className="text-blue-100 text-sm space-y-1">
-          <li>✓ Complete disaster recovery backups (CMS Data + Source Code + Assets)</li>
-          <li>✓ Automatically sent to Telegram for secure cloud storage</li>
-          <li>✓ Local backups retained for {RETENTION_DAYS} days</li>
-          <li>✓ Ready for immediate redeployment in case of data loss</li>
-          <li>✓ Click the button above to create a manual backup</li>
+      <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4 text-sm">
+        <h3 className="text-sm font-semibold text-cyan-300 mb-2">Full Site Backups</h3>
+        <ul className="text-text-secondary space-y-1">
+          <li className="flex items-start gap-2"><FaCheck className="mt-0.5 shrink-0 text-xs text-cyan-300" aria-hidden="true" />Complete disaster recovery backups (CMS Data + Source Code + Assets)</li>
+          <li className="flex items-start gap-2"><FaCheck className="mt-0.5 shrink-0 text-xs text-cyan-300" aria-hidden="true" />Automatically sent to Telegram for secure cloud storage</li>
+          <li className="flex items-start gap-2"><FaCheck className="mt-0.5 shrink-0 text-xs text-cyan-300" aria-hidden="true" />Local backups retained for {RETENTION_DAYS} days</li>
+          <li className="flex items-start gap-2"><FaCheck className="mt-0.5 shrink-0 text-xs text-cyan-300" aria-hidden="true" />Ready for immediate redeployment in case of data loss</li>
+          <li className="flex items-start gap-2"><FaCheck className="mt-0.5 shrink-0 text-xs text-cyan-300" aria-hidden="true" />Click the button above to create a manual backup</li>
         </ul>
       </div>
 
       {/* Backups List */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+      <div className="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-400">Loading backups...</div>
+          <div className="p-8 text-center text-text-secondary">Loading backups...</div>
         ) : backups.length === 0 ? (
-          <div className="p-8 text-center text-gray-400">No backups found. Create one to get started.</div>
+          <div className="p-8 text-center text-text-secondary">No backups found. Create one to get started.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-800 border-b border-gray-700">
+              <thead className="bg-dark-lighter border-b border-dark-border">
                 <tr>
-                  <th className="px-6 py-3 text-left text-green-400 font-semibold">Backup Name</th>
-                  <th className="px-6 py-3 text-left text-green-400 font-semibold">Date</th>
-                  <th className="px-6 py-3 text-left text-green-400 font-semibold">Size</th>
-                  <th className="px-6 py-3 text-right text-green-400 font-semibold">Actions</th>
+                  <th className="px-6 py-3 text-left text-text-muted text-xs uppercase tracking-wide font-semibold">Backup Name</th>
+                  <th className="px-6 py-3 text-left text-text-muted text-xs uppercase tracking-wide font-semibold">Date</th>
+                  <th className="px-6 py-3 text-left text-text-muted text-xs uppercase tracking-wide font-semibold">Size</th>
+                  <th className="px-6 py-3 text-right text-text-muted text-xs uppercase tracking-wide font-semibold">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800">
+              <tbody className="divide-y divide-dark-border">
                 {backups.map((backup) => (
-                  <tr key={backup.name} className="hover:bg-gray-800 transition">
-                    <td className="px-6 py-4 text-gray-300 font-mono">{backup.name}</td>
-                    <td className="px-6 py-4 text-gray-400">
+                  <tr key={backup.name} className="hover:bg-dark-lighter transition-colors">
+                    <td className="px-6 py-4 text-text-primary font-mono text-sm">{backup.name}</td>
+                    <td className="px-6 py-4 text-text-secondary">
                       {new Date(backup.date).toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 text-gray-400">{backup.sizeMB} MB</td>
+                    <td className="px-6 py-4 text-text-secondary">{backup.sizeMB} MB</td>
                     <td className="px-6 py-4 text-right space-x-2 flex justify-end">
                       <button
                         onClick={() => handleRestoreBackup(backup.name)}
                         disabled={restoring}
-                        className="p-2 text-green-400 hover:bg-green-900 disabled:bg-gray-700 rounded transition"
+                        className="p-2 text-green-400 hover:bg-green-500/10 disabled:opacity-50 disabled:cursor-not-allowed rounded transition"
                         title="Restore backup"
+                        aria-label={`Restore backup ${backup.name}`}
                       >
-                        <FaUpload size={16} />
+                        <FaUpload size={16} aria-hidden="true" />
                       </button>
                       <button
                         onClick={() => handleDownloadBackup(backup.name)}
-                        className="p-2 text-blue-400 hover:bg-blue-900 rounded transition"
+                        className="p-2 text-blue-400 hover:bg-blue-500/10 rounded transition"
                         title="Download backup"
+                        aria-label={`Download backup ${backup.name}`}
                       >
-                        <FaDownload size={16} />
+                        <FaDownload size={16} aria-hidden="true" />
                       </button>
                       <button
                         onClick={() => handleDeleteBackup(backup.name)}
-                        className="p-2 text-red-400 hover:bg-red-900 rounded transition"
+                        className="p-2 text-red-400 hover:bg-red-500/10 rounded transition"
                         title="Delete backup"
+                        aria-label={`Delete backup ${backup.name}`}
                       >
-                        <FaTrash size={16} />
+                        <FaTrash size={16} aria-hidden="true" />
                       </button>
                     </td>
                   </tr>
@@ -386,77 +389,77 @@ export default function BackupsPage() {
       </div>
 
       {/* Telegram Settings */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+      <div className="bg-dark-card border border-dark-border rounded-xl p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <FaDatabase className="text-2xl text-green-400" />
+            <FaDatabase className="text-2xl text-green-400" aria-hidden="true" />
             <div>
-              <h3 className="text-xl font-bold text-green-400">Backup & Disaster Recovery</h3>
+              <h3 className="text-lg font-semibold text-text-primary">Backup & Disaster Recovery</h3>
               {telegramConfigured && (
-                <p className="text-green-300 text-sm mt-1">✅ Telegram is configured and ready</p>
+                <p className="text-green-300 text-sm mt-1 flex items-center gap-1.5"><FaCheckCircle className="text-green-400" aria-hidden="true" />Telegram is configured and ready</p>
               )}
               {!telegramConfigured && (
-                <p className="text-yellow-300 text-sm mt-1">⚠️ Telegram not configured yet</p>
+                <p className="text-yellow-300 text-sm mt-1 flex items-center gap-1.5"><FaExclamationTriangle className="text-yellow-400" aria-hidden="true" />Telegram not configured yet</p>
               )}
             </div>
           </div>
         </div>
         
         <div className="space-y-6">
-          <div className="bg-blue-900 border border-blue-700 rounded-lg p-4 mb-4">
-            <p className="text-blue-100 text-sm">
+          <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4 text-sm">
+            <p className="text-text-secondary">
               <strong>Configure Telegram</strong> to automatically send backups to your Telegram chat for secure cloud storage.
               Each backup can be up to 50MB and includes your complete site (CMS data, source code, and assets).
             </p>
           </div>
 
           <div>
-            <label className="block text-green-400 font-semibold mb-2">Telegram Bot Token</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1.5">Telegram Bot Token</label>
             <input
               type="password"
               placeholder="123456:ABCDEfghIjklmnopqrSTUVwxyz"
               value={backupSettings.botToken}
               onChange={(e) => setBackupSettings({ ...backupSettings, botToken: e.target.value })}
-              className="w-full bg-gray-800 border-2 border-gray-700 rounded-lg py-2 px-4 text-gray-100 
+              className="w-full bg-dark-input border border-dark-border rounded-lg py-2 px-3 text-text-primary 
                        focus:border-green-400 focus:outline-none"
             />
-            <p className="text-gray-400 text-xs mt-1">Get from @BotFather on Telegram</p>
+            <p className="text-text-secondary text-xs mt-1">Get from @BotFather on Telegram</p>
           </div>
 
           <div>
-            <label className="block text-green-400 font-semibold mb-2">Telegram Chat ID</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1.5">Telegram Chat ID</label>
             <input
               type="text"
               placeholder="123456789"
               value={backupSettings.chatId}
               onChange={(e) => setBackupSettings({ ...backupSettings, chatId: e.target.value })}
-              className="w-full bg-gray-800 border-2 border-gray-700 rounded-lg py-2 px-4 text-gray-100 
+              className="w-full bg-dark-input border border-dark-border rounded-lg py-2 px-3 text-text-primary 
                        focus:border-green-400 focus:outline-none"
             />
-            <p className="text-gray-400 text-xs mt-1">Get from getUpdates API or use your user ID</p>
+            <p className="text-text-secondary text-xs mt-1">Get from getUpdates API or use your user ID</p>
           </div>
 
           {/* Test Result Status */}
           {telegramStatus && (
-            <div className={`rounded-lg p-4 flex items-start space-x-3 ${
-              telegramStatus.success 
-                ? 'bg-green-900 border border-green-700' 
-                : 'bg-red-900 border border-red-700'
+            <div className={`rounded-lg border p-4 text-sm flex items-start gap-3 ${
+              telegramStatus.success
+                ? 'border-green-500/30 bg-green-500/10'
+                : 'border-red-500/30 bg-red-500/10'
             }`}>
               {telegramStatus.success ? (
-                <FaCheck className="text-2xl text-green-400 mt-1 shrink-0" />
+                <FaCheck className="text-green-400 mt-0.5 shrink-0" aria-hidden="true" />
               ) : (
-                <FaTimes className="text-2xl text-red-400 mt-1 shrink-0" />
+                <FaTimes className="text-red-400 mt-0.5 shrink-0" aria-hidden="true" />
               )}
               <div className="flex-1">
-                <p className={telegramStatus.success ? 'text-green-200 font-semibold' : 'text-red-200 font-semibold'}>
-                  {telegramStatus.success ? '✅ Test Successful' : '❌ Test Failed'}
+                <p className={telegramStatus.success ? 'text-sm font-semibold text-green-300' : 'text-sm font-semibold text-red-300'}>
+                  {telegramStatus.success ? 'Test Successful' : 'Test Failed'}
                 </p>
-                <p className={telegramStatus.success ? 'text-green-100 text-sm' : 'text-red-100 text-sm'}>
+                <p className="text-text-secondary">
                   {telegramStatus.message}
                 </p>
                 {telegramStatus.botName && (
-                  <p className="text-green-100 text-sm mt-1">
+                  <p className="text-text-secondary mt-1">
                     <strong>Bot Name:</strong> {telegramStatus.botName}
                   </p>
                 )}
@@ -465,42 +468,42 @@ export default function BackupsPage() {
           )}
 
           {/* Test Button */}
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={handleTestTelegram}
               disabled={testingTelegram || !backupSettings.botToken || !backupSettings.chatId}
-              className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-700 text-black font-semibold py-2 px-4 rounded-lg transition"
+              className="btn-secondary"
             >
-              {testingTelegram ? 'Testing...' : '🧪 Test'}
+              {testingTelegram ? 'Testing...' : 'Test'}
             </button>
             <button
               onClick={handleSaveTelegram}
               disabled={!backupSettings.botToken || !backupSettings.chatId}
-              className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-700 text-black font-semibold py-2 px-4 rounded-lg transition"
+              className="btn-primary"
             >
-              💾 Save Settings
+              Save Settings
             </button>
           </div>
 
-          <p className="text-gray-400 text-sm">
-            ℹ️ Click "Test" to verify credentials, then "Save Settings" to store them for automatic backups.
+          <p className="text-text-secondary text-sm">
+            Click "Test" to verify credentials, then "Save Settings" to store them for automatic backups.
           </p>
         </div>
       </div>
 
       {/* Scheduler Settings */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+      <div className="bg-dark-card border border-dark-border rounded-xl p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <FaClock className="text-2xl text-blue-400" />
-            <h3 className="text-xl font-bold text-blue-400">Automated Backup Scheduler</h3>
+            <FaClock className="text-2xl text-blue-400" aria-hidden="true" />
+            <h3 className="text-lg font-semibold text-text-primary">Automated Backup Scheduler</h3>
           </div>
         </div>
 
         <div className="space-y-4">
           {/* Enable/Disable Toggle */}
           <div className="flex items-center justify-between">
-            <label className="text-gray-300 font-semibold">Enable Automated Backups</label>
+            <label className="text-sm font-medium text-text-secondary">Enable Automated Backups</label>
             <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -513,8 +516,12 @@ export default function BackupsPage() {
                 }
                 className="w-5 h-5 text-blue-400 rounded"
               />
-              <span className="ml-3 text-gray-400">
-                {schedulerSettings.enabled ? '✅ Enabled' : '⚠️ Disabled'}
+              <span className="ml-3 text-text-secondary inline-flex items-center gap-1.5">
+                {schedulerSettings.enabled ? (
+                  <><FaCheckCircle className="text-green-400" aria-hidden="true" />Enabled</>
+                ) : (
+                  <><FaExclamationTriangle className="text-yellow-400" aria-hidden="true" />Disabled</>
+                )}
               </span>
             </label>
           </div>
@@ -523,7 +530,7 @@ export default function BackupsPage() {
             <>
               {/* Frequency Selection */}
               <div>
-                <label className="block text-gray-300 font-semibold mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
                   Backup Frequency
                 </label>
                 <div className="flex gap-3">
@@ -536,11 +543,12 @@ export default function BackupsPage() {
                           frequency: freq,
                         })
                       }
-                      className={`px-4 py-2 rounded-lg font-semibold transition ${
+                      aria-pressed={schedulerSettings.frequency === freq}
+                      className={
                         schedulerSettings.frequency === freq
-                          ? 'bg-blue-500 text-black'
-                          : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                      }`}
+                          ? 'btn-secondary border-cyber-green bg-cyber-green/10 text-cyber-green'
+                          : 'btn-secondary'
+                      }
                     >
                       {freq.charAt(0).toUpperCase() + freq.slice(1)}
                     </button>
@@ -550,7 +558,7 @@ export default function BackupsPage() {
 
               {/* Time Selection */}
               <div>
-                <label className="block text-gray-300 font-semibold mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
                   Backup Time (24-hour format)
                 </label>
                 <input
@@ -562,14 +570,14 @@ export default function BackupsPage() {
                       time: e.target.value,
                     })
                   }
-                  className="w-full bg-gray-800 text-gray-200 px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-400 focus:outline-none"
+                  className="w-full bg-dark-input text-text-primary px-3 py-2 rounded-lg border border-dark-border focus:border-cyber-green focus:outline-none"
                 />
               </div>
 
               {/* Day of Week (for weekly backups) */}
               {schedulerSettings.frequency === 'weekly' && (
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">
                     Day of Week
                   </label>
                   <select
@@ -580,7 +588,7 @@ export default function BackupsPage() {
                         dayOfWeek: e.target.value,
                       })
                     }
-                    className="w-full bg-gray-800 text-gray-200 px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-400 focus:outline-none"
+                    className="w-full bg-dark-input text-text-primary px-3 py-2 rounded-lg border border-dark-border focus:border-cyber-green focus:outline-none"
                   >
                     {[
                       'sunday',
@@ -600,9 +608,9 @@ export default function BackupsPage() {
               )}
 
               {/* Summary */}
-              <div className="bg-blue-900 bg-opacity-30 border border-blue-700 rounded-lg p-3">
-                <p className="text-blue-200 text-sm">
-                  <strong>📅 Schedule Summary:</strong> Backups will run{' '}
+              <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4 text-sm">
+                <p className="text-text-secondary">
+                  <strong className="font-semibold text-cyan-300">Schedule Summary:</strong> Backups will run{' '}
                   {schedulerSettings.frequency === 'daily'
                     ? `daily at ${schedulerSettings.time}`
                     : schedulerSettings.frequency === 'weekly'
@@ -617,46 +625,40 @@ export default function BackupsPage() {
           <button
             onClick={handleSaveScheduler}
             disabled={savingScheduler}
-            className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-700 text-black font-semibold py-3 px-4 rounded-lg transition"
+            className="btn-primary"
           >
-            {savingScheduler ? '💾 Saving...' : '💾 Save Scheduler Settings'}
+            {savingScheduler ? 'Saving...' : 'Save Scheduler Settings'}
           </button>
 
-          <p className="text-gray-400 text-sm">
-            ℹ️ Enable automated backups and select your preferred schedule. Backups will run
+          <p className="text-text-secondary text-sm">
+            Enable automated backups and select your preferred schedule. Backups will run
             automatically at the specified time and be sent to Telegram if configured.
           </p>
         </div>
       </div>
 
       {/* Help Section */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+      <div className="bg-dark-card border border-dark-border rounded-xl p-6">
 
-        <h3 className="text-green-400 font-semibold mb-3">🔄 Disaster Recovery Backups</h3>
-        <ul className="text-gray-300 text-sm space-y-2">
-          <li className="flex gap-3">
-            <span className="text-green-400">📦</span>
+        <h3 className="text-text-primary font-semibold mb-3">Disaster Recovery Backups</h3>
+        <ul className="text-text-secondary text-sm space-y-2 list-disc pl-5">
+          <li>
             <span><strong>Complete Portable Backup:</strong> Includes CMS data, full source code (src/), assets (public/), and all configuration files. Restore with: npm install && npm run build</span>
           </li>
-          <li className="flex gap-3">
-            <span className="text-green-400">🤖</span>
+          <li>
             <span><strong>Telegram Integration:</strong> Backups under 50MB are automatically uploaded to Telegram for secure cloud storage. Larger backups are stored locally only</span>
           </li>
-          <li className="flex gap-3">
-            <span className="text-green-400">🗓️</span>
+          <li>
             <span><strong>Local Retention:</strong> Backups are kept for {RETENTION_DAYS} days on the server, then automatically deleted</span>
           </li>
-          <li className="flex gap-3">
-            <span className="text-green-400">⬇️</span>
+          <li>
             <span><strong>Easy Download:</strong> Use the download button to get any backup for local archival</span>
           </li>
-          <li className="flex gap-3">
-            <span className="text-green-400">🚀</span>
+          <li>
             <span><strong>Quick Restore:</strong> Includes BACKUP_MANIFEST.json with step-by-step restore instructions for redeployment</span>
           </li>
-          <li className="flex gap-3">
-            <span className="text-blue-400">ℹ️</span>
-            <span><strong>Setup:</strong> Configure backup Telegram credentials in admin settings or environment variables (TELEGRAM_BACKUP_BOT_TOKEN, TELEGRAM_BACKUP_CHAT_ID, or TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID)</span>
+          <li>
+            <span><strong>Setup:</strong> Set the backup bot token and chat ID above, or in Integrations → Telegram bots (Backups). They are stored in the site database.</span>
           </li>
         </ul>
       </div>

@@ -15,6 +15,11 @@ export default function AdminSearch() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<AdminSearchItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  // Shown in the trigger; set after mount so server and client markup agree.
+  const [shortcut, setShortcut] = useState('Ctrl K');
+  useEffect(() => {
+    if (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) setShortcut('⌘K');
+  }, []);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -76,24 +81,25 @@ export default function AdminSearch() {
     <>
       {/* Search Button in Top Bar */}
       <button
+        type="button"
         onClick={() => setIsOpen(true)}
-        className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-dark-lighter border border-dark-border 
-                 hover:border-cyber-green text-text-secondary hover:text-cyber-green transition-colors 
-                 text-sm hidden sm:flex"
-        title="Search settings (Ctrl+K)"
+        aria-label={`Search admin (${shortcut})`}
+        className="hidden sm:flex items-center gap-2 h-9 pl-3 pr-2 rounded-lg border border-dark-border bg-dark-card
+                 text-sm text-text-muted hover:text-text-primary hover:border-[var(--adm-border-ctl)] transition-colors"
       >
-        <FaSearch className="text-sm" />
-        <span className="hidden md:inline">Search...</span>
-        <kbd className="ml-2 text-xs px-2 py-1 rounded bg-dark-border text-text-muted">⌘K</kbd>
+        <FaSearch className="text-xs" aria-hidden="true" />
+        <span className="hidden md:inline pr-6">Search…</span>
+        <kbd className="hidden md:inline text-xs px-1.5 py-0.5 rounded border border-dark-border text-text-muted font-sans">{shortcut}</kbd>
       </button>
 
       {/* Mobile Search Button */}
       <button
+        type="button"
         onClick={() => setIsOpen(true)}
-        className="sm:hidden p-2 rounded-lg text-text-secondary hover:text-cyber-green hover:bg-dark-lighter transition-colors"
-        title="Search settings"
+        aria-label="Search admin"
+        className="sm:hidden grid place-items-center w-9 h-9 rounded-lg text-text-secondary hover:text-text-primary hover:bg-dark-lighter transition-colors"
       >
-        <FaSearch className="text-lg" />
+        <FaSearch aria-hidden="true" />
       </button>
 
       {/* Search Modal */}
@@ -111,16 +117,18 @@ export default function AdminSearch() {
 
             {/* Modal */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
               className="fixed top-20 left-1/2 -translate-x-1/2 w-full max-w-2xl z-50 px-4"
             >
               <div className="bg-dark-card border border-dark-border rounded-xl shadow-2xl overflow-hidden">
                 {/* Search Input */}
                 <div className="flex items-center border-b border-dark-border px-4 py-3">
-                  <FaSearch className="text-text-muted mr-3" />
+                  <FaSearch className="text-text-muted mr-3" aria-hidden="true" />
                   <input
+                    aria-label="Search settings, pages and forms"
                     ref={inputRef}
                     type="text"
                     placeholder="Search settings, pages, forms... (Ctrl+K)"
@@ -134,9 +142,10 @@ export default function AdminSearch() {
                       setIsOpen(false);
                       setQuery('');
                     }}
-                    className="text-text-muted hover:text-text-primary"
+                    aria-label="Close search"
+                    className="grid place-items-center w-7 h-7 rounded-md text-text-muted hover:text-text-primary hover:bg-dark-lighter"
                   >
-                    <FaTimes />
+                    <FaTimes aria-hidden="true" />
                   </button>
                 </div>
 

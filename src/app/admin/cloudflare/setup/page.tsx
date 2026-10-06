@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaLink, FaCheck, FaExclamationTriangle, FaSave, FaEye, FaEyeSlash, FaCheckCircle, FaTimesCircle, FaVial, FaCloudflare } from 'react-icons/fa';
+import { FaLink, FaCheck, FaExclamationTriangle, FaSave, FaEye, FaEyeSlash, FaCheckCircle, FaTimesCircle, FaVial, FaCloudflare, FaGlobe, FaKey, FaRocket } from 'react-icons/fa';
 import type { IconType } from 'react-icons';
 
 interface Credential {
@@ -101,7 +101,7 @@ export default function CloudflareSetupPage() {
         const allSuccess = Object.values(data.results).every((r: any) => r.status === 'success');
         setMessage({ 
           type: allSuccess ? 'success' : 'error', 
-          text: allSuccess ? '✅ All credentials are working!' : '⚠️ Some credentials have issues - see details below' 
+          text: allSuccess ? 'All credentials are working!' : 'Some credentials have issues - see details below'
         });
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to test configuration' });
@@ -218,27 +218,30 @@ export default function CloudflareSetupPage() {
       </div>
 
       {/* Quick Start Card */}
-      <div className="card-cyber p-6 mb-8 bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border-l-4 border-l-blue-500">
-        <div className="flex items-start gap-4">
-          <div className="text-4xl">🚀</div>
+      <div className="mb-8 rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4 text-sm">
+        <div className="flex items-start gap-3">
+          <FaRocket className="mt-0.5 shrink-0 text-cyan-300" aria-hidden="true" />
           <div>
-            <h3 className="text-lg font-bold text-text-primary mb-2">Quick Start</h3>
-            <p className="text-text-muted mb-3">You need to collect 5 credentials from Cloudflare dashboard and save them in the admin (they're stored in the site database)</p>
-            <div className="space-y-1 text-sm text-text-secondary">
-              <p>1️⃣ Visit Cloudflare Dashboard (see links below)</p>
-              <p>2️⃣ Copy the 5 credentials listed below</p>
-              <p>3️⃣ Save your credentials on the Cloudflare setup page</p>
-              <p>4️⃣ Restart application: <code className="bg-dark-lighter px-2 py-1 rounded">pm2 restart rhcsolutions --update-env</code></p>
-              <p>5️⃣ Test Turnstile on contact form and check admin dashboard</p>
-            </div>
+            <h3 className="text-sm font-semibold text-cyan-300 mb-1">Quick Start</h3>
+            <p className="text-text-primary mb-2">You need to collect 5 credentials from Cloudflare dashboard and save them in the admin (they're stored in the site database)</p>
+            <ol className="list-decimal pl-5 space-y-1 text-text-secondary">
+              <li>Visit Cloudflare Dashboard (see links below)</li>
+              <li>Copy the 5 credentials listed below</li>
+              <li>Save your credentials on the Cloudflare setup page</li>
+              <li>Secret keys apply immediately. The public site key (NEXT_PUBLIC_…) is read at build time, so it applies after the next deploy.</li>
+              <li>Test Turnstile on contact form and check admin dashboard</li>
+            </ol>
           </div>
         </div>
       </div>
 
       {/* Save Button and Status */}
       {message && (
-        <div className={`card-cyber p-4 mb-6 ${message.type === 'success' ? 'bg-green-500/20 border-green-500' : 'bg-red-500/20 border-red-500'}`}>
-          <p className={message.type === 'success' ? 'text-green-400' : 'text-red-400'}>{message.text}</p>
+        <div className={`mb-6 rounded-lg border p-4 text-sm flex items-start gap-2 ${message.type === 'success' ? 'border-green-500/30 bg-green-500/10' : 'border-red-500/30 bg-red-500/10'}`}>
+          {message.type === 'success'
+            ? <FaCheckCircle className="mt-0.5 shrink-0 text-green-400" aria-hidden="true" />
+            : <FaTimesCircle className="mt-0.5 shrink-0 text-red-400" aria-hidden="true" />}
+          <p className={message.type === 'success' ? 'text-green-300' : 'text-red-300'}>{message.text}</p>
         </div>
       )}
 
@@ -248,7 +251,7 @@ export default function CloudflareSetupPage() {
           disabled={testing}
           className="btn-secondary flex items-center gap-2"
         >
-          <FaVial />
+          <FaVial aria-hidden="true" />
           {testing ? 'Testing...' : 'Test Configuration'}
         </button>
         
@@ -257,7 +260,7 @@ export default function CloudflareSetupPage() {
           disabled={saving}
           className="btn-primary flex items-center gap-2"
         >
-          <FaSave />
+          <FaSave aria-hidden="true" />
           {saving ? 'Saving...' : 'Save All Configuration'}
         </button>
       </div>
@@ -278,28 +281,28 @@ export default function CloudflareSetupPage() {
           return (
             <div key={cred.id} className="card-cyber p-6">
               <div className="flex items-start gap-4 mb-4">
-                <div className="text-3xl text-cyber-cyan">
-                  {cred.icon ? <cred.icon /> : (cred.isPublic ? '🌐' : '🔑')}
+                <div className="w-8 shrink-0 flex justify-center text-2xl text-cyber-cyan" aria-hidden="true">
+                  {cred.icon ? <cred.icon /> : (cred.isPublic ? <FaGlobe /> : <FaKey />)}
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h3 className="heading-md text-text-primary">{cred.name}</h3>
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${cred.isPublic ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400'}`}>
-                      {cred.isPublic ? '🌐 Public' : '🔑 Secret'}
+                      {cred.isPublic ? 'Public' : 'Secret'}
                     </span>
                     {/* Status Badge */}
                     {isConfigured ? (
                       <span className="px-2 py-1 rounded text-xs font-semibold bg-green-500/20 text-green-400 flex items-center gap-1">
-                        <FaCheckCircle /> ✅ SET
+                        <FaCheckCircle aria-hidden="true" /> SET
                       </span>
                     ) : (
                       <span className="px-2 py-1 rounded text-xs font-semibold bg-red-500/20 text-red-400 flex items-center gap-1">
-                        <FaTimesCircle /> ❌ EMPTY
+                        <FaTimesCircle aria-hidden="true" /> EMPTY
                       </span>
                     )}
                   </div>
                   <p className="text-text-muted text-sm mb-3">{cred.description}</p>
-                  
+
                   {/* Test Result */}
                   {testResult && (
                     <div className={`mb-3 p-2 rounded text-sm ${
@@ -307,8 +310,9 @@ export default function CloudflareSetupPage() {
                       testResult.status === 'warning' ? 'bg-yellow-500/20 text-yellow-400' :
                       'bg-red-500/20 text-red-400'
                     }`}>
-                      {testResult.status === 'success' && <FaCheckCircle className="inline mr-2" />}
-                      {testResult.status === 'error' && <FaTimesCircle className="inline mr-2" />}
+                      {testResult.status === 'success' && <FaCheckCircle className="inline mr-2" aria-hidden="true" />}
+                      {testResult.status === 'warning' && <FaExclamationTriangle className="inline mr-2" aria-hidden="true" />}
+                      {testResult.status === 'error' && <FaTimesCircle className="inline mr-2" aria-hidden="true" />}
                       {testResult.message}
                     </div>
                   )}
@@ -330,9 +334,10 @@ export default function CloudflareSetupPage() {
                       <button
                         type="button"
                         onClick={() => toggleSecretVisibility(cred.id)}
+                        aria-label={showSecrets[cred.id] ? `Hide ${cred.name}` : `Show ${cred.name}`}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-cyber-cyan"
                       >
-                        {showSecrets[cred.id] ? <FaEyeSlash /> : <FaEye />}
+                        {showSecrets[cred.id] ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
                       </button>
                     )}
                   </div>
@@ -343,9 +348,9 @@ export default function CloudflareSetupPage() {
                   href={cred.dashboardLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-cyber-cyan/20 text-cyber-cyan hover:bg-cyber-cyan/30 rounded-lg transition-colors font-semibold text-sm"
+                  className="btn-secondary"
                 >
-                  <FaLink />
+                  <FaLink aria-hidden="true" />
                   Go to Cloudflare Dashboard
                 </a>
               </div>

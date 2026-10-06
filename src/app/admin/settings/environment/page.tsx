@@ -1,7 +1,7 @@
 'use client';
 import { useState, useCallback, useEffect } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaKey, FaEnvelope, FaRobot, FaEye, FaEyeSlash, FaCheck, FaSync } from 'react-icons/fa';
+import { FaKey, FaEnvelope, FaRobot, FaEye, FaEyeSlash, FaCheck, FaSync, FaExclamationTriangle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 interface EnvSettings {
@@ -110,7 +110,7 @@ export default function EnvironmentSettingsPage() {
       if (response.ok) {
         const data = await response.json();
         setSettings(data);
-        toast.success('✓ Settings loaded successfully');
+        toast.success('Settings loaded successfully');
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -167,7 +167,7 @@ export default function EnvironmentSettingsPage() {
       });
 
       if (response.ok) {
-        toast.success('✓ Settings saved successfully!');
+        toast.success('Settings saved successfully!');
       } else {
         const data = await response.json();
         toast.error(data.message || 'Failed to save settings');
@@ -194,13 +194,13 @@ export default function EnvironmentSettingsPage() {
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-dark-border overflow-x-auto">
         {[
-          { key: 'auth', label: '🔐 Auth', icon: FaKey },
-          { key: 'google', label: '📊 Google', icon: FaKey },
-          { key: 'cloudflare', label: '☁️ Cloudflare', icon: FaKey },
-          { key: 'email', label: '📧 Email', icon: FaEnvelope },
-          { key: 'recaptcha', label: '🤖 reCAPTCHA', icon: FaRobot },
-          { key: 'telegram', label: '💬 Telegram', icon: FaRobot },
-          { key: 'site', label: '🌐 Site', icon: FaKey },
+          { key: 'auth', label: 'Auth', icon: FaKey },
+          { key: 'google', label: 'Google', icon: FaKey },
+          { key: 'cloudflare', label: 'Cloudflare', icon: FaKey },
+          { key: 'email', label: 'Email', icon: FaEnvelope },
+          { key: 'recaptcha', label: 'reCAPTCHA', icon: FaRobot },
+          { key: 'telegram', label: 'Telegram', icon: FaRobot },
+          { key: 'site', label: 'Site', icon: FaKey },
         ].map(tab => (
           <button
             key={tab.key}
@@ -236,8 +236,8 @@ export default function EnvironmentSettingsPage() {
             <div className="card-dark p-6">
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-lg font-bold text-text-primary">NextAuth Secret</label>
-                <button onClick={() => toggleSecret('nextauthSecret')} className="text-text-secondary">
-                  {showSecrets['nextauthSecret'] ? <FaEyeSlash /> : <FaEye />}
+                <button onClick={() => toggleSecret('nextauthSecret')} aria-label={showSecrets['nextauthSecret'] ? 'Hide NextAuth Secret' : 'Show NextAuth Secret'} className="text-text-secondary">
+                  {showSecrets['nextauthSecret'] ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
                 </button>
               </div>
               <input
@@ -247,7 +247,7 @@ export default function EnvironmentSettingsPage() {
                 placeholder="Generate with: openssl rand -base64 32"
                 className="w-full px-4 py-2 bg-dark-lighter border border-dark-border rounded-lg text-text-primary focus:outline-none focus:border-red-500"
               />
-              <p className="text-xs text-text-secondary mt-2">🔐 Keep this secret! Generate new with openssl rand -base64 32</p>
+              <p className="text-xs text-text-secondary mt-2">Keep this secret! Generate new with openssl rand -base64 32</p>
             </div>
           </>
         )}
@@ -278,8 +278,8 @@ export default function EnvironmentSettingsPage() {
             <div className="card-dark p-6">
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-lg font-bold text-text-primary">GA4 Private Key</label>
-                <button onClick={() => toggleSecret('ga4PrivateKey')} className="text-text-secondary">
-                  {showSecrets['ga4PrivateKey'] ? <FaEyeSlash /> : <FaEye />}
+                <button onClick={() => toggleSecret('ga4PrivateKey')} aria-label={showSecrets['ga4PrivateKey'] ? 'Hide GA4 Private Key' : 'Show GA4 Private Key'} className="text-text-secondary">
+                  {showSecrets['ga4PrivateKey'] ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
                 </button>
               </div>
               <textarea
@@ -306,8 +306,8 @@ export default function EnvironmentSettingsPage() {
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-lg font-bold text-text-primary">{label}</label>
                   {secret && (
-                    <button onClick={() => toggleSecret(field)} className="text-text-secondary">
-                      {showSecrets[field] ? <FaEyeSlash /> : <FaEye />}
+                    <button onClick={() => toggleSecret(field)} aria-label={`${showSecrets[field] ? 'Hide' : 'Show'} ${label}`} className="text-text-secondary">
+                      {showSecrets[field] ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
                     </button>
                   )}
                 </div>
@@ -326,7 +326,7 @@ export default function EnvironmentSettingsPage() {
         {activeTab === 'email' && (
           <>
             <div className="mb-6 p-4 bg-dark-lighter border border-dark-border rounded-lg">
-              <h3 className="text-lg font-bold text-cyber-cyan mb-2">📧 Email Configuration</h3>
+              <h3 className="text-lg font-bold text-cyber-cyan mb-2">Email Configuration</h3>
               <p className="text-text-secondary text-sm">Choose either SMTP (Gmail, etc.) or Office 365 OAuth2 (modern authentication)</p>
             </div>
             
@@ -342,8 +342,8 @@ export default function EnvironmentSettingsPage() {
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-lg font-bold text-text-primary">{label}</label>
                     {secret && (
-                      <button onClick={() => toggleSecret(field)} className="text-text-secondary">
-                        {showSecrets[field] ? <FaEyeSlash /> : <FaEye />}
+                      <button onClick={() => toggleSecret(field)} aria-label={`${showSecrets[field] ? 'Hide' : 'Show'} ${label}`} className="text-text-secondary">
+                        {showSecrets[field] ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
                       </button>
                     )}
                   </div>
@@ -371,8 +371,8 @@ export default function EnvironmentSettingsPage() {
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-lg font-bold text-text-primary">{label}</label>
                     {secret && (
-                      <button onClick={() => toggleSecret(field)} className="text-text-secondary">
-                        {showSecrets[field] ? <FaEyeSlash /> : <FaEye />}
+                      <button onClick={() => toggleSecret(field)} aria-label={`${showSecrets[field] ? 'Hide' : 'Show'} ${label}`} className="text-text-secondary">
+                        {showSecrets[field] ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
                       </button>
                     )}
                   </div>
@@ -414,8 +414,8 @@ export default function EnvironmentSettingsPage() {
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-lg font-bold text-text-primary">{label}</label>
                   {secret && (
-                    <button onClick={() => toggleSecret(field)} className="text-text-secondary">
-                      {showSecrets[field] ? <FaEyeSlash /> : <FaEye />}
+                    <button onClick={() => toggleSecret(field)} aria-label={`${showSecrets[field] ? 'Hide' : 'Show'} ${label}`} className="text-text-secondary">
+                      {showSecrets[field] ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
                     </button>
                   )}
                 </div>
@@ -442,8 +442,8 @@ export default function EnvironmentSettingsPage() {
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-lg font-bold text-text-primary">{label}</label>
                   {secret && (
-                    <button onClick={() => toggleSecret(field)} className="text-text-secondary">
-                      {showSecrets[field] ? <FaEyeSlash /> : <FaEye />}
+                    <button onClick={() => toggleSecret(field)} aria-label={`${showSecrets[field] ? 'Hide' : 'Show'} ${label}`} className="text-text-secondary">
+                      {showSecrets[field] ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
                     </button>
                   )}
                 </div>
@@ -463,13 +463,13 @@ export default function EnvironmentSettingsPage() {
           <>
             {/* Resume Bot */}
             <div className="card-dark p-6 border-l-4 border-purple-500">
-              <h3 className="text-lg font-bold text-purple-400 mb-4">📝 Resume/Careers Bot</h3>
+              <h3 className="text-lg font-bold text-purple-400 mb-4">Resume/Careers Bot</h3>
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-md font-bold text-text-primary">Bot Token</label>
-                    <button onClick={() => toggleSecret('telegramResumeBotToken')} className="text-text-secondary">
-                      {showSecrets['telegramResumeBotToken'] ? <FaEyeSlash /> : <FaEye />}
+                    <button onClick={() => toggleSecret('telegramResumeBotToken')} aria-label={showSecrets['telegramResumeBotToken'] ? 'Hide Resume Bot token' : 'Show Resume Bot token'} className="text-text-secondary">
+                      {showSecrets['telegramResumeBotToken'] ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
                     </button>
                   </div>
                   <input
@@ -493,20 +493,20 @@ export default function EnvironmentSettingsPage() {
                   disabled={testingBot === 'resume'}
                   className="btn-secondary w-full disabled:opacity-50"
                 >
-                  {testingBot === 'resume' ? 'Testing...' : '🧪 Test Resume Bot'}
+                  {testingBot === 'resume' ? 'Testing...' : 'Test Resume Bot'}
                 </button>
               </div>
             </div>
 
             {/* Contact Bot */}
             <div className="card-dark p-6 border-l-4 border-cyan-500">
-              <h3 className="text-lg font-bold text-cyan-400 mb-4">💬 Contact Form Bot</h3>
+              <h3 className="text-lg font-bold text-cyan-400 mb-4">Contact Form Bot</h3>
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-md font-bold text-text-primary">Bot Token</label>
-                    <button onClick={() => toggleSecret('telegramContactBotToken')} className="text-text-secondary">
-                      {showSecrets['telegramContactBotToken'] ? <FaEyeSlash /> : <FaEye />}
+                    <button onClick={() => toggleSecret('telegramContactBotToken')} aria-label={showSecrets['telegramContactBotToken'] ? 'Hide Contact Bot token' : 'Show Contact Bot token'} className="text-text-secondary">
+                      {showSecrets['telegramContactBotToken'] ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
                     </button>
                   </div>
                   <input
@@ -530,20 +530,20 @@ export default function EnvironmentSettingsPage() {
                   disabled={testingBot === 'contact'}
                   className="btn-secondary w-full disabled:opacity-50"
                 >
-                  {testingBot === 'contact' ? 'Testing...' : '🧪 Test Contact Bot'}
+                  {testingBot === 'contact' ? 'Testing...' : 'Test Contact Bot'}
                 </button>
               </div>
             </div>
 
             {/* Backup Bot */}
             <div className="card-dark p-6 border-l-4 border-green-500">
-              <h3 className="text-lg font-bold text-green-400 mb-4">💾 Backup Notifications Bot</h3>
+              <h3 className="text-lg font-bold text-green-400 mb-4">Backup Notifications Bot</h3>
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-md font-bold text-text-primary">Bot Token</label>
-                    <button onClick={() => toggleSecret('telegramBackupBotToken')} className="text-text-secondary">
-                      {showSecrets['telegramBackupBotToken'] ? <FaEyeSlash /> : <FaEye />}
+                    <button onClick={() => toggleSecret('telegramBackupBotToken')} aria-label={showSecrets['telegramBackupBotToken'] ? 'Hide Backup Bot token' : 'Show Backup Bot token'} className="text-text-secondary">
+                      {showSecrets['telegramBackupBotToken'] ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
                     </button>
                   </div>
                   <input
@@ -567,20 +567,20 @@ export default function EnvironmentSettingsPage() {
                   disabled={testingBot === 'backup'}
                   className="btn-secondary w-full disabled:opacity-50"
                 >
-                  {testingBot === 'backup' ? 'Testing...' : '🧪 Test Backup Bot'}
+                  {testingBot === 'backup' ? 'Testing...' : 'Test Backup Bot'}
                 </button>
               </div>
             </div>
 
             {/* Login Alert Bot */}
             <div className="card-dark p-6 border-l-4 border-yellow-500">
-              <h3 className="text-lg font-bold text-yellow-400 mb-4">🔐 Login Alert Bot</h3>
+              <h3 className="text-lg font-bold text-yellow-400 mb-4">Login Alert Bot</h3>
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-md font-bold text-text-primary">Bot Token</label>
-                    <button onClick={() => toggleSecret('telegramLoginAlertBotToken')} className="text-text-secondary">
-                      {showSecrets['telegramLoginAlertBotToken'] ? <FaEyeSlash /> : <FaEye />}
+                    <button onClick={() => toggleSecret('telegramLoginAlertBotToken')} aria-label={showSecrets['telegramLoginAlertBotToken'] ? 'Hide Login Alert Bot token' : 'Show Login Alert Bot token'} className="text-text-secondary">
+                      {showSecrets['telegramLoginAlertBotToken'] ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
                     </button>
                   </div>
                   <input
@@ -604,7 +604,7 @@ export default function EnvironmentSettingsPage() {
                   disabled={testingBot === 'login'}
                   className="btn-secondary w-full disabled:opacity-50"
                 >
-                  {testingBot === 'login' ? 'Testing...' : '🧪 Test Login Alert Bot'}
+                  {testingBot === 'login' ? 'Testing...' : 'Test Login Alert Bot'}
                 </button>
               </div>
             </div>
@@ -625,8 +625,8 @@ export default function EnvironmentSettingsPage() {
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-lg font-bold text-text-primary">{label}</label>
                   {secret && (
-                    <button onClick={() => toggleSecret(field)} className="text-text-secondary">
-                      {showSecrets[field] ? <FaEyeSlash /> : <FaEye />}
+                    <button onClick={() => toggleSecret(field)} aria-label={`${showSecrets[field] ? 'Hide' : 'Show'} ${label}`} className="text-text-secondary">
+                      {showSecrets[field] ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
                     </button>
                   )}
                 </div>
@@ -650,7 +650,7 @@ export default function EnvironmentSettingsPage() {
           disabled={loading}
           className="btn-primary flex items-center space-x-2 disabled:opacity-50"
         >
-          <FaCheck />
+          <FaCheck aria-hidden="true" />
           <span>{loading ? 'Saving...' : 'Save All Settings'}</span>
         </button>
         <button
@@ -658,15 +658,16 @@ export default function EnvironmentSettingsPage() {
           disabled={loading}
           className="btn-secondary flex items-center space-x-2 disabled:opacity-50"
         >
-          <FaSync className={loading ? 'animate-spin' : ''} />
+          <FaSync className={loading ? 'animate-spin' : ''} aria-hidden="true" />
           <span>Reload from Server</span>
         </button>
       </div>
 
       {/* Warning */}
-      <div className="card-cyber p-4 mt-8 border-l-4 border-red-500">
-        <p className="text-sm text-red-400">
-          ⚠️ <strong>Warning:</strong> All settings are sensitive credentials. Change these carefully and never share them. After saving, remember to restart the application.
+      <div className="mt-8 flex items-start gap-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm">
+        <FaExclamationTriangle className="text-yellow-400 shrink-0 mt-0.5" aria-hidden="true" />
+        <p className="text-text-secondary">
+          <strong className="font-semibold text-yellow-300">Warning:</strong> All settings are sensitive credentials. Change these carefully and never share them. After saving, remember to restart the application.
         </p>
       </div>
     </AdminShell>

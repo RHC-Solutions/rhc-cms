@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaEdit, FaEye, FaSearch, FaTimes, FaSave, FaExternalLinkAlt, 
   FaPlus, FaTrash, FaArrowUp, FaArrowDown, FaAlignLeft, FaAlignCenter, FaAlignRight,
-  FaColumns, FaTh, FaQuoteRight, FaCode
+  FaColumns, FaTh, FaQuoteRight, FaCode,
+  FaCamera, FaMap, FaEnvelope, FaRocket, FaComments, FaHandshake, FaInfoCircle, FaBullhorn
 } from 'react-icons/fa';
 import Link from 'next/link';
 import { BlockRenderer } from '@adminpanel/components/cms/BlockRenderer';
@@ -120,7 +121,7 @@ export default function CMSPagesEditor() {
       });
 
       if (res.ok) {
-        addToast('success', '✓ Page saved successfully!');
+        addToast('success', 'Page saved successfully!');
         setShowEditor(false);
         fetchPages();
       } else {
@@ -729,10 +730,10 @@ export default function CMSPagesEditor() {
                   <span>Logo {idx + 1}</span>
                   <div className="flex items-center gap-3">
                     <button type="button" onClick={() => move(idx, -1)} disabled={idx === 0} className="hover:text-text-primary disabled:opacity-30" aria-label="Move up">
-                      <FaArrowUp />
+                      <FaArrowUp aria-hidden="true" />
                     </button>
                     <button type="button" onClick={() => move(idx, 1)} disabled={idx === items.length - 1} className="hover:text-text-primary disabled:opacity-30" aria-label="Move down">
-                      <FaArrowDown />
+                      <FaArrowDown aria-hidden="true" />
                     </button>
                     <button type="button" onClick={() => setItems(items.filter((_, i) => i !== idx))} className="text-cyber-red hover:text-red-400">
                       Remove
@@ -745,7 +746,7 @@ export default function CMSPagesEditor() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={it.src} alt="" className="max-w-full max-h-full object-contain" style={partners ? { filter: 'brightness(0) invert(1)' } : undefined} />
                     ) : (
-                      <span className="text-[10px] text-text-muted">No image</span>
+                      <span className="text-xs text-text-muted">No image</span>
                     )}
                   </div>
                   <input
@@ -866,7 +867,7 @@ export default function CMSPagesEditor() {
         return (
           <div className={alignClass}>
             <div className="inline-block bg-dark-lighter p-4 rounded border border-cyber-green/30">
-              <div className="text-4xl text-cyber-green">📷</div>
+              <div className="text-2xl text-cyber-green"><FaCamera aria-hidden="true" /></div>
               <p className="text-xs text-text-muted mt-2">{block.props}</p>
             </div>
           </div>
@@ -894,7 +895,7 @@ export default function CMSPagesEditor() {
             >
               {cards.map((card: any, idx: number) => (
                 <div key={idx} className="bg-dark-lighter border border-dark-border rounded p-4">
-                  <div className="text-2xl mb-2">{card.icon || '🃏'}</div>
+                  <div className="text-2xl mb-2">{card.icon || <FaTh aria-hidden="true" />}</div>
                   <div className="font-semibold text-text-primary mb-1">{card.title}</div>
                   <p className="text-sm text-text-secondary leading-relaxed">{card.description}</p>
                 </div>
@@ -985,14 +986,14 @@ export default function CMSPagesEditor() {
       case 'worldmap':
         return (
           <div className="bg-dark-card p-6 rounded border border-cyber-green/30 text-center">
-            <div className="text-4xl text-cyber-green mb-2">🗺️</div>
+            <div className="text-2xl text-cyber-green mb-2"><FaMap className="mx-auto" aria-hidden="true" /></div>
             <p className="text-text-muted">Interactive World Map</p>
           </div>
         );
       case 'contactform':
         return (
           <div className="bg-dark-card p-6 rounded border border-cyber-cyan/30 text-center">
-            <div className="text-4xl text-cyber-cyan mb-2">📝</div>
+            <div className="text-2xl text-cyber-cyan mb-2"><FaEnvelope className="mx-auto" aria-hidden="true" /></div>
             <p className="text-text-muted">Contact Form</p>
             {block.props?.title && <p className="text-sm text-text-secondary mt-1">Title: {block.props.title}</p>}
           </div>
@@ -1000,35 +1001,35 @@ export default function CMSPagesEditor() {
       case 'servicescarousel':
         return (
           <div className="bg-dark-card p-6 rounded border border-cyber-green/30 text-center">
-            <div className="text-4xl text-cyber-green mb-2">🚀</div>
+            <div className="text-2xl text-cyber-green mb-2"><FaRocket className="mx-auto" aria-hidden="true" /></div>
             <p className="text-text-muted">Services Carousel</p>
           </div>
         );
       case 'testimonialscarousel':
         return (
           <div className="bg-dark-card p-6 rounded border border-cyber-cyan/30 text-center">
-            <div className="text-4xl text-cyber-cyan mb-2">💬</div>
+            <div className="text-2xl text-cyber-cyan mb-2"><FaComments className="mx-auto" aria-hidden="true" /></div>
             <p className="text-text-muted">Testimonials Carousel</p>
           </div>
         );
       case 'clientsteaser':
         return (
           <div className="bg-dark-card p-6 rounded border border-cyber-green/30 text-center">
-            <div className="text-4xl text-cyber-green mb-2">🤝</div>
+            <div className="text-2xl text-cyber-green mb-2"><FaHandshake className="mx-auto" aria-hidden="true" /></div>
             <p className="text-text-muted">Clients Teaser</p>
           </div>
         );
       case 'aboutpreview':
         return (
           <div className="bg-dark-card p-6 rounded border border-cyber-cyan/30 text-center">
-            <div className="text-4xl text-cyber-cyan mb-2">ℹ️</div>
+            <div className="text-2xl text-cyber-cyan mb-2"><FaInfoCircle className="mx-auto" aria-hidden="true" /></div>
             <p className="text-text-muted">About Preview</p>
           </div>
         );
       case 'ctasection':
         return (
           <div className="bg-dark-card p-6 rounded border border-cyber-green/30 text-center">
-            <div className="text-4xl text-cyber-green mb-2">📣</div>
+            <div className="text-2xl text-cyber-green mb-2"><FaBullhorn className="mx-auto" aria-hidden="true" /></div>
             <p className="text-text-muted">CTA Section</p>
           </div>
         );
@@ -1062,7 +1063,7 @@ export default function CMSPagesEditor() {
       {/* Search */}
       <div className="card-cyber p-6 mb-6">
         <div className="relative">
-          <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-text-secondary" />
+          <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-text-secondary" aria-hidden="true" />
           <input
             type="text"
             placeholder="Search pages..."
@@ -1108,14 +1109,14 @@ export default function CMSPagesEditor() {
                   <td className="px-4 py-3">{new Date(page.updatedAt).toLocaleString()}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end items-center gap-2">
-                      <Link href={page.slug} target="_blank" className="p-2 text-cyber-cyan hover:bg-cyber-cyan/20 rounded transition-colors">
-                        <FaExternalLinkAlt />
+                      <Link href={page.slug} target="_blank" className="p-2 text-cyber-cyan hover:bg-cyber-cyan/20 rounded transition-colors" aria-label={`View ${page.title} on the site`}>
+                        <FaExternalLinkAlt aria-hidden="true" />
                       </Link>
-                      <button onClick={() => handleEdit(page)} className="btn-primary px-3 py-1">
+                      <button onClick={() => handleEdit(page)} className="btn-secondary px-3 py-1">
                         Edit
                       </button>
-                      <button onClick={() => handleDelete(page.id)} className="p-2 text-cyber-red hover:bg-cyber-red/20 rounded transition-colors">
-                        <FaTrash />
+                      <button onClick={() => handleDelete(page.id)} className="p-2 text-cyber-red hover:bg-cyber-red/20 rounded transition-colors" aria-label={`Delete ${page.title}`}>
+                        <FaTrash aria-hidden="true" />
                       </button>
                     </div>
                   </td>
@@ -1197,8 +1198,9 @@ export default function CMSPagesEditor() {
                     <button
                       onClick={() => setShowEditor(false)}
                       className="text-text-secondary hover:text-cyber-red transition-colors"
+                      aria-label="Close editor"
                     >
-                      <FaTimes className="text-2xl" />
+                      <FaTimes className="text-2xl" aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -1297,20 +1299,23 @@ export default function CMSPagesEditor() {
                             <button
                               onClick={(e) => { e.stopPropagation(); updateBlock(block.id, { props: { ...block.props, align: 'left' }}); }}
                               className={`p-1 rounded ${block.props?.align === 'left' || !block.props?.align ? 'bg-cyber-green/20 text-cyber-green' : 'text-text-muted hover:text-text-primary'}`}
+                              aria-label="Align left"
                             >
-                              <FaAlignLeft className="text-sm" />
+                              <FaAlignLeft className="text-sm" aria-hidden="true" />
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); updateBlock(block.id, { props: { ...block.props, align: 'center' }}); }}
                               className={`p-1 rounded ${block.props?.align === 'center' ? 'bg-cyber-green/20 text-cyber-green' : 'text-text-muted hover:text-text-primary'}`}
+                              aria-label="Align center"
                             >
-                              <FaAlignCenter className="text-sm" />
+                              <FaAlignCenter className="text-sm" aria-hidden="true" />
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); updateBlock(block.id, { props: { ...block.props, align: 'right' }}); }}
                               className={`p-1 rounded ${block.props?.align === 'right' ? 'bg-cyber-green/20 text-cyber-green' : 'text-text-muted hover:text-text-primary'}`}
+                              aria-label="Align right"
                             >
-                              <FaAlignRight className="text-sm" />
+                              <FaAlignRight className="text-sm" aria-hidden="true" />
                             </button>
                             <div className="w-px h-4 bg-dark-border mx-1" />
                             {/* Move */}
@@ -1318,22 +1323,25 @@ export default function CMSPagesEditor() {
                               onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'up'); }}
                               disabled={index === 0}
                               className="p-1 text-cyber-cyan hover:bg-cyber-cyan/20 rounded disabled:opacity-30"
+                              aria-label="Move block up"
                             >
-                              <FaArrowUp className="text-sm" />
+                              <FaArrowUp className="text-sm" aria-hidden="true" />
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'down'); }}
                               disabled={index === editingPage.blocks.length - 1}
                               className="p-1 text-cyber-cyan hover:bg-cyber-cyan/20 rounded disabled:opacity-30"
+                              aria-label="Move block down"
                             >
-                              <FaArrowDown className="text-sm" />
+                              <FaArrowDown className="text-sm" aria-hidden="true" />
                             </button>
                             {/* Delete */}
                             <button
                               onClick={(e) => { e.stopPropagation(); deleteBlock(block.id); }}
                               className="p-1 text-cyber-red hover:bg-cyber-red/20 rounded"
+                              aria-label="Delete block"
                             >
-                              <FaTrash className="text-sm" />
+                              <FaTrash className="text-sm" aria-hidden="true" />
                             </button>
                           </div>
                         </div>
@@ -1358,7 +1366,7 @@ export default function CMSPagesEditor() {
                 <div className="bg-dark-card rounded-lg p-8 border border-dark-border overflow-y-auto max-h-[calc(100vh-350px)]">
                   <div className="flex items-center justify-between mb-6 pb-4 border-b border-dark-border">
                     <h3 className="text-lg font-bold text-text-primary">Live Preview</h3>
-                    <FaEye className="text-cyber-cyan" />
+                    <FaEye className="text-cyber-cyan" aria-hidden="true" />
                   </div>
                   
                   <div className="space-y-6">

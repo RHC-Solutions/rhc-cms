@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
 import { useToast } from '@adminpanel/components/admin/Toast';
 import { motion } from 'framer-motion';
-import { FaPlus, FaEdit, FaTrash, FaEye, FaEyeSlash, FaBriefcase, FaTimes, FaSave, FaUsers, FaDownload } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaEye, FaEyeSlash, FaBriefcase, FaTimes, FaSave, FaUsers, FaDownload, FaGlobe, FaBuilding, FaMapMarkerAlt } from 'react-icons/fa';
 
 interface Job {
   id: string;
@@ -178,7 +178,7 @@ export default function JobManagement() {
           setJobs([...jobs, result]);
         }
         handleCloseModal();
-        addToast('success', '✓ Job saved successfully!');
+        addToast('success', 'Job saved successfully!');
       } else {
         addToast('error', 'Failed to save job');
       }
@@ -287,9 +287,9 @@ export default function JobManagement() {
                     <td className="p-4 font-medium">{job.title}</td>
                     <td className="p-4 text-text-secondary">{job.department}</td>
                     <td className="p-4 text-text-secondary">
-                      {job.locationType === 'remote' && '🌍 Remote'}
-                      {job.locationType === 'hybrid' && `🏢 ${job.city}, ${job.country}`}
-                      {job.locationType === 'in-office' && `📍 ${job.city}, ${job.country}`}
+                      {job.locationType === 'remote' && <span className="inline-flex items-center gap-1.5"><FaGlobe aria-hidden="true" />Remote</span>}
+                      {job.locationType === 'hybrid' && <span className="inline-flex items-center gap-1.5"><FaBuilding aria-hidden="true" />{`${job.city}, ${job.country}`}</span>}
+                      {job.locationType === 'in-office' && <span className="inline-flex items-center gap-1.5"><FaMapMarkerAlt aria-hidden="true" />{`${job.city}, ${job.country}`}</span>}
                     </td>
                     <td className="p-4">{job.type}</td>
                     <td className="p-4 text-text-muted text-sm">{job.createdBy || '—'}</td>
@@ -309,20 +309,21 @@ export default function JobManagement() {
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2 items-center">
                         <span className="px-3 py-1 rounded bg-dark-lighter border border-dark-border text-text-secondary flex items-center gap-2">
-                          <FaUsers className="text-sm" />
-                          <span className="text-sm">{job.applicants || 0}</span>
+                          <FaUsers className="text-sm" aria-hidden="true" />
+                          <span className="text-sm">{job.applicants || 0}<span className="sr-only"> applicants</span></span>
                         </span>
                         <button
                           onClick={() => handleEdit(job)}
-                          className="btn-primary px-3 py-1 flex items-center gap-2"
+                          className="btn-secondary px-3 py-1 flex items-center gap-2"
                         >
-                          <FaEdit /> Edit
+                          <FaEdit aria-hidden="true" /> Edit
                         </button>
                         <button
                           onClick={() => handleDelete(job.id)}
                           className="p-2 text-cyber-red hover:bg-cyber-red/20 rounded transition-colors"
+                          aria-label={`Delete ${job.title}`}
                         >
-                          <FaTrash />
+                          <FaTrash aria-hidden="true" />
                         </button>
                       </div>
                     </td>
@@ -346,8 +347,8 @@ export default function JobManagement() {
               <h2 className="heading-lg text-gradient">
                 {editingJob ? 'Edit Job Posting' : 'Create New Job Posting'}
               </h2>
-              <button onClick={handleCloseModal} className="text-text-secondary hover:text-cyber-red">
-                <FaTimes className="text-2xl" />
+              <button onClick={handleCloseModal} className="text-text-secondary hover:text-cyber-red" aria-label="Close">
+                <FaTimes className="text-2xl" aria-hidden="true" />
               </button>
             </div>
 
@@ -478,7 +479,7 @@ export default function JobManagement() {
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="px-6 py-3 border-2 border-dark-border rounded-lg text-text-secondary hover:border-text-secondary"
+                  className="btn-secondary"
                 >
                   Cancel
                 </button>

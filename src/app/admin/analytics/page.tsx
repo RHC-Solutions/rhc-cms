@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaChartLine, FaUsers, FaDesktop, FaMobile, FaGlobeAmericas, FaSync, FaShieldAlt, FaNetworkWired, FaSearch, FaTachometerAlt, FaDollarSign } from 'react-icons/fa';
+import { FaChartLine, FaUsers, FaDesktop, FaMobile, FaGlobeAmericas, FaSync, FaShieldAlt, FaNetworkWired, FaSearch, FaTachometerAlt, FaDollarSign, FaExclamationTriangle, FaExchangeAlt, FaBan, FaBolt, FaChartBar, FaFire } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 interface AnalyticsData {
@@ -162,8 +162,8 @@ export default function AnalyticsPage() {
   
   return (
     <AdminShell title="Analytics">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
           <h1 className="heading-xl text-gradient mb-2">Website Analytics</h1>
           <p className="text-text-secondary">Unified analytics from Google Analytics 4 and Cloudflare</p>
         </div>
@@ -172,14 +172,14 @@ export default function AnalyticsPage() {
           disabled={refreshing || loading}
           className="btn-primary px-4 py-2 flex items-center gap-2"
         >
-          <FaSync className={refreshing ? 'animate-spin' : ''} />
+          <FaSync className={refreshing ? 'animate-spin' : ''} aria-hidden="true" />
           {refreshing ? 'Refreshing...' : 'Refresh All'}
         </button>
       </div>
 
       {loading && !gaData && !cfData ? (
         <div className="card-dark p-8 text-center mb-8">
-          <FaSync className="text-4xl text-cyber-cyan animate-spin mx-auto mb-4" />
+          <FaSync className="text-2xl text-cyber-cyan animate-spin mx-auto mb-4" aria-hidden="true" />
           <p className="text-text-secondary">Loading analytics data...</p>
         </div>
       ) : (
@@ -188,7 +188,7 @@ export default function AnalyticsPage() {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gradient flex items-center gap-2">
-                <FaNetworkWired className="text-cyber-cyan" />
+                <FaNetworkWired className="text-cyber-cyan" aria-hidden="true" />
                 Cloudflare Analytics (24h)
               </h2>
               {cfData?.zone && (
@@ -204,19 +204,22 @@ export default function AnalyticsPage() {
             </div>
 
             {cfError ? (
-              <div className="card-dark p-6 mb-4 border-l-4 border-yellow-500">
-                <p className="text-yellow-500 font-semibold">⚠️ Cloudflare: {cfError}</p>
-                <p className="text-text-secondary text-sm mt-2">Configure Cloudflare credentials in Settings</p>
+              <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm mb-4">
+                <p className="flex items-center gap-2 text-sm font-semibold text-yellow-300">
+                  <FaExclamationTriangle className="text-yellow-400 shrink-0" aria-hidden="true" />
+                  Cloudflare: {cfError}
+                </p>
+                <p className="text-text-secondary mt-1">Configure Cloudflare credentials in Settings</p>
               </div>
             ) : cfData?.analytics ? (
               <>
                 {cfData?.zone?.plan?.name === 'Free Website' && (
-                  <div className="card-cyber p-4 mb-4 border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-500/5 to-transparent">
+                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm mb-4">
                     <div className="flex items-start gap-3">
-                      <span className="text-xl">⚠️</span>
+                      <FaExclamationTriangle className="text-yellow-400 shrink-0 mt-0.5" aria-hidden="true" />
                       <div>
-                        <h3 className="font-bold text-amber-400 text-sm">Limited on Free Plan</h3>
-                        <p className="text-text-muted text-xs">
+                        <h3 className="text-sm font-semibold text-amber-300">Limited on Free Plan</h3>
+                        <p className="text-text-secondary">
                           Detailed analytics require a paid Cloudflare plan (Pro or Business).
                         </p>
                       </div>
@@ -233,7 +236,7 @@ export default function AnalyticsPage() {
                           {(cfData.analytics.requests || 0).toLocaleString()}
                         </p>
                       </div>
-                      <div className="text-4xl text-blue-400 opacity-20">📨</div>
+                      <FaExchangeAlt className="text-2xl text-blue-400 shrink-0" aria-hidden="true" />
                     </div>
                   </div>
 
@@ -245,7 +248,7 @@ export default function AnalyticsPage() {
                           {formatBytes(cfData.analytics.bandwidth || 0)}
                         </p>
                       </div>
-                      <div className="text-4xl text-cyan-400 opacity-20">🌐</div>
+                      <FaGlobeAmericas className="text-2xl text-cyan-400 shrink-0" aria-hidden="true" />
                     </div>
                   </div>
 
@@ -257,7 +260,7 @@ export default function AnalyticsPage() {
                           {(cfData.analytics.threats || 0).toLocaleString()}
                         </p>
                       </div>
-                      <div className="text-4xl text-red-400 opacity-20">🚫</div>
+                      <FaBan className="text-2xl text-red-400 shrink-0" aria-hidden="true" />
                     </div>
                   </div>
 
@@ -269,7 +272,7 @@ export default function AnalyticsPage() {
                           {(cfData.analytics.pageviews || 0).toLocaleString()}
                         </p>
                       </div>
-                      <div className="text-4xl text-green-400 opacity-20">📈</div>
+                      <FaChartLine className="text-2xl text-green-400 shrink-0" aria-hidden="true" />
                     </div>
                   </div>
                 </div>
@@ -285,7 +288,7 @@ export default function AnalyticsPage() {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gradient flex items-center gap-2">
-                <FaChartLine className="text-cyber-green" />
+                <FaChartLine className="text-cyber-green" aria-hidden="true" />
                 Google Services (Site Kit Integration)
               </h2>
             </div>
@@ -295,13 +298,16 @@ export default function AnalyticsPage() {
                 {/* Search Console Section */}
                 <div className="mb-6">
                   <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-                    <FaSearch className="text-blue-400" />
+                    <FaSearch className="text-blue-400" aria-hidden="true" />
                     Search Console (30d)
                   </h3>
                   {googleServices.searchConsole?.error ? (
-                    <div className="card-dark p-6 border-l-4 border-yellow-500">
-                      <p className="text-yellow-500 font-semibold">⚠️ {googleServices.searchConsole.error}</p>
-                      <p className="text-text-secondary text-sm mt-2">Grant Search Console access to service account</p>
+                    <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm">
+                      <p className="flex items-center gap-2 text-sm font-semibold text-yellow-300">
+                        <FaExclamationTriangle className="text-yellow-400 shrink-0" aria-hidden="true" />
+                        {googleServices.searchConsole.error}
+                      </p>
+                      <p className="text-text-secondary mt-1">Grant Search Console access to service account</p>
                     </div>
                   ) : googleServices.searchConsole ? (
                     <>
@@ -365,13 +371,16 @@ export default function AnalyticsPage() {
                 {/* PageSpeed Insights Section */}
                 <div className="mb-6">
                   <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-                    <FaTachometerAlt className="text-green-400" />
+                    <FaTachometerAlt className="text-green-400" aria-hidden="true" />
                     PageSpeed Insights
                   </h3>
                   {googleServices.pageSpeed?.error ? (
-                    <div className="card-dark p-6 border-l-4 border-yellow-500">
-                      <p className="text-yellow-500 font-semibold">⚠️ {googleServices.pageSpeed.error}</p>
-                      <p className="text-text-secondary text-sm mt-2">PageSpeed API unavailable</p>
+                    <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm">
+                      <p className="flex items-center gap-2 text-sm font-semibold text-yellow-300">
+                        <FaExclamationTriangle className="text-yellow-400 shrink-0" aria-hidden="true" />
+                        {googleServices.pageSpeed.error}
+                      </p>
+                      <p className="text-text-secondary mt-1">PageSpeed API unavailable</p>
                     </div>
                   ) : googleServices.pageSpeed ? (
                     <>
@@ -461,7 +470,7 @@ export default function AnalyticsPage() {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gradient flex items-center gap-2">
-                <FaChartLine className="text-cyber-green" />
+                <FaChartLine className="text-cyber-green" aria-hidden="true" />
                 Google Analytics 4 (30d)
               </h2>
               <a
@@ -475,9 +484,12 @@ export default function AnalyticsPage() {
             </div>
 
             {gaError ? (
-              <div className="card-dark p-6 border-l-4 border-yellow-500">
-                <p className="text-yellow-500 font-semibold">⚠️ Google Analytics: {gaError}</p>
-                <p className="text-text-secondary text-sm mt-2">
+              <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm">
+                <p className="flex items-center gap-2 text-sm font-semibold text-yellow-300">
+                  <FaExclamationTriangle className="text-yellow-400 shrink-0" aria-hidden="true" />
+                  Google Analytics: {gaError}
+                </p>
+                <p className="text-text-secondary mt-1">
                   Configure GA4 credentials in Admin → Analytics → Setup
                 </p>
               </div>
@@ -485,12 +497,12 @@ export default function AnalyticsPage() {
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                   <div className="card-cyber p-6">
-                    <FaUsers className="text-3xl text-cyber-green mb-3" />
+                    <FaUsers className="text-3xl text-cyber-green mb-3" aria-hidden="true" />
                     <h3 className="text-2xl font-bold text-text-primary">{gaData.users?.toLocaleString() || 'N/A'}</h3>
                     <p className="text-text-secondary">Total Users</p>
                   </div>
                   <div className="card-cyber p-6">
-                    <FaDesktop className="text-3xl text-cyber-cyan mb-3" />
+                    <FaDesktop className="text-3xl text-cyber-cyan mb-3" aria-hidden="true" />
                     <h3 className="text-2xl font-bold text-text-primary">
                       {gaData.deviceBreakdown?.desktop ? 
                         `${((gaData.deviceBreakdown.desktop / (gaData.deviceBreakdown.desktop + gaData.deviceBreakdown.mobile + (gaData.deviceBreakdown.tablet || 0))) * 100).toFixed(1)}%` 
@@ -499,7 +511,7 @@ export default function AnalyticsPage() {
                     <p className="text-text-secondary">Desktop Traffic</p>
                   </div>
                   <div className="card-cyber p-6">
-                    <FaMobile className="text-3xl text-cyber-blue mb-3" />
+                    <FaMobile className="text-3xl text-cyber-blue mb-3" aria-hidden="true" />
                     <h3 className="text-2xl font-bold text-text-primary">
                       {gaData.deviceBreakdown?.mobile ? 
                         `${((gaData.deviceBreakdown.mobile / (gaData.deviceBreakdown.desktop + gaData.deviceBreakdown.mobile + (gaData.deviceBreakdown.tablet || 0))) * 100).toFixed(1)}%` 
@@ -508,7 +520,7 @@ export default function AnalyticsPage() {
                     <p className="text-text-secondary">Mobile Traffic</p>
                   </div>
                   <div className="card-cyber p-6">
-                    <FaGlobeAmericas className="text-3xl text-cyber-purple mb-3" />
+                    <FaGlobeAmericas className="text-3xl text-cyber-purple mb-3" aria-hidden="true" />
                     <h3 className="text-2xl font-bold text-text-primary">{gaData.topCountries?.length || 'N/A'}</h3>
                     <p className="text-text-secondary">Countries</p>
                   </div>
@@ -562,15 +574,15 @@ export default function AnalyticsPage() {
             {/* Google Analytics Links */}
             <div className="card-dark p-6">
               <h3 className="text-lg font-bold text-text-primary mb-4 flex items-center gap-2">
-                <FaChartLine className="text-cyber-green" />
+                <FaChartLine className="text-cyber-green" aria-hidden="true" />
                 Google Analytics Features
               </h3>
               <div className="space-y-2">
                 {[
-                  { name: 'Real-time Overview', url: 'https://analytics.google.com/analytics/web/#/p314493630/realtime/overview', icon: '⚡' },
-                  { name: 'Reports Snapshot', url: 'https://analytics.google.com/analytics/web/#/p314493630/reports/intelligenthome', icon: '📈' },
-                  { name: 'Traffic Sources', url: 'https://analytics.google.com/analytics/web/#/p314493630/reports/acquisition', icon: '🔍' },
-                  { name: 'User Demographics', url: 'https://analytics.google.com/analytics/web/#/p314493630/reports/reportinghub?params=_u..nav%3Dmaui', icon: '👥' }
+                  { name: 'Real-time Overview', url: 'https://analytics.google.com/analytics/web/#/p314493630/realtime/overview', icon: FaBolt },
+                  { name: 'Reports Snapshot', url: 'https://analytics.google.com/analytics/web/#/p314493630/reports/intelligenthome', icon: FaChartLine },
+                  { name: 'Traffic Sources', url: 'https://analytics.google.com/analytics/web/#/p314493630/reports/acquisition', icon: FaSearch },
+                  { name: 'User Demographics', url: 'https://analytics.google.com/analytics/web/#/p314493630/reports/reportinghub?params=_u..nav%3Dmaui', icon: FaUsers }
                 ].map((feature, idx) => (
                   <a
                     key={idx}
@@ -579,9 +591,9 @@ export default function AnalyticsPage() {
                     rel="noopener noreferrer"
                     className="flex items-center space-x-3 p-3 bg-dark-lighter rounded-lg hover:bg-dark-border transition-colors group"
                   >
-                    <span className="text-xl">{feature.icon}</span>
+                    <feature.icon className="text-base text-text-muted shrink-0" aria-hidden="true" />
                     <span className="text-text-primary group-hover:text-cyber-green transition-colors text-sm">{feature.name}</span>
-                    <span className="ml-auto text-text-secondary text-xs">→</span>
+                    <span className="ml-auto text-text-secondary text-xs" aria-hidden="true">→</span>
                   </a>
                 ))}
               </div>
@@ -591,15 +603,15 @@ export default function AnalyticsPage() {
             {cfData?.zone && (
               <div className="card-dark p-6">
                 <h3 className="text-lg font-bold text-text-primary mb-4 flex items-center gap-2">
-                  <FaShieldAlt className="text-cyber-cyan" />
+                  <FaShieldAlt className="text-cyber-cyan" aria-hidden="true" />
                   Cloudflare Features
                 </h3>
                 <div className="space-y-2">
                   {[
-                    { name: 'Live Traffic Analytics', url: `https://dash.cloudflare.com/${cfData.accountId}/${cfData.zone.name}/analytics/traffic`, icon: '📊' },
-                    { name: 'Security Events', url: `https://dash.cloudflare.com/${cfData.accountId}/${cfData.zone.name}/security/events`, icon: '🛡️' },
-                    { name: 'DNS Records', url: `https://dash.cloudflare.com/${cfData.accountId}/${cfData.zone.name}/dns`, icon: '🌐' },
-                    { name: 'Firewall Rules', url: `https://dash.cloudflare.com/${cfData.accountId}/${cfData.zone.name}/security/waf`, icon: '🔥' }
+                    { name: 'Live Traffic Analytics', url: `https://dash.cloudflare.com/${cfData.accountId}/${cfData.zone.name}/analytics/traffic`, icon: FaChartBar },
+                    { name: 'Security Events', url: `https://dash.cloudflare.com/${cfData.accountId}/${cfData.zone.name}/security/events`, icon: FaShieldAlt },
+                    { name: 'DNS Records', url: `https://dash.cloudflare.com/${cfData.accountId}/${cfData.zone.name}/dns`, icon: FaGlobeAmericas },
+                    { name: 'Firewall Rules', url: `https://dash.cloudflare.com/${cfData.accountId}/${cfData.zone.name}/security/waf`, icon: FaFire }
                   ].map((feature, idx) => (
                     <a
                       key={idx}
@@ -608,9 +620,9 @@ export default function AnalyticsPage() {
                       rel="noopener noreferrer"
                       className="flex items-center space-x-3 p-3 bg-dark-lighter rounded-lg hover:bg-dark-border transition-colors group"
                     >
-                      <span className="text-xl">{feature.icon}</span>
+                      <feature.icon className="text-base text-text-muted shrink-0" aria-hidden="true" />
                       <span className="text-text-primary group-hover:text-cyber-cyan transition-colors text-sm">{feature.name}</span>
-                      <span className="ml-auto text-text-secondary text-xs">→</span>
+                      <span className="ml-auto text-text-secondary text-xs" aria-hidden="true">→</span>
                     </a>
                   ))}
                 </div>

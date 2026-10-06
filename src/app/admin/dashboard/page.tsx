@@ -27,7 +27,7 @@ function PanelPlaceholder({
   if (loading) {
     return (
       <div className="text-center py-12 text-text-muted">
-        <FaSpinner className="text-4xl mx-auto mb-4 animate-spin text-cyber-green/60" />
+        <FaSpinner className="text-2xl mx-auto mb-4 animate-spin text-cyber-green/60" aria-hidden="true" />
         <p>Loading analytics…</p>
       </div>
     );
@@ -36,7 +36,7 @@ function PanelPlaceholder({
   if (error) {
     return (
       <div className="text-center py-12 text-text-muted">
-        <FaExclamationTriangle className="text-4xl mx-auto mb-4 text-yellow-500/70" />
+        <FaExclamationTriangle className="text-2xl mx-auto mb-4 text-yellow-500/70" aria-hidden="true" />
         <p className="text-yellow-500">Analytics unavailable</p>
         <p className="text-sm mt-2">{error}</p>
       </div>
@@ -45,7 +45,7 @@ function PanelPlaceholder({
 
   return (
     <div className="text-center py-12 text-text-muted">
-      <Icon className="text-5xl mx-auto mb-4 opacity-30" />
+      <Icon className="text-2xl mx-auto mb-4 opacity-30" />
       <p>No analytics data available</p>
       <p className="text-sm mt-2">{emptyHint}</p>
     </div>
@@ -416,19 +416,19 @@ export default function AdminDashboard() {
         className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4"
       >
         <a href="/admin/pages" className="card-dark p-6 text-center hover:border-cyber-green group transition-all">
-          <FaFileAlt className="text-4xl text-cyber-green mx-auto mb-3 group-hover:scale-110 transition-transform" />
+          <FaFileAlt className="text-2xl text-cyber-green mx-auto mb-3" aria-hidden="true" />
           <h3 className="text-text-primary font-semibold">Manage Pages</h3>
         </a>
         <a href="/admin/media" className="card-dark p-6 text-center hover:border-cyber-cyan group transition-all">
-          <FaImages className="text-4xl text-cyber-cyan mx-auto mb-3 group-hover:scale-110 transition-transform" />
+          <FaImages className="text-2xl text-cyber-cyan mx-auto mb-3" aria-hidden="true" />
           <h3 className="text-text-primary font-semibold">Media Library</h3>
         </a>
         <a href="/admin/analytics" className="card-dark p-6 text-center hover:border-cyber-blue group transition-all">
-          <FaChartLine className="text-4xl text-cyber-blue mx-auto mb-3 group-hover:scale-110 transition-transform" />
+          <FaChartLine className="text-2xl text-cyber-blue mx-auto mb-3" aria-hidden="true" />
           <h3 className="text-text-primary font-semibold">Full Analytics</h3>
         </a>
         <a href="/admin/users" className="card-dark p-6 text-center hover:border-cyber-purple group transition-all">
-          <FaUsers className="text-4xl text-cyber-purple mx-auto mb-3 group-hover:scale-110 transition-transform" />
+          <FaUsers className="text-2xl text-cyber-purple mx-auto mb-3" aria-hidden="true" />
           <h3 className="text-text-primary font-semibold">User Management</h3>
         </a>
       </motion.div>

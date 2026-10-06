@@ -181,8 +181,8 @@ export default function LandingPagesAdmin() {
   return (
     <AdminShell title="Landing Pages">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gradient mb-1">Landing Pages</h1>
-        <p className="text-text-secondary text-sm">
+        <h1 className="heading-xl">Landing Pages</h1>
+        <p className="text-text-secondary text-sm mt-1">
           Build campaign landing pages from templates. Leads are emailed to the address set on each LP.
         </p>
       </div>
@@ -194,7 +194,7 @@ export default function LandingPagesAdmin() {
             tab === 'pages' ? 'border-cyber-green text-cyber-green' : 'border-transparent text-text-secondary hover:text-text-primary'
           }`}
         >
-          <FaList className="inline mr-2" />
+          <FaList className="inline mr-2" aria-hidden="true" />
           Pages ({pages.length})
         </button>
         <button
@@ -203,7 +203,7 @@ export default function LandingPagesAdmin() {
             tab === 'leads' ? 'border-cyber-green text-cyber-green' : 'border-transparent text-text-secondary hover:text-text-primary'
           }`}
         >
-          <FaInbox className="inline mr-2" />
+          <FaInbox className="inline mr-2" aria-hidden="true" />
           Leads ({leads.length}{newLeadsCount > 0 ? ` · ${newLeadsCount} new` : ''})
         </button>
       </div>
@@ -277,9 +277,9 @@ function PagesTab({
         {!creating && (
           <button
             onClick={onStartCreate}
-            className="inline-flex items-center gap-2 bg-cyber-green text-dark font-semibold px-4 py-2 rounded-lg hover:bg-cyber-green/90"
+            className="btn-primary"
           >
-            <FaPlus /> New landing page
+            <FaPlus aria-hidden="true" /> New landing page
           </button>
         )}
       </div>
@@ -331,13 +331,13 @@ function PagesTab({
             <button
               onClick={() => onCreate(templateId, slug, title)}
               disabled={!templateId}
-              className="bg-cyber-green text-dark font-semibold px-4 py-2 rounded-lg hover:bg-cyber-green/90 disabled:opacity-50"
+              className="btn-primary"
             >
               Create draft
             </button>
             <button
               onClick={onCancelCreate}
-              className="bg-dark border border-dark-border text-text-secondary px-4 py-2 rounded-lg hover:text-text-primary"
+              className="btn-secondary"
             >
               Cancel
             </button>
@@ -383,39 +383,44 @@ function PagesTab({
                       <button
                         onClick={() => onBuildUrl(p)}
                         title="Build campaign URL"
+                        aria-label={`Build campaign URL for ${p.title}`}
                         className="p-2 text-text-secondary hover:text-cyber-green"
                       >
-                        <FaLink />
+                        <FaLink aria-hidden="true" />
                       </button>
                       <button
                         onClick={() => onCopyLink(p.slug)}
                         title="Copy public link"
+                        aria-label={`Copy public link for ${p.title}`}
                         className="p-2 text-text-secondary hover:text-cyber-green"
                       >
-                        <FaCopy />
+                        <FaCopy aria-hidden="true" />
                       </button>
                       <a
                         href={`/lp/${p.slug}`}
                         target="_blank"
                         rel="noopener"
                         title="Open"
+                        aria-label={`Open ${p.title}`}
                         className="p-2 text-text-secondary hover:text-cyber-green"
                       >
-                        <FaExternalLinkAlt />
+                        <FaExternalLinkAlt aria-hidden="true" />
                       </a>
                       <button
                         onClick={() => onEdit(p)}
                         title="Edit"
+                        aria-label={`Edit ${p.title}`}
                         className="p-2 text-text-secondary hover:text-cyber-green"
                       >
-                        <FaEdit />
+                        <FaEdit aria-hidden="true" />
                       </button>
                       <button
                         onClick={() => onDelete(p.id)}
                         title="Delete"
+                        aria-label={`Delete ${p.title}`}
                         className="p-2 text-text-secondary hover:text-red-400"
                       >
-                        <FaTrash />
+                        <FaTrash aria-hidden="true" />
                       </button>
                     </div>
                   </td>
@@ -450,8 +455,8 @@ function EditModal({
       <div className="bg-dark-card border border-dark-border rounded-xl max-w-4xl w-full my-8">
         <div className="flex items-center justify-between p-4 border-b border-dark-border sticky top-0 bg-dark-card z-10">
           <h2 className="text-xl font-bold">Edit landing page</h2>
-          <button onClick={onCancel} className="p-2 text-text-secondary hover:text-text-primary">
-            <FaTimes />
+          <button onClick={onCancel} className="p-2 text-text-secondary hover:text-text-primary" aria-label="Close">
+            <FaTimes aria-hidden="true" />
           </button>
         </div>
 
@@ -596,7 +601,7 @@ function EditModal({
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wide">Benefits</h3>
               <button onClick={addBenefit} className="text-xs text-cyber-green hover:underline">
-                <FaPlus className="inline mr-1" /> Add benefit
+                <FaPlus className="inline mr-1" aria-hidden="true" /> Add benefit
               </button>
             </div>
             <div className="space-y-2">
@@ -619,8 +624,9 @@ function EditModal({
                   <button
                     onClick={() => removeBenefit(i)}
                     className="col-span-1 text-text-secondary hover:text-red-400 flex items-center justify-center"
+                    aria-label={`Remove benefit ${i + 1}`}
                   >
-                    <FaTrash />
+                    <FaTrash aria-hidden="true" />
                   </button>
                 </div>
               ))}
@@ -686,33 +692,19 @@ function EditModal({
         <div className="flex justify-end gap-2 p-4 border-t border-dark-border sticky bottom-0 bg-dark-card">
           <button
             onClick={onCancel}
-            className="bg-dark border border-dark-border text-text-secondary px-4 py-2 rounded-lg hover:text-text-primary"
+            className="btn-secondary"
           >
             Cancel
           </button>
           <button
             onClick={() => onSave(draft)}
-            className="bg-cyber-green text-dark font-semibold px-4 py-2 rounded-lg hover:bg-cyber-green/90"
+            className="btn-primary"
           >
-            <FaCheck className="inline mr-2" />
+            <FaCheck aria-hidden="true" />
             Save
           </button>
         </div>
       </div>
-      <style jsx>{`
-        :global(.input) {
-          width: 100%;
-          background: #0a0a0a;
-          border: 1px solid #2a2a2a;
-          border-radius: 8px;
-          padding: 8px 12px;
-          color: var(--text-primary, #fff);
-        }
-        :global(.input:focus) {
-          outline: none;
-          border-color: #00FF41;
-        }
-      `}</style>
     </div>
   );
 }
@@ -817,7 +809,7 @@ function LeadsTab({
                     onClick={() => onDelete(l.id)}
                     className="text-xs px-3 py-1 rounded-full border border-red-500/40 text-red-400 hover:bg-red-500/10 ml-auto"
                   >
-                    <FaTrash className="inline mr-1" /> Delete
+                    <FaTrash className="inline mr-1" aria-hidden="true" /> Delete
                   </button>
                 </div>
               </div>
@@ -872,7 +864,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (v: string)
             onClick={() => onChange(c)}
             title={c}
             aria-label={`Use ${c}`}
-            className="w-5 h-5 rounded-full border border-dark-border hover:scale-110 transition-transform"
+            className="w-5 h-5 rounded-full border border-dark-border"
             style={{ backgroundColor: c }}
           />
         ))}
@@ -904,7 +896,7 @@ function MediaPickerField({
               <video src={url} muted playsInline className="w-full h-full object-cover" />
             )
           ) : (
-            <FaImage className="text-3xl text-text-muted" />
+            <FaImage className="text-3xl text-text-muted" aria-hidden="true" />
           )}
         </div>
         <div className="space-y-3">
@@ -912,9 +904,9 @@ function MediaPickerField({
             <button
               type="button"
               onClick={() => setPicking(true)}
-              className="inline-flex items-center gap-2 bg-cyber-green text-dark font-semibold px-3 py-2 rounded-lg hover:bg-cyber-green/90"
+              className="btn-secondary"
             >
-              <FaImage /> Choose from gallery
+              <FaImage aria-hidden="true" /> Choose from gallery
             </button>
             {url && (
               <button
@@ -1009,8 +1001,8 @@ function MediaGalleryModal({
       <div className="bg-dark-card border border-dark-border rounded-xl max-w-5xl w-full my-8">
         <div className="flex items-center justify-between p-4 border-b border-dark-border sticky top-0 bg-dark-card z-10">
           <h2 className="text-xl font-bold">Media gallery</h2>
-          <button onClick={onClose} className="p-2 text-text-secondary hover:text-text-primary">
-            <FaTimes />
+          <button onClick={onClose} className="p-2 text-text-secondary hover:text-text-primary" aria-label="Close">
+            <FaTimes aria-hidden="true" />
           </button>
         </div>
         <div className="p-4 border-b border-dark-border flex flex-wrap gap-3 items-center">
@@ -1071,7 +1063,7 @@ function MediaGalleryModal({
                     </div>
                     <div className="px-2 py-1.5">
                       <div className="text-xs text-text-primary truncate">{item.filename}</div>
-                      <div className="text-[10px] text-text-muted">{item.type}</div>
+                      <div className="text-xs text-text-muted">{item.type}</div>
                     </div>
                   </button>
                 );
@@ -1137,8 +1129,8 @@ function CampaignUrlModal({ lp, onClose }: { lp: LandingPage; onClose: () => voi
             <h2 className="text-xl font-bold">Build campaign URL</h2>
             <p className="text-xs text-text-muted font-mono">/lp/{lp.slug}</p>
           </div>
-          <button onClick={onClose} className="p-2 text-text-secondary hover:text-text-primary">
-            <FaTimes />
+          <button onClick={onClose} className="p-2 text-text-secondary hover:text-text-primary" aria-label="Close">
+            <FaTimes aria-hidden="true" />
           </button>
         </div>
 
@@ -1227,15 +1219,15 @@ function CampaignUrlModal({ lp, onClose }: { lp: LandingPage; onClose: () => voi
         <div className="flex justify-end gap-2 p-4 border-t border-dark-border">
           <button
             onClick={onClose}
-            className="bg-dark border border-dark-border text-text-secondary px-4 py-2 rounded-lg hover:text-text-primary"
+            className="btn-secondary"
           >
             Close
           </button>
           <button
             onClick={handleCopy}
-            className="bg-cyber-green text-dark font-semibold px-4 py-2 rounded-lg hover:bg-cyber-green/90 inline-flex items-center gap-2"
+            className="btn-primary"
           >
-            <FaCopy /> Copy URL
+            <FaCopy aria-hidden="true" /> Copy URL
           </button>
         </div>
       </div>

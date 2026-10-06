@@ -1,7 +1,7 @@
 'use client';
 import { useState, useCallback } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaKey, FaGlobe, FaCheck, FaTimes, FaEye, FaEyeSlash, FaSync, FaTrash } from 'react-icons/fa';
+import { FaKey, FaGlobe, FaCheck, FaEye, FaEyeSlash, FaSync, FaTrash, FaCheckCircle, FaTimesCircle, FaExclamationTriangle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 interface GA4Config {
@@ -86,11 +86,11 @@ export default function AnalyticsSetupPage() {
       setTestResults(data.results || []);
 
       if (data.status === 'success') {
-        toast.success('✓ All credentials verified!');
+        toast.success('All credentials verified!');
       } else if (data.status === 'warning') {
-        toast('⚠ Some credentials need attention', { icon: '⚠️' });
+        toast('Some credentials need attention', { icon: <FaExclamationTriangle className="text-yellow-400" aria-hidden="true" /> });
       } else {
-        toast.error('✗ Configuration test failed');
+        toast.error('Configuration test failed');
       }
     } catch (error) {
       toast.error('Failed to test configuration');
@@ -124,7 +124,7 @@ export default function AnalyticsSetupPage() {
           keyId: !!config.keyId,
           projectId: !!config.projectId,
         });
-        toast.success('✓ Analytics configuration saved!');
+        toast.success('Analytics configuration saved!');
       } else {
         toast.error(data.message || 'Failed to save configuration');
       }
@@ -163,7 +163,7 @@ export default function AnalyticsSetupPage() {
           projectId: !!newConfig.projectId,
         });
         
-        toast.success('✓ JSON file loaded successfully!');
+        toast.success('JSON file loaded successfully!');
       } catch (error) {
         toast.error('Failed to parse JSON file');
         console.error(error);
@@ -191,7 +191,7 @@ export default function AnalyticsSetupPage() {
         keyId: false,
         projectId: false,
       });
-      toast.success('✓ Credentials cleared');
+      toast.success('Credentials cleared');
     }
   };
 
@@ -221,13 +221,13 @@ export default function AnalyticsSetupPage() {
       <div className="card-dark p-6 mb-8 border-l-4 border-cyber-green">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-bold text-cyber-green mb-2">📤 Quick Setup: Upload Service Account JSON</h3>
+            <h3 className="text-lg font-bold text-cyber-green mb-2">Quick Setup: Upload Service Account JSON</h3>
             <p className="text-text-secondary text-sm">Upload your Google service account JSON file to automatically populate all fields</p>
           </div>
         </div>
         <div className="flex items-center space-x-4">
           <label className="btn-primary cursor-pointer flex items-center space-x-2">
-            <FaKey />
+            <FaKey aria-hidden="true" />
             <span>Choose JSON File</span>
             <input
               type="file"
@@ -249,12 +249,12 @@ export default function AnalyticsSetupPage() {
         <div className="card-dark p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
-              <FaGlobe className="text-cyber-green" />
+              <FaGlobe className="text-cyber-green" aria-hidden="true" />
               <label className="text-lg font-bold text-text-primary">Property ID</label>
               <span className="text-xs px-2 py-1 rounded bg-cyber-green/20 text-cyber-green">PUBLIC</span>
             </div>
-            <div className={`text-sm px-3 py-1 rounded font-bold ${statusBadges.propertyId ? 'bg-cyber-green/20 text-cyber-green' : 'bg-red-500/20 text-red-400'}`}>
-              {statusBadges.propertyId ? '✅ SET' : '❌ EMPTY'}
+            <div className={`inline-flex items-center gap-1.5 text-sm px-3 py-1 rounded font-bold ${statusBadges.propertyId ? 'bg-cyber-green/20 text-cyber-green' : 'bg-red-500/20 text-red-400'}`}>
+              {statusBadges.propertyId ? <><FaCheckCircle className="text-green-400" aria-hidden="true" />SET</> : <><FaTimesCircle className="text-red-400" aria-hidden="true" />EMPTY</>}
             </div>
           </div>
           <input
@@ -271,12 +271,12 @@ export default function AnalyticsSetupPage() {
         <div className="card-dark p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
-              <FaKey className="text-cyber-cyan" />
+              <FaKey className="text-cyber-cyan" aria-hidden="true" />
               <label className="text-lg font-bold text-text-primary">Service Account Email</label>
               <span className="text-xs px-2 py-1 rounded bg-cyber-cyan/20 text-cyber-cyan">PUBLIC</span>
             </div>
-            <div className={`text-sm px-3 py-1 rounded font-bold ${statusBadges.serviceAccountEmail ? 'bg-cyber-green/20 text-cyber-green' : 'bg-red-500/20 text-red-400'}`}>
-              {statusBadges.serviceAccountEmail ? '✅ SET' : '❌ EMPTY'}
+            <div className={`inline-flex items-center gap-1.5 text-sm px-3 py-1 rounded font-bold ${statusBadges.serviceAccountEmail ? 'bg-cyber-green/20 text-cyber-green' : 'bg-red-500/20 text-red-400'}`}>
+              {statusBadges.serviceAccountEmail ? <><FaCheckCircle className="text-green-400" aria-hidden="true" />SET</> : <><FaTimesCircle className="text-red-400" aria-hidden="true" />EMPTY</>}
             </div>
           </div>
           <input
@@ -293,12 +293,12 @@ export default function AnalyticsSetupPage() {
         <div className="card-dark p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
-              <FaGlobe className="text-cyber-blue" />
+              <FaGlobe className="text-cyber-blue" aria-hidden="true" />
               <label className="text-lg font-bold text-text-primary">Project ID</label>
               <span className="text-xs px-2 py-1 rounded bg-cyber-blue/20 text-cyber-blue">PUBLIC</span>
             </div>
-            <div className={`text-sm px-3 py-1 rounded font-bold ${statusBadges.projectId ? 'bg-cyber-green/20 text-cyber-green' : 'bg-red-500/20 text-red-400'}`}>
-              {statusBadges.projectId ? '✅ SET' : '❌ EMPTY'}
+            <div className={`inline-flex items-center gap-1.5 text-sm px-3 py-1 rounded font-bold ${statusBadges.projectId ? 'bg-cyber-green/20 text-cyber-green' : 'bg-red-500/20 text-red-400'}`}>
+              {statusBadges.projectId ? <><FaCheckCircle className="text-green-400" aria-hidden="true" />SET</> : <><FaTimesCircle className="text-red-400" aria-hidden="true" />EMPTY</>}
             </div>
           </div>
           <input
@@ -315,12 +315,12 @@ export default function AnalyticsSetupPage() {
         <div className="card-dark p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
-              <FaKey className="text-cyber-purple" />
+              <FaKey className="text-cyber-purple" aria-hidden="true" />
               <label className="text-lg font-bold text-text-primary">Key ID</label>
               <span className="text-xs px-2 py-1 rounded bg-cyber-purple/20 text-cyber-purple">PUBLIC</span>
             </div>
-            <div className={`text-sm px-3 py-1 rounded font-bold ${statusBadges.keyId ? 'bg-cyber-green/20 text-cyber-green' : 'bg-red-500/20 text-red-400'}`}>
-              {statusBadges.keyId ? '✅ SET' : '❌ EMPTY'}
+            <div className={`inline-flex items-center gap-1.5 text-sm px-3 py-1 rounded font-bold ${statusBadges.keyId ? 'bg-cyber-green/20 text-cyber-green' : 'bg-red-500/20 text-red-400'}`}>
+              {statusBadges.keyId ? <><FaCheckCircle className="text-green-400" aria-hidden="true" />SET</> : <><FaTimesCircle className="text-red-400" aria-hidden="true" />EMPTY</>}
             </div>
           </div>
           <input
@@ -337,12 +337,12 @@ export default function AnalyticsSetupPage() {
         <div className="card-dark p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
-              <FaKey className="text-red-500" />
+              <FaKey className="text-red-500" aria-hidden="true" />
               <label className="text-lg font-bold text-text-primary">Private Key</label>
               <span className="text-xs px-2 py-1 rounded bg-red-500/20 text-red-400">SECRET</span>
             </div>
-            <div className={`text-sm px-3 py-1 rounded font-bold ${statusBadges.privateKey ? 'bg-cyber-green/20 text-cyber-green' : 'bg-red-500/20 text-red-400'}`}>
-              {statusBadges.privateKey ? '✅ SET' : '❌ EMPTY'}
+            <div className={`inline-flex items-center gap-1.5 text-sm px-3 py-1 rounded font-bold ${statusBadges.privateKey ? 'bg-cyber-green/20 text-cyber-green' : 'bg-red-500/20 text-red-400'}`}>
+              {statusBadges.privateKey ? <><FaCheckCircle className="text-green-400" aria-hidden="true" />SET</> : <><FaTimesCircle className="text-red-400" aria-hidden="true" />EMPTY</>}
             </div>
           </div>
           <div className="relative">
@@ -354,9 +354,10 @@ export default function AnalyticsSetupPage() {
             />
             <button
               onClick={() => setShowPrivateKey(!showPrivateKey)}
+              aria-label={showPrivateKey ? 'Hide private key' : 'Show private key'}
               className="absolute right-3 top-3 text-text-secondary hover:text-text-primary transition"
             >
-              {showPrivateKey ? <FaEyeSlash /> : <FaEye />}
+              {showPrivateKey ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
             </button>
           </div>
           <p className="text-xs text-text-secondary mt-2">The "private_key" value from your Google Cloud JSON key (keep this secure!)</p>
@@ -372,11 +373,11 @@ export default function AnalyticsSetupPage() {
               <div key={idx} className="flex items-start space-x-3 p-3 bg-dark-lighter rounded-lg">
                 <div className="mt-1">
                   {result.status === 'success' ? (
-                    <FaCheck className="text-cyber-green" />
+                    <FaCheckCircle className="text-green-400" aria-hidden="true" />
                   ) : result.status === 'warning' ? (
-                    <div className="text-yellow-500">⚠</div>
+                    <FaExclamationTriangle className="text-yellow-400" aria-hidden="true" />
                   ) : (
-                    <FaTimes className="text-red-500" />
+                    <FaTimesCircle className="text-red-400" aria-hidden="true" />
                   )}
                 </div>
                 <div className="flex-1">
@@ -398,7 +399,7 @@ export default function AnalyticsSetupPage() {
           disabled={loading || testing}
           className="btn-secondary flex items-center space-x-2 disabled:opacity-50"
         >
-          <FaSync className={testing ? 'animate-spin' : ''} />
+          <FaSync className={testing ? 'animate-spin' : ''} aria-hidden="true" />
           <span>{testing ? 'Testing...' : 'Test Configuration'}</span>
         </button>
         <button
@@ -406,7 +407,7 @@ export default function AnalyticsSetupPage() {
           disabled={loading || testing}
           className="btn-primary flex items-center space-x-2 disabled:opacity-50"
         >
-          <FaCheck />
+          <FaCheck aria-hidden="true" />
           <span>{loading ? 'Saving...' : 'Save All Configuration'}</span>
         </button>
         <button
@@ -414,7 +415,7 @@ export default function AnalyticsSetupPage() {
           disabled={loading || testing}
           className="btn-danger flex items-center space-x-2 disabled:opacity-50"
         >
-          <FaTrash />
+          <FaTrash aria-hidden="true" />
           <span>Clear All</span>
         </button>
       </div>

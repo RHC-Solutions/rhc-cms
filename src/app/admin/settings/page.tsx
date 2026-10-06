@@ -285,7 +285,7 @@ export default function SettingsPage() {
       {/* General Settings */}
       <div className="card-cyber p-8 mb-8">
         <div className="flex items-center space-x-3 mb-6">
-          <FaCog className="text-3xl text-cyber-green" />
+          <FaCog className="text-3xl text-cyber-green" aria-hidden="true" />
           <h2 className="text-xl font-bold text-text-primary">General Settings</h2>
         </div>
         <div className="space-y-6">
@@ -338,7 +338,7 @@ export default function SettingsPage() {
       {/* Homepage Content */}
       <div className="card-cyber p-8 mb-8">
         <div className="flex items-center space-x-3 mb-6">
-          <FaGlobe className="text-3xl text-cyber-green" />
+          <FaGlobe className="text-3xl text-cyber-green" aria-hidden="true" />
           <h2 className="text-xl font-bold text-text-primary">Homepage Content</h2>
         </div>
         <p className="text-text-secondary text-sm mb-6">
@@ -520,7 +520,7 @@ export default function SettingsPage() {
       {/* Contact Page */}
       <div className="card-cyber p-8 mb-8">
         <div className="flex items-center space-x-3 mb-6">
-          <FaEnvelope className="text-3xl text-cyber-green" />
+          <FaEnvelope className="text-3xl text-cyber-green" aria-hidden="true" />
           <h2 className="text-xl font-bold text-text-primary">Contact Page</h2>
         </div>
         <p className="text-text-secondary text-sm mb-6">Copy on the /contact page. The contact methods themselves are set under Contact Information above.</p>
@@ -586,7 +586,7 @@ export default function SettingsPage() {
       {/* Contact Information */}
       <div className="card-cyber p-8 mb-8">
         <div className="flex items-center space-x-3 mb-6">
-          <FaEnvelope className="text-3xl text-cyber-cyan" />
+          <FaEnvelope className="text-3xl text-cyber-cyan" aria-hidden="true" />
           <h2 className="text-xl font-bold text-text-primary">Contact Information</h2>
         </div>
         <div className="space-y-6">
@@ -676,7 +676,7 @@ export default function SettingsPage() {
       {/* Regional Settings */}
       <div className="card-cyber p-8 mb-8">
         <div className="flex items-center space-x-3 mb-6">
-          <FaGlobe className="text-3xl text-cyber-blue" />
+          <FaGlobe className="text-3xl text-cyber-blue" aria-hidden="true" />
           <h2 className="text-xl font-bold text-text-primary">Regional Settings</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -723,7 +723,7 @@ export default function SettingsPage() {
       {/* Security Settings */}
       <div className="card-cyber p-8 mb-8">
         <div className="flex items-center space-x-3 mb-6">
-          <FaShieldAlt className="text-3xl text-cyber-red" />
+          <FaShieldAlt className="text-3xl text-cyber-red" aria-hidden="true" />
           <h2 className="text-xl font-bold text-text-primary">Security & Maintenance</h2>
         </div>
         <div className="space-y-4">

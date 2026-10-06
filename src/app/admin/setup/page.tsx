@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { FaUser, FaLock, FaShieldAlt, FaCheckCircle } from 'react-icons/fa';
+import { FaCheckCircle, FaExclamationCircle, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
 import QRCode from 'qrcode';
 
 export default function SetupWizard() {
@@ -114,276 +113,191 @@ export default function SetupWizard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
-        <div className="text-white text-xl">Checking setup status...</div>
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <p role="status" className="flex items-center gap-2 text-sm text-text-secondary">
+          <FaSpinner className="animate-spin" aria-hidden="true" />
+          Checking setup status...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="transition-stage">
-      <div className="transition-overlay" />
-      <div className="min-h-screen flex items-center justify-center p-4 transition-container">
-        <div className="bg-gray-800 rounded-lg shadow-2xl max-w-2xl w-full p-8 border border-gray-700 transition-card transition-delay-2">
-        {/* Header */}
-        <div className="text-center mb-8 transition-slide-up transition-delay-3">
-          <Image
-            src="/logo.png"
-            alt="RHC Solutions"
-            width={64}
-            height={64}
-            priority
-            className="w-16 h-16 object-contain mx-auto mb-4"
-          />
-          <h1 className="heading-xl text-gradient mb-2">
-            Welcome to Admin by RHC Solutions
+    <div className="min-h-screen flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-md">
+        <p className="mb-6 text-center text-[15px] font-bold tracking-[-0.01em] text-text-primary">
+          <span className="text-[var(--adm-accent)]">RHC</span> Admin
+        </p>
+
+        <div className="card-cyber p-5 sm:p-8">
+          {/* Header */}
+          <p className="text-xs font-medium text-text-muted">Step {step} of 2</p>
+          <h1 className="mt-1 text-xl font-semibold text-text-primary">
+            {step === 1 ? 'Set up your administrator account' : 'Set up two-factor authentication'}
           </h1>
-          <p className="text-gray-400">
+          <p className="mt-1 mb-6 text-sm text-text-secondary">
             {step === 1
-              ? 'Let\'s set up your administrator account'
-              : 'Set up Two-Factor Authentication'}
+              ? 'Welcome. Create the first admin account to finish setting up the panel.'
+              : 'Required to sign in. Use Google Authenticator, Authy, or any TOTP-compatible app.'}
           </p>
-        </div>
 
-        {/* Progress Indicator */}
-        <div className="flex items-center justify-center mb-8 transition-slide-up transition-delay-4">
-          <div className="flex items-center">
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                step >= 1
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-700 text-gray-400'
-              }`}
-            >
-              <FaUser />
-            </div>
-            <div
-              className={`w-16 h-1 ${
-                step >= 2 ? 'bg-blue-500' : 'bg-gray-700'
-              }`}
-            />
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                step >= 2
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-700 text-gray-400'
-              }`}
-            >
-              <FaShieldAlt />
-            </div>
-          </div>
-        </div>
-
-        {/* Step 1: Admin Account */}
-        {step === 1 && (
-          <form onSubmit={handleSubmit} className="space-y-6 transition-slide-up transition-delay-5">
-            {error && (
-              <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded">
-                {error}
-              </div>
-            )}
-
-            <div>
-              <label className="block text-gray-300 font-semibold mb-2">
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none"
-                placeholder="John Doe"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-300 font-semibold mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none"
-                placeholder="admin@example.com"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-300 font-semibold mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none"
-                placeholder="Minimum 8 characters"
-                required
-                minLength={8}
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-300 font-semibold mb-2">
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                value={formData.confirmPassword}
-                onChange={(e) =>
-                  setFormData({ ...formData, confirmPassword: e.target.value })
-                }
-                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none"
-                placeholder="Re-enter password"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition flex items-center justify-center gap-2"
-            >
-              {submitting ? (
-                'Creating Account...'
-              ) : (
-                <>
-                  Continue <FaLock />
-                </>
+          {/* Step 1: Admin Account */}
+          {step === 1 && (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {error && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2.5 text-sm text-red-300"
+                >
+                  <FaExclamationCircle className="mt-0.5 shrink-0" aria-hidden="true" />
+                  <span>{error}</span>
+                </div>
               )}
-            </button>
-          </form>
-        )}
 
-        {/* Step 2: 2FA Setup */}
-        {step === 2 && mfaData && (
-          <div className="space-y-6 transition-slide-up transition-delay-5">
-            <div className="bg-green-900 bg-opacity-30 border border-green-700 text-green-200 px-4 py-3 rounded flex items-center gap-2">
-              <FaCheckCircle />
-              <span>Admin account created successfully!</span>
-            </div>
-
-            <div className="text-center">
-              <h3 className="text-xl font-semibold text-white mb-4">
-                Scan this QR Code with your authenticator app
-              </h3>
-              <p className="text-gray-400 mb-6">
-                Use Google Authenticator, Authy, or any TOTP-compatible app
-              </p>
-
-              <div className="bg-white p-4 rounded-lg inline-block">
-                <img
-                  src={mfaData.qrCodeDataURL}
-                  alt="2FA QR Code"
-                  className="w-64 h-64"
+              <div>
+                <label htmlFor="setup-name" className="block text-sm font-medium mb-1.5">
+                  Full name
+                </label>
+                <input
+                  id="setup-name"
+                  type="text"
+                  autoComplete="name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  className="input py-2.5"
+                  placeholder="John Doe"
+                  required
                 />
               </div>
-            </div>
 
-            <div className="bg-gray-700 p-4 rounded-lg">
-              <p className="text-gray-300 text-sm mb-2">
-                Can't scan? Enter this secret key manually:
-              </p>
-              <code className="text-blue-300 font-mono text-lg break-all">
-                {mfaData.secret}
-              </code>
-            </div>
+              <div>
+                <label htmlFor="setup-email" className="block text-sm font-medium mb-1.5">
+                  Email address
+                </label>
+                <input
+                  id="setup-email"
+                  type="email"
+                  autoComplete="username"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  className="input py-2.5"
+                  placeholder="admin@example.com"
+                  required
+                />
+              </div>
 
-            <div className="bg-yellow-900 bg-opacity-30 border border-yellow-700 text-yellow-200 px-4 py-3 rounded text-sm">
-              ⚠️ <strong>Important:</strong> Save this secret key in a safe
-              place. You'll need your authenticator app to log in.
-            </div>
+              <div>
+                <label htmlFor="setup-password" className="block text-sm font-medium mb-1.5">
+                  Password
+                </label>
+                <input
+                  id="setup-password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  aria-describedby="setup-password-hint"
+                  className="input py-2.5"
+                  required
+                  minLength={8}
+                />
+                <p id="setup-password-hint" className="mt-1.5 text-xs text-text-muted">
+                  At least 8 characters.
+                </p>
+              </div>
 
-            <button
-              onClick={handleFinish}
-              className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition flex items-center justify-center gap-2"
-            >
-              <FaCheckCircle />
-              Complete Setup & Go to Login
-            </button>
-          </div>
-        )}
+              <div>
+                <label htmlFor="setup-confirm-password" className="block text-sm font-medium mb-1.5">
+                  Confirm password
+                </label>
+                <input
+                  id="setup-confirm-password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={formData.confirmPassword}
+                  onChange={(e) =>
+                    setFormData({ ...formData, confirmPassword: e.target.value })
+                  }
+                  className="input py-2.5"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="btn-primary w-full py-2.5"
+              >
+                {submitting ? (
+                  <>
+                    <FaSpinner className="animate-spin" aria-hidden="true" />
+                    Creating account...
+                  </>
+                ) : (
+                  'Continue'
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* Step 2: 2FA Setup */}
+          {step === 2 && mfaData && (
+            <div className="space-y-5">
+              <div
+                role="status"
+                className="flex items-start gap-2 rounded-lg border border-cyber-green/40 bg-cyber-green/10 px-3 py-2.5 text-sm text-cyber-green"
+              >
+                <FaCheckCircle className="mt-0.5 shrink-0" aria-hidden="true" />
+                <span>Admin account created.</span>
+              </div>
+
+              <div className="text-center">
+                <p className="mb-3 text-sm text-text-secondary">
+                  Scan this QR code with your authenticator app.
+                </p>
+                <div className="inline-block rounded-lg bg-white p-3">
+                  <img
+                    src={mfaData.qrCodeDataURL}
+                    alt="QR code for two-factor authentication"
+                    className="w-48 h-48 sm:w-56 sm:h-56"
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-dark-border bg-dark-lighter p-3">
+                <p className="mb-1 text-sm text-text-secondary">
+                  Can't scan? Enter this secret key manually:
+                </p>
+                <code className="block break-all select-all text-sm text-text-primary">
+                  {mfaData.secret}
+                </code>
+              </div>
+
+              <div className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-200">
+                <FaExclamationTriangle className="mt-0.5 shrink-0" aria-hidden="true" />
+                <span>
+                  <strong>Important:</strong> Save this secret key in a safe
+                  place. You'll need your authenticator app to log in.
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleFinish}
+                className="btn-primary w-full py-2.5"
+              >
+                Complete setup and go to login
+              </button>
+            </div>
+          )}
         </div>
       </div>
-      <style jsx>{`
-        .transition-stage {
-          position: relative;
-          min-height: 100vh;
-          background: radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.12), transparent 25%),
-            radial-gradient(circle at 80% 0%, rgba(168, 85, 247, 0.12), transparent 30%),
-            #0b1020;
-          overflow: hidden;
-        }
-
-        .transition-overlay {
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(135deg, rgba(17, 24, 39, 0.92), rgba(15, 23, 42, 0.92));
-          z-index: 0;
-          animation: transition-overlay 1s ease forwards;
-          transform-origin: right;
-        }
-
-        .transition-container {
-          position: relative;
-          z-index: 1;
-          animation: transition-expand 0.8s ease forwards;
-          transform: translateX(1200px);
-        }
-
-        .transition-card {
-          animation: transition-slide-up 0.8s ease forwards;
-          transform: translateY(80px);
-          opacity: 0;
-        }
-
-        .transition-slide-up {
-          animation: transition-slide-up 0.8s ease forwards;
-          transform: translateY(80px);
-          opacity: 0;
-        }
-
-        .transition-delay-1 { animation-delay: 0.15s; }
-        .transition-delay-2 { animation-delay: 0.25s; }
-        .transition-delay-3 { animation-delay: 0.35s; }
-        .transition-delay-4 { animation-delay: 0.45s; }
-        .transition-delay-5 { animation-delay: 0.55s; }
-
-        @keyframes transition-expand {
-          from { transform: translateX(1200px); }
-          to { transform: translateX(0); }
-        }
-
-        @keyframes transition-slide-up {
-          from { transform: translateY(80px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-
-        @keyframes transition-overlay {
-          from { transform: scaleX(1.1); opacity: 0; }
-          to { transform: scaleX(1); opacity: 1; }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .transition-container,
-          .transition-card,
-          .transition-slide-up,
-          .transition-overlay {
-            animation: none !important;
-            transform: none !important;
-            opacity: 1 !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }
