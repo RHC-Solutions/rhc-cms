@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getClientIp as clientIpFromHeaders } from '@adminpanel/lib/auth/client-ip';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
@@ -21,10 +22,11 @@ const ACCOUNT_COOLDOWN_MS = 60 * 60 * 1000;
 const ipBucket = new Map<string, number[]>();
 const accountLastReset = new Map<string, number>();
 
+// The leftmost X-Forwarded-For entry is client-controlled, so trusting it let an
+// attacker dodge the reset rate limit or lock out a victim's IP. Use the shared
+// precedence (cf-connecting-ip first, rightmost XFF last).
 function getClientIp(req: NextRequest): string {
-  const xff = req.headers.get('x-forwarded-for');
-  if (xff) return xff.split(',')[0].trim();
-  return req.headers.get('cf-connecting-ip') || req.headers.get('x-real-ip') || 'unknown';
+  return clientIpFromHeaders((name) => req.headers.get(name));
 }
 
 function ipRateLimited(ip: string): boolean {

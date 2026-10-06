@@ -171,7 +171,7 @@ export default function SEOManagement() {
         <p className="text-text-secondary">Optimize your website for search engines</p>
       </div>
 
-      <div className="flex space-x-4 mb-6 border-b border-dark-border">
+      <div className="flex gap-1 mb-6 border-b border-dark-border overflow-x-auto">
         {(['global', 'sitemap', 'google', 'ahrefs', 'hotjar', 'ipinfo'] as const).map((tab) => (
           <button
             key={tab}
@@ -182,7 +182,7 @@ export default function SEOManagement() {
                 : 'text-text-secondary hover:text-text-primary'
             }`}
           >
-            {tab === 'sitemap' ? '🗺️ Sitemap' : tab === 'google' ? 'Google' : tab === 'ahrefs' ? '🔗 Ahrefs' : tab === 'hotjar' ? '🔥 Hotjar' : tab === 'ipinfo' ? '🌍 IPinfo' : 'Global'}
+            {tab === 'sitemap' ? 'Sitemap' : tab === 'google' ? 'Google' : tab === 'ahrefs' ? 'Ahrefs' : tab === 'hotjar' ? 'Hotjar' : tab === 'ipinfo' ? 'IPinfo' : 'Global'}
           </button>
         ))}
       </div>
@@ -271,7 +271,7 @@ export default function SEOManagement() {
         {activeTab === 'sitemap' && (
           <div className="card-cyber p-8">
             <h2 className="heading-md text-gradient mb-6 flex items-center gap-2">
-              <FaSitemap className="text-cyber-green" />
+              <FaSitemap className="text-cyber-green" aria-hidden="true" />
               Sitemap (served live)
             </h2>
             <p className="text-text-secondary mb-6">
@@ -280,7 +280,7 @@ export default function SEOManagement() {
 
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
               <div className="flex items-center gap-3">
-                <FaSitemap className="text-2xl text-cyber-cyan" />
+                <FaSitemap className="text-2xl text-cyber-cyan" aria-hidden="true" />
                 <div>
                   <p className="text-text-primary font-semibold">Current sitemap.xml</p>
                   <p className="text-text-secondary text-sm">Served at /sitemap.xml using your live domain</p>
@@ -297,18 +297,19 @@ export default function SEOManagement() {
             </div>
 
             {sitemapStatus?.generated && (
-              <div className="bg-green-900/30 border border-green-600 text-green-200 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
-                <FaCheckCircle />
+              <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-sm text-text-primary mb-6 flex items-center gap-2">
+                <FaCheckCircle className="text-green-400 shrink-0" aria-hidden="true" />
                 <span>Sitemap generated successfully on {sitemapStatus.date}</span>
               </div>
             )}
 
             <button
+              type="button"
               onClick={handleGenerateSitemap}
               disabled={generatingSitemap}
-              className="btn-primary px-8 py-3 flex items-center gap-2"
+              className="btn-secondary flex items-center gap-2"
             >
-              <FaSyncAlt className={generatingSitemap ? 'animate-spin' : ''} />
+              <FaSyncAlt className={generatingSitemap ? 'animate-spin' : ''} aria-hidden="true" />
               {generatingSitemap ? 'Clearing...' : 'Clear static sitemap'}
             </button>
 
@@ -327,7 +328,7 @@ export default function SEOManagement() {
         {activeTab === 'google' && (
           <div className="card-cyber p-8">
             <div className="flex items-start space-x-4 mb-6">
-              <FaGoogle className="text-4xl text-cyber-blue shrink-0 mt-1" />
+              <FaGoogle className="text-2xl text-cyber-blue shrink-0 mt-1" aria-hidden="true" />
               <div>
                 <h2 className="text-xl font-bold text-text-primary mb-2">Google Services</h2>
                 <p className="text-text-secondary">Integration with Google Tag Manager, Analytics, and Search Console</p>
@@ -349,7 +350,7 @@ export default function SEOManagement() {
 
               <div className="border border-dark-border rounded-lg p-4 bg-dark-card text-sm text-text-secondary space-y-3">
                 <div className="flex items-center gap-2 text-text-primary font-semibold">
-                  <FaGoogle />
+                  <FaGoogle aria-hidden="true" />
                   <span>Install Google Tag Manager (GTM)</span>
                 </div>
                 <p>Place the head snippet high in &lt;head&gt; and the noscript snippet right after &lt;body&gt;.</p>
@@ -420,7 +421,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                   rel="noopener noreferrer"
                   className="btn-secondary py-2 px-6 flex items-center justify-center space-x-2"
                 >
-                  <FaSearch />
+                  <FaSearch aria-hidden="true" />
                   <span>Open Search Console</span>
                 </a>
                 <a
@@ -429,7 +430,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                   rel="noopener noreferrer"
                   className="btn-secondary py-2 px-6 flex items-center justify-center space-x-2"
                 >
-                  <FaGoogle />
+                  <FaGoogle aria-hidden="true" />
                   <span>Open Analytics</span>
                 </a>
                 <a
@@ -438,7 +439,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                   rel="noopener noreferrer"
                   className="btn-secondary py-2 px-6 flex items-center justify-center space-x-2"
                 >
-                  <FaGoogle />
+                  <FaGoogle aria-hidden="true" />
                   <span>Open Tag Manager</span>
                 </a>
               </div>
@@ -450,13 +451,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   <div className={`p-4 rounded-lg border-2 ${
                     settings?.googleTagManagerId
-                      ? 'border-cyber-green bg-green-900/20'
+                      ? 'border-green-500/30 bg-green-500/10'
                       : 'border-dark-border bg-dark-card'
                   }`}>
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-text-primary">GTM Integration</span>
                       {settings?.googleTagManagerId ? (
-                        <FaCheckCircle className="text-cyber-green text-lg" />
+                        <span className="flex items-center gap-1.5 text-sm text-text-secondary"><FaCheckCircle className="text-green-400" aria-hidden="true" />Configured</span>
                       ) : (
                         <span className="text-text-muted text-sm">Not configured</span>
                       )}
@@ -465,13 +466,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
                   <div className={`p-4 rounded-lg border-2 ${
                     settings?.googleAnalytics4Id
-                      ? 'border-cyber-green bg-green-900/20'
+                      ? 'border-green-500/30 bg-green-500/10'
                       : 'border-dark-border bg-dark-card'
                   }`}>
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-text-primary">GA4 Integration</span>
                       {settings?.googleAnalytics4Id ? (
-                        <FaCheckCircle className="text-cyber-green text-lg" />
+                        <span className="flex items-center gap-1.5 text-sm text-text-secondary"><FaCheckCircle className="text-green-400" aria-hidden="true" />Configured</span>
                       ) : (
                         <span className="text-text-muted text-sm">Not configured</span>
                       )}
@@ -480,7 +481,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
                   <div className={`p-4 rounded-lg border-2 ${
                     googleIntegrationStatus?.sitemapSubmitted
-                      ? 'border-cyber-green bg-green-900/20'
+                      ? 'border-green-500/30 bg-green-500/10'
                       : 'border-dark-border bg-dark-card'
                   }`}>
                     <div className="flex items-center justify-between">
@@ -491,7 +492,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         )}
                       </div>
                       {googleIntegrationStatus?.sitemapSubmitted ? (
-                        <FaCheckCircle className="text-cyber-green text-lg" />
+                        <span className="flex items-center gap-1.5 text-sm text-text-secondary"><FaCheckCircle className="text-green-400" aria-hidden="true" />Submitted</span>
                       ) : (
                         <span className="text-text-muted text-sm">Not submitted</span>
                       )}
@@ -500,7 +501,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
                   <div className={`p-4 rounded-lg border-2 ${
                     googleIntegrationStatus?.robotsTxtSubmitted
-                      ? 'border-cyber-green bg-green-900/20'
+                      ? 'border-green-500/30 bg-green-500/10'
                       : 'border-dark-border bg-dark-card'
                   }`}>
                     <div className="flex items-center justify-between">
@@ -511,7 +512,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         )}
                       </div>
                       {googleIntegrationStatus?.robotsTxtSubmitted ? (
-                        <FaCheckCircle className="text-cyber-green text-lg" />
+                        <span className="flex items-center gap-1.5 text-sm text-text-secondary"><FaCheckCircle className="text-green-400" aria-hidden="true" />Submitted</span>
                       ) : (
                         <span className="text-text-muted text-sm">Not submitted</span>
                       )}
@@ -524,19 +525,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                   <p className="text-text-secondary text-sm mb-4">Submit your sitemap and robots.txt to Google Search Console automatically.</p>
                   <div className="flex flex-col gap-3">
                     <button
+                      type="button"
                       onClick={() => handleSubmitToGoogle('sitemap')}
                       disabled={submittingToGoogle}
                       className="btn-primary py-2 px-4 w-full flex items-center justify-center gap-2"
                     >
-                      <FaSyncAlt className={submittingToGoogle ? 'animate-spin' : ''} />
+                      <FaSyncAlt className={submittingToGoogle ? 'animate-spin' : ''} aria-hidden="true" />
                       {submittingToGoogle ? 'Submitting...' : 'Submit Sitemap to Google'}
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleSubmitToGoogle('robots')}
                       disabled={submittingToGoogle}
-                      className="btn-primary py-2 px-4 w-full flex items-center justify-center gap-2"
+                      className="btn-secondary py-2 px-4 w-full flex items-center justify-center gap-2"
                     >
-                      <FaSyncAlt className={submittingToGoogle ? 'animate-spin' : ''} />
+                      <FaSyncAlt className={submittingToGoogle ? 'animate-spin' : ''} aria-hidden="true" />
                       {submittingToGoogle ? 'Submitting...' : 'Submit Robots.txt to Google'}
                     </button>
                   </div>
@@ -549,7 +552,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         {activeTab === 'ahrefs' && (
           <div className="card-cyber p-8">
             <div className="flex items-start space-x-4 mb-6">
-              <FaLink className="text-4xl text-cyber-green shrink-0 mt-1" />
+              <FaLink className="text-2xl text-cyber-green shrink-0 mt-1" aria-hidden="true" />
               <div>
                 <h2 className="text-xl font-bold text-text-primary mb-2">Ahrefs Integration</h2>
                 <p className="text-text-secondary">Connect with Ahrefs for SEO analysis and backlink monitoring</p>
@@ -642,7 +645,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
               <div className="border border-dark-border rounded-lg p-4 bg-dark-card text-sm text-text-secondary space-y-3">
                 <div className="flex items-center gap-2 text-text-primary font-semibold">
-                  <FaLink />
+                  <FaLink aria-hidden="true" />
                   <span>
                     {(settings?.ahrefsInstallMethod || 'direct') === 'direct' 
                       ? 'Direct snippet (auto-injected into <head>):'
@@ -678,7 +681,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                   rel="noopener noreferrer"
                   className="btn-secondary py-2 px-6 flex items-center justify-center space-x-2"
                 >
-                  <FaLink />
+                  <FaLink aria-hidden="true" />
                   <span>Open Ahrefs Dashboard</span>
                 </a>
                 <a
@@ -687,7 +690,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                   rel="noopener noreferrer"
                   className="btn-secondary py-2 px-6 flex items-center justify-center space-x-2"
                 >
-                  <FaLink />
+                  <FaLink aria-hidden="true" />
                   <span>API Settings</span>
                 </a>
               </div>
@@ -702,13 +705,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               Connect with Hotjar for behavior analytics, heatmaps, and session recordings.
             </p>
 
-            <div className="border-l-4 border-l-purple-500 bg-purple-500/10 p-4 rounded-lg">
-              <h3 className="text-lg font-semibold text-purple-400 mb-2">🔥 Hotjar Features</h3>
-              <p className="text-text-muted text-sm mb-3">
+            <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-4 text-sm">
+              <h3 className="text-sm font-semibold text-purple-300 mb-2">Hotjar Features</h3>
+              <p className="text-text-secondary mb-3">
                 Hotjar provides behavior analytics and user feedback through heatmaps, session recordings, and surveys.
                 Get your Site ID from <a href="https://insights.hotjar.com/sites" target="_blank" rel="noopener noreferrer" className="text-cyber-blue hover:underline">Hotjar Dashboard</a>.
               </p>
-              <ul className="text-text-muted text-sm space-y-1 list-disc list-inside">
+              <ul className="text-text-secondary space-y-1 list-disc list-inside">
                 <li>Heatmaps - See where users click and scroll</li>
                 <li>Session Recordings - Watch real user sessions</li>
                 <li>Surveys - Collect user feedback</li>
@@ -746,7 +749,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
             <div className="border border-dark-border rounded-lg p-4 bg-dark-card text-sm text-text-secondary space-y-3">
               <div className="flex items-center gap-2 text-text-primary font-semibold">
-                <FaLink />
+                <FaLink aria-hidden="true" />
                 <span>Tracking code (auto-injected into &lt;head&gt;):</span>
               </div>
               <code className="block bg-dark-lighter p-3 rounded border border-dark-border text-xs whitespace-pre-wrap break-all text-text-primary">
@@ -773,7 +776,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 rel="noopener noreferrer"
                 className="btn-secondary py-2 px-6 flex items-center justify-center space-x-2"
               >
-                <FaLink />
+                <FaLink aria-hidden="true" />
                 <span>Open Hotjar Dashboard</span>
               </a>
               <a
@@ -782,7 +785,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 rel="noopener noreferrer"
                 className="btn-secondary py-2 px-6 flex items-center justify-center space-x-2"
               >
-                <FaLink />
+                <FaLink aria-hidden="true" />
                 <span>Installation Guide</span>
               </a>
             </div>
@@ -810,7 +813,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
             <div className="border border-dark-border rounded-lg p-4 bg-dark-card text-sm text-text-secondary space-y-3">
               <div className="flex items-center gap-2 text-text-primary font-semibold">
-                <FaLink />
+                <FaLink aria-hidden="true" />
                 <span>What is this token used for?</span>
               </div>
               <ul className="list-disc list-inside space-y-1 text-text-muted text-xs">
@@ -828,7 +831,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 rel="noopener noreferrer"
                 className="btn-secondary py-2 px-6 flex items-center justify-center space-x-2"
               >
-                <FaLink />
+                <FaLink aria-hidden="true" />
                 <span>Visit IPinfo</span>
               </a>
               <a
@@ -837,7 +840,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 rel="noopener noreferrer"
                 className="btn-secondary py-2 px-6 flex items-center justify-center space-x-2"
               >
-                <FaLink />
+                <FaLink aria-hidden="true" />
                 <span>Get Your Token</span>
               </a>
             </div>
@@ -846,7 +849,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         <div className="mt-8 flex justify-end">
           <button type="submit" disabled={saving} className="btn-primary px-8 py-3 flex items-center gap-2">
-            <FaSave />
+            <FaSave aria-hidden="true" />
             {saving ? 'Saving...' : 'Save Settings'}
           </button>
         </div>

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
+import { FaCheckCircle } from 'react-icons/fa';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
 
 interface MfaInitResponse {
@@ -120,27 +121,34 @@ export default function MfaSetupPage() {
 
   return (
     <AdminShell title="MFA Setup">
-      <div className="max-w-3xl mx-auto">
-        <div className="card-cyber p-6">
-          <h1 className="heading-xl text-gradient mb-2">Confirm Two-Factor Authentication</h1>
-          <p className="text-text-secondary mb-6">
-            Enter the current 6-digit code from your authenticator app to enable
-            2FA on this account. If you scanned a QR during the install wizard,
-            the entry is already in your app &mdash; just type the code below; you
-            don&apos;t need to scan again. If you skipped that step (or your app
-            doesn&apos;t recognise this account), scan the QR on the left first.
-          </p>
+      <div className="max-w-3xl">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="heading-xl">Two-factor authentication</h1>
+            <p className="text-text-secondary text-sm mt-1">
+              Enter the current 6-digit code from your authenticator app to enable
+              2FA on this account. If you scanned a QR during the install wizard,
+              the entry is already in your app &mdash; just type the code below; you
+              don&apos;t need to scan again. If you skipped that step (or your app
+              doesn&apos;t recognise this account), scan the QR first.
+            </p>
+          </div>
+        </div>
 
-          {loading && <div className="text-text-secondary">Loading MFA setup...</div>}
+        <div className="card-cyber p-6">
+          {loading && <p role="status" className="text-text-secondary">Loading MFA setup...</p>}
 
           {!loading && enabled && (
             <div className="space-y-4">
-              <div className="bg-dark-lighter border border-dark-border rounded p-4 text-text-primary">
-                MFA is enabled. Keep these recovery codes safe. You must sign in again using your authenticator code.
+              <div className="flex items-start gap-2 rounded-lg border border-cyber-green/40 bg-cyber-green/10 p-4 text-sm text-text-primary">
+                <FaCheckCircle className="mt-0.5 shrink-0 text-cyber-green" aria-hidden="true" />
+                <span>
+                  MFA is enabled. Keep these recovery codes safe. You must sign in again using your authenticator code.
+                </span>
               </div>
               {recoveryCodes && (
-                <div className="bg-dark border border-dark-border rounded p-4">
-                  <p className="text-text-secondary mb-2 text-sm">Recovery Codes (store securely):</p>
+                <div className="bg-dark border border-dark-border rounded-lg p-4">
+                  <p className="text-text-secondary mb-2 text-sm">Recovery codes (store securely):</p>
                   <div className="grid grid-cols-2 gap-2 font-mono text-sm text-text-primary">
                     {recoveryCodes.map((c) => (
                       <span key={c}>{c}</span>
@@ -148,11 +156,13 @@ export default function MfaSetupPage() {
                   </div>
                 </div>
               )}
-              <div className="flex flex-col md:flex-row md:items-center gap-3">
-                <button className="btn-primary" onClick={handleContinue}>
+              {error && <p role="alert" className="text-cyber-red text-sm">{error}</p>}
+              <div className="flex flex-wrap items-center gap-3">
+                <button type="button" className="btn-primary" onClick={handleContinue}>
                   Sign out and re-login with MFA
                 </button>
                 <button
+                  type="button"
                   className="btn-secondary"
                   onClick={handleReset}
                   disabled={resetting || disabling}
@@ -160,7 +170,8 @@ export default function MfaSetupPage() {
                   {resetting ? 'Resetting...' : 'Reset / Reconfigure MFA'}
                 </button>
                 <button
-                  className="btn-danger"
+                  type="button"
+                  className="btn-danger sm:ml-auto"
                   onClick={handleDisable}
                   disabled={disabling || resetting}
                 >
@@ -172,38 +183,45 @@ export default function MfaSetupPage() {
 
           {!loading && !enabled && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="bg-dark-lighter border border-dark-border rounded p-4">
-                  <p className="text-sm text-text-secondary mb-2">Step 1: Scan QR</p>
-                  {qrData ? (
-                    <img src={qrData} alt="MFA QR Code" className="w-48 h-48" />
-                  ) : (
-                    <div className="text-text-secondary">Generating QR...</div>
-                  )}
-                  {secret && (
-                    <p className="text-xs text-text-muted mt-3">Secret: {secret}</p>
-                  )}
-                </div>
+              <div className="bg-dark-lighter border border-dark-border rounded-lg p-4">
+                <h2 className="text-sm font-semibold text-text-primary mb-3">1. Scan the QR code</h2>
+                {qrData ? (
+                  <img src={qrData} alt="QR code for your authenticator app" className="w-48 h-48 rounded-md" />
+                ) : (
+                  <p className="text-sm text-text-secondary">Generating QR...</p>
+                )}
+                {secret && (
+                  <>
+                    <p className="text-xs text-text-muted mt-3">Can't scan? Enter this key manually:</p>
+                    <code className="mt-1 block break-all select-all text-sm text-text-primary">{secret}</code>
+                  </>
+                )}
               </div>
-              <div className="space-y-4">
-                <div className="bg-dark-lighter border border-dark-border rounded p-4">
-                  <p className="text-sm text-text-secondary mb-2">Step 2: Enter Code</p>
-                  <form className="space-y-3" onSubmit={handleVerify}>
+              <div className="bg-dark-lighter border border-dark-border rounded-lg p-4">
+                <h2 className="text-sm font-semibold text-text-primary mb-3">2. Enter the code</h2>
+                <form className="space-y-3" onSubmit={handleVerify}>
+                  <div>
+                    <label htmlFor="mfa-code" className="block text-sm mb-1.5">
+                      6-digit code from your app
+                    </label>
                     <input
+                      id="mfa-code"
+                      type="text"
                       className="input-cyber"
                       placeholder="123456"
                       value={code}
                       onChange={(e) => setCode(e.target.value)}
                       inputMode="numeric"
+                      autoComplete="one-time-code"
                       pattern="[0-9]*"
                       required
                     />
-                    {error && <p className="text-cyber-red text-sm">{error}</p>}
-                    <button className="btn-primary" type="submit" disabled={saving}>
-                      {saving ? 'Verifying...' : 'Verify & Enable'}
-                    </button>
-                  </form>
-                </div>
+                  </div>
+                  {error && <p role="alert" className="text-cyber-red text-sm">{error}</p>}
+                  <button className="btn-primary" type="submit" disabled={saving}>
+                    {saving ? 'Verifying...' : 'Verify & Enable'}
+                  </button>
+                </form>
               </div>
             </div>
           )}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { FaUser, FaLock, FaShieldAlt, FaCheckCircle, FaPalette, FaCog, FaInfoCircle } from 'react-icons/fa';
+import { FaUser, FaLock, FaCheckCircle, FaPalette, FaCog, FaInfoCircle, FaExclamationTriangle, FaExclamationCircle, FaSpinner, FaChevronDown } from 'react-icons/fa';
 import { INTEGRATIONS } from '@adminpanel/lib/integrations';
 import QRCode from 'qrcode';
 
@@ -242,8 +242,11 @@ export default function SetupWizard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
-        <div className="text-white text-xl">Checking setup status...</div>
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <p role="status" className="flex items-center gap-2 text-sm text-text-secondary">
+          <FaSpinner className="animate-spin" aria-hidden="true" />
+          Checking setup status...
+        </p>
       </div>
     );
   }
@@ -258,73 +261,65 @@ export default function SetupWizard() {
     'your new site';
 
   return (
-    <div className="transition-stage">
-      <div className="transition-overlay" />
-      <div className="min-h-screen flex items-center justify-center p-4 transition-container">
-        <div className="bg-gray-800 rounded-lg shadow-2xl max-w-2xl w-full p-8 border border-gray-700 transition-card transition-delay-2">
-        {/* Header */}
-        <div className="text-center mb-8 transition-slide-up transition-delay-3">
-          <Image
-            src="/logo.png"
-            alt={deploymentName}
-            width={64}
-            height={64}
-            priority
-            unoptimized
-            className="w-16 h-16 object-contain mx-auto mb-4"
-          />
-          <h1 className="heading-xl text-gradient mb-2">
-            Welcome to Admin by {deploymentName}
-          </h1>
-          <p className="text-gray-400">
-            {step === 1
-              ? 'Apply a design pack to your new site'
-              : step === 2
-                ? 'Configure your site — domain & integrations'
-                : step === 3
-                  ? 'Let\'s set up your administrator account'
-                  : 'Set up Two-Factor Authentication'}
-          </p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-2xl">
+        <p className="mb-6 text-center text-[15px] font-bold tracking-[-0.01em] text-text-primary">
+          <span className="text-[var(--adm-accent)]">RHC</span> CMS
+        </p>
 
-        {/* Progress Indicator */}
-        <div className="flex items-center justify-center mb-8 transition-slide-up transition-delay-4">
-          <div className="flex items-center">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
-              <FaPalette />
+        <div className="card-cyber p-5 sm:p-8">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-xs font-medium text-text-muted">Step {step} of 4</p>
+            <div className="flex gap-1" aria-hidden="true">
+              {[1, 2, 3, 4].map((n) => (
+                <span key={n} className={`h-1 w-6 rounded-full ${step >= n ? 'bg-[var(--adm-accent)]' : 'bg-dark-border'}`} />
+              ))}
             </div>
-            <div className={`w-10 h-1 ${step >= 2 ? 'bg-blue-500' : 'bg-gray-700'}`} />
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
-              <FaCog />
-            </div>
-            <div className={`w-10 h-1 ${step >= 3 ? 'bg-blue-500' : 'bg-gray-700'}`} />
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 3 ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
-              <FaUser />
-            </div>
-            <div className={`w-10 h-1 ${step >= 4 ? 'bg-blue-500' : 'bg-gray-700'}`} />
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= 4 ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
-              <FaShieldAlt />
+          </div>
+          <div className="mt-4 flex items-start gap-4">
+            <Image
+              src="/logo.png"
+              alt={deploymentName}
+              width={40}
+              height={40}
+              priority
+              unoptimized
+              className="h-10 w-10 shrink-0 object-contain"
+            />
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold text-text-primary break-words">
+                Welcome to Admin by {deploymentName}
+              </h1>
+              <p className="mt-1 text-sm text-text-secondary">
+                {step === 1
+                  ? 'Apply a design pack to your new site'
+                  : step === 2
+                    ? 'Configure your site — domain & integrations'
+                    : step === 3
+                      ? 'Let\'s set up your administrator account'
+                      : 'Set up Two-Factor Authentication'}
+              </p>
             </div>
           </div>
         </div>
 
         {/* Step 1: Design pack */}
         {step === 1 && (
-          <div className="space-y-5 transition-slide-up transition-delay-5">
-            {error && (
-              <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded">{error}</div>
-            )}
+          <div className="space-y-5">
+            {error && <ErrorAlert message={error} />}
 
-            <div className="bg-blue-900/20 border border-blue-700/60 rounded-lg p-4 text-sm text-blue-100 space-y-2">
-              <div className="flex items-center gap-2 font-semibold text-blue-200">
-                <FaInfoCircle /> What is a design pack?
+            <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4 text-sm text-text-secondary space-y-2">
+              <div className="flex items-center gap-2 font-semibold text-text-primary">
+                <FaInfoCircle className="shrink-0 text-[var(--adm-info)]" aria-hidden="true" /> What is a design pack?
               </div>
-              <p className="text-blue-100/90">
+              <p>
                 A portable <span className="font-mono">.zip</span> that bundles your theme,
                 starter pages, navigation menu and footer. Uploading one applies all of it
                 in a single click &mdash; no copy/paste, no manual page-building.
               </p>
-              <ul className="list-disc list-inside space-y-1 text-blue-100/80">
+              <ul className="list-disc pl-5 space-y-1">
                 <li>The identity fields below fill <span className="font-mono">{'{{siteName}}'}</span>, <span className="font-mono">{'{{tagline}}'}</span>, <span className="font-mono">{'{{contactEmail}}'}</span> and <span className="font-mono">{'{{domain}}'}</span> placeholders inside the pack &mdash; leave any blank to keep the pack&apos;s default.</li>
                 <li>Packs only carry <em>design</em>. Secrets, users and the database are never imported.</li>
                 <li>No pack yet? Click <strong>Skip</strong> &mdash; you can apply one later from <span className="font-mono">/admin/themes</span> or build pages by hand.</li>
@@ -332,34 +327,46 @@ export default function SetupWizard() {
             </div>
 
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">Design pack (.zip)</label>
+              <label htmlFor="setup-pack-file" className="block text-sm font-medium mb-1.5">Design pack (.zip)</label>
               <input
+                id="setup-pack-file"
                 type="file"
                 accept=".zip,application/zip"
                 onChange={(e) => setPackFile(e.target.files?.[0] || null)}
-                className="w-full text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-500 file:text-white hover:file:bg-blue-600 bg-gray-700 rounded-lg border border-gray-600 p-2"
+                className="input p-1.5 text-text-secondary file:mr-3 file:rounded-md file:border-0 file:bg-cyber-green/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-cyber-green hover:file:bg-cyber-green/20"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input value={identity.siteName} onChange={(e) => setIdentity({ ...identity, siteName: e.target.value })}
-                placeholder="Site name (e.g. Acme Inc)"
-                className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
-              <input value={identity.tagline} onChange={(e) => setIdentity({ ...identity, tagline: e.target.value })}
-                placeholder="Tagline"
-                className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
-              <input value={identity.contactEmail} onChange={(e) => setIdentity({ ...identity, contactEmail: e.target.value })}
-                placeholder="Contact email"
-                className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
-              <input value={identity.domain} onChange={(e) => setIdentity({ ...identity, domain: e.target.value })}
-                placeholder="Domain (e.g. example.com)"
-                className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="pack-site-name" className="block text-sm font-medium mb-1.5">Site name</label>
+                <input id="pack-site-name" autoComplete="organization" value={identity.siteName} onChange={(e) => setIdentity({ ...identity, siteName: e.target.value })}
+                  placeholder="Acme Inc"
+                  className="input" />
+              </div>
+              <div>
+                <label htmlFor="pack-tagline" className="block text-sm font-medium mb-1.5">Tagline</label>
+                <input id="pack-tagline" autoComplete="off" value={identity.tagline} onChange={(e) => setIdentity({ ...identity, tagline: e.target.value })}
+                  className="input" />
+              </div>
+              <div>
+                <label htmlFor="pack-contact-email" className="block text-sm font-medium mb-1.5">Contact email</label>
+                <input id="pack-contact-email" type="email" autoComplete="email" value={identity.contactEmail} onChange={(e) => setIdentity({ ...identity, contactEmail: e.target.value })}
+                  className="input" />
+              </div>
+              <div>
+                <label htmlFor="pack-domain" className="block text-sm font-medium mb-1.5">Domain</label>
+                <input id="pack-domain" inputMode="url" autoComplete="off" autoCapitalize="none" spellCheck={false} value={identity.domain} onChange={(e) => setIdentity({ ...identity, domain: e.target.value })}
+                  placeholder="example.com"
+                  className="input" />
+              </div>
             </div>
-            <p className="text-gray-500 text-xs">These fill {'{{siteName}}'}, {'{{tagline}}'}, {'{{contactEmail}}'} and {'{{domain}}'} placeholders in the pack.</p>
+            <p className="text-text-muted text-xs">These fill {'{{siteName}}'}, {'{{tagline}}'}, {'{{contactEmail}}'} and {'{{domain}}'} placeholders in the pack.</p>
 
             {packResult && (
-              <div className="bg-green-900 bg-opacity-30 border border-green-700 text-green-200 px-4 py-3 rounded flex items-center gap-2">
-                <FaCheckCircle /> {packResult}
+              <div role="status" className="flex items-start gap-2 rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-sm text-text-primary">
+                <FaCheckCircle className="mt-0.5 shrink-0 text-green-400" aria-hidden="true" />
+                <span>{packResult}</span>
               </div>
             )}
 
@@ -367,14 +374,14 @@ export default function SetupWizard() {
               <button
                 onClick={applyDesignPack}
                 disabled={!packFile || applyingPack}
-                className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition flex items-center justify-center gap-2"
+                className="btn-primary flex-1 py-2.5"
               >
-                {applyingPack ? 'Applying…' : (<><FaPalette /> Apply design &amp; continue</>)}
+                {applyingPack ? 'Applying…' : (<><FaPalette aria-hidden="true" /> Apply design &amp; continue</>)}
               </button>
               <button
                 onClick={() => { setError(''); setStep(2); }}
                 disabled={applyingPack}
-                className="bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-3 px-6 rounded-lg transition"
+                className="btn-secondary py-2.5"
               >
                 Skip
               </button>
@@ -384,80 +391,123 @@ export default function SetupWizard() {
 
         {/* Step 2: Configure (domain + integrations) */}
         {step === 2 && (
-          <div className="space-y-5 transition-slide-up transition-delay-5">
-            {error && <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded">{error}</div>}
+          <div className="space-y-5">
+            {error && <ErrorAlert message={error} />}
 
-            <div className="bg-blue-900/20 border border-blue-700/60 rounded-lg p-4 text-sm text-blue-100 space-y-2">
-              <div className="flex items-center gap-2 font-semibold text-blue-200">
-                <FaInfoCircle /> Connect your services
+            <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4 text-sm text-text-secondary space-y-2">
+              <div className="flex items-center gap-2 font-semibold text-text-primary">
+                <FaInfoCircle className="shrink-0 text-[var(--adm-info)]" aria-hidden="true" /> Connect your services
               </div>
-              <ul className="list-disc list-inside space-y-1 text-blue-100/85">
+              <ul className="list-disc pl-5 space-y-1">
                 <li><strong>Domain</strong> &mdash; the public URL where the site is served (e.g.&nbsp;<span className="font-mono">example.com</span>). The admin URL (<span className="font-mono">NEXTAUTH_URL</span>) is set separately and is never overwritten by this step.</li>
                 <li><strong>Email delivery</strong> &mdash; powers the contact form, password resets and admin notifications. Pick <strong>Brevo</strong> (HTTP API, simplest) or <strong>SMTP</strong>. Skip if you don&apos;t need email yet.</li>
                 <li><strong>Cloudflare</strong> &mdash; optional. With an API token + zone ID the wizard validates access; add a server IP and it can also create the <span className="font-mono">A</span> (and optionally <span className="font-mono">www</span>) DNS records automatically.</li>
               </ul>
-              <p className="text-blue-100/70 text-xs pt-1">
+              <p className="text-xs pt-1">
                 Every field is optional &mdash; you can configure or change any of this later under <span className="font-mono">/admin/settings</span>. <strong>Domain and Cloudflare settings are stored in the site database</strong> and take effect after the next build and restart (e.g.&nbsp;<span className="font-mono">pm2 reload</span>).
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input value={identity.siteName} onChange={(e) => setIdentity({ ...identity, siteName: e.target.value })}
-                placeholder="Site name" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
-              <input value={identity.domain} onChange={(e) => setIdentity({ ...identity, domain: e.target.value })}
-                placeholder="Primary domain (e.g. example.com)" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
-              <input value={identity.contactEmail} onChange={(e) => setIdentity({ ...identity, contactEmail: e.target.value })}
-                placeholder="Contact email" className="sm:col-span-2 bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="cfg-site-name" className="block text-sm font-medium mb-1.5">Site name</label>
+                <input id="cfg-site-name" autoComplete="organization" value={identity.siteName} onChange={(e) => setIdentity({ ...identity, siteName: e.target.value })}
+                  className="input" />
+              </div>
+              <div>
+                <label htmlFor="cfg-domain" className="block text-sm font-medium mb-1.5">Primary domain</label>
+                <input id="cfg-domain" inputMode="url" autoComplete="off" autoCapitalize="none" spellCheck={false} value={identity.domain} onChange={(e) => setIdentity({ ...identity, domain: e.target.value })}
+                  placeholder="example.com" className="input" />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="cfg-contact-email" className="block text-sm font-medium mb-1.5">Contact email</label>
+                <input id="cfg-contact-email" type="email" autoComplete="email" value={identity.contactEmail} onChange={(e) => setIdentity({ ...identity, contactEmail: e.target.value })}
+                  className="input" />
+              </div>
             </div>
 
-            <div className="border-t border-gray-700 pt-4">
-              <label className="block text-gray-300 font-semibold mb-2 text-sm">Email delivery</label>
-              <select value={provision.emailProvider} onChange={(e) => setProvision({ ...provision, emailProvider: e.target.value as any })}
-                className="w-full bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none">
+            <div className="border-t border-dark-border pt-4">
+              <label htmlFor="setup-email-provider" className="block text-sm font-semibold text-text-primary mb-2">Email delivery</label>
+              <select id="setup-email-provider" value={provision.emailProvider} onChange={(e) => setProvision({ ...provision, emailProvider: e.target.value as any })}
+                className="input">
                 <option value="none">None for now</option>
                 <option value="brevo">Brevo (API)</option>
                 <option value="smtp">SMTP</option>
               </select>
               {provision.emailProvider === 'brevo' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                  <input value={provision.brevoApiKey} onChange={(e) => setProvision({ ...provision, brevoApiKey: e.target.value })} placeholder="Brevo API key" type="password" className="sm:col-span-2 bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
-                  <input value={provision.brevoSenderEmail} onChange={(e) => setProvision({ ...provision, brevoSenderEmail: e.target.value })} placeholder="Sender email" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
-                  <input value={provision.brevoSenderName} onChange={(e) => setProvision({ ...provision, brevoSenderName: e.target.value })} placeholder="Sender name" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+                  <div className="sm:col-span-2">
+                    <label htmlFor="setup-brevo-key" className="block text-sm font-medium mb-1.5">Brevo API key</label>
+                    <input id="setup-brevo-key" value={provision.brevoApiKey} onChange={(e) => setProvision({ ...provision, brevoApiKey: e.target.value })} type="password" autoComplete="off" className="input" />
+                  </div>
+                  <div>
+                    <label htmlFor="setup-brevo-sender-email" className="block text-sm font-medium mb-1.5">Sender email</label>
+                    <input id="setup-brevo-sender-email" value={provision.brevoSenderEmail} onChange={(e) => setProvision({ ...provision, brevoSenderEmail: e.target.value })} type="email" autoComplete="off" className="input" />
+                  </div>
+                  <div>
+                    <label htmlFor="setup-brevo-sender-name" className="block text-sm font-medium mb-1.5">Sender name</label>
+                    <input id="setup-brevo-sender-name" value={provision.brevoSenderName} onChange={(e) => setProvision({ ...provision, brevoSenderName: e.target.value })} autoComplete="off" className="input" />
+                  </div>
                 </div>
               )}
               {provision.emailProvider === 'smtp' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                  <input value={provision.smtpHost} onChange={(e) => setProvision({ ...provision, smtpHost: e.target.value })} placeholder="SMTP host" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
-                  <input value={provision.smtpPort} onChange={(e) => setProvision({ ...provision, smtpPort: e.target.value })} placeholder="Port (587)" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
-                  <input value={provision.smtpUser} onChange={(e) => setProvision({ ...provision, smtpUser: e.target.value })} placeholder="Username" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
-                  <input value={provision.smtpPass} onChange={(e) => setProvision({ ...provision, smtpPass: e.target.value })} placeholder="Password" type="password" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+                  <div>
+                    <label htmlFor="setup-smtp-host" className="block text-sm font-medium mb-1.5">SMTP host</label>
+                    <input id="setup-smtp-host" value={provision.smtpHost} onChange={(e) => setProvision({ ...provision, smtpHost: e.target.value })} placeholder="smtp.example.com" autoComplete="off" autoCapitalize="none" spellCheck={false} className="input" />
+                  </div>
+                  <div>
+                    <label htmlFor="setup-smtp-port" className="block text-sm font-medium mb-1.5">Port</label>
+                    <input id="setup-smtp-port" value={provision.smtpPort} onChange={(e) => setProvision({ ...provision, smtpPort: e.target.value })} placeholder="587" inputMode="numeric" autoComplete="off" className="input" />
+                  </div>
+                  <div>
+                    <label htmlFor="setup-smtp-user" className="block text-sm font-medium mb-1.5">Username</label>
+                    <input id="setup-smtp-user" value={provision.smtpUser} onChange={(e) => setProvision({ ...provision, smtpUser: e.target.value })} autoComplete="off" autoCapitalize="none" spellCheck={false} className="input" />
+                  </div>
+                  <div>
+                    <label htmlFor="setup-smtp-pass" className="block text-sm font-medium mb-1.5">Password</label>
+                    <input id="setup-smtp-pass" value={provision.smtpPass} onChange={(e) => setProvision({ ...provision, smtpPass: e.target.value })} type="password" autoComplete="off" className="input" />
+                  </div>
                 </div>
               )}
             </div>
 
-            <div className="border-t border-gray-700 pt-4">
-              <label className="block text-gray-300 font-semibold mb-2 text-sm">Database</label>
-              <p className="text-xs text-text-muted mb-2">SQLite is zero-config and recommended for most sites. Choose PostgreSQL for multi-instance or larger deployments — the connection is tested before it&apos;s saved.</p>
-              <select value={provision.dbDriver} onChange={(e) => setProvision({ ...provision, dbDriver: e.target.value as 'sqlite' | 'postgres' })} className="w-full bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none">
+            <div className="border-t border-dark-border pt-4">
+              <label htmlFor="setup-db-driver" className="block text-sm font-semibold text-text-primary mb-1">Database</label>
+              <p id="setup-db-hint" className="text-xs text-text-muted mb-2">SQLite is zero-config and recommended for most sites. Choose PostgreSQL for multi-instance or larger deployments — the connection is tested before it&apos;s saved.</p>
+              <select id="setup-db-driver" aria-describedby="setup-db-hint" value={provision.dbDriver} onChange={(e) => setProvision({ ...provision, dbDriver: e.target.value as 'sqlite' | 'postgres' })} className="input">
                 <option value="sqlite">SQLite (file-based, zero-config)</option>
                 <option value="postgres">PostgreSQL (DATABASE_URL)</option>
               </select>
               {provision.dbDriver === 'postgres' && (
-                <input value={provision.dbUrl} onChange={(e) => setProvision({ ...provision, dbUrl: e.target.value })} placeholder="postgres://user:pass@host:5432/dbname" className="w-full mt-3 bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+                <div className="mt-3">
+                  <label htmlFor="setup-db-url" className="block text-sm font-medium mb-1.5">Connection URL</label>
+                  <input id="setup-db-url" value={provision.dbUrl} onChange={(e) => setProvision({ ...provision, dbUrl: e.target.value })} placeholder="postgres://user:pass@host:5432/dbname" autoComplete="off" autoCapitalize="none" spellCheck={false} className="input" />
+                </div>
               )}
             </div>
 
-            <div className="border-t border-gray-700 pt-4">
-              <label className="block text-gray-300 font-semibold mb-2 text-sm">Cloudflare (optional)</label>
-              <input value={provision.cloudflareToken} onChange={(e) => setProvision({ ...provision, cloudflareToken: e.target.value })} placeholder="API token" type="password" className="w-full bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                <input value={provision.cloudflareZoneId} onChange={(e) => setProvision({ ...provision, cloudflareZoneId: e.target.value })} placeholder="Zone ID" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
-                <input value={provision.cloudflareAccountId} onChange={(e) => setProvision({ ...provision, cloudflareAccountId: e.target.value })} placeholder="Account ID" className="bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
+            <div className="border-t border-dark-border pt-4">
+              <h2 className="text-sm font-semibold text-text-primary mb-2">Cloudflare (optional)</h2>
+              <div>
+                <label htmlFor="setup-cf-token" className="block text-sm font-medium mb-1.5">API token</label>
+                <input id="setup-cf-token" value={provision.cloudflareToken} onChange={(e) => setProvision({ ...provision, cloudflareToken: e.target.value })} type="password" autoComplete="off" className="input" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+                <div>
+                  <label htmlFor="setup-cf-zone" className="block text-sm font-medium mb-1.5">Zone ID</label>
+                  <input id="setup-cf-zone" value={provision.cloudflareZoneId} onChange={(e) => setProvision({ ...provision, cloudflareZoneId: e.target.value })} autoComplete="off" spellCheck={false} className="input" />
+                </div>
+                <div>
+                  <label htmlFor="setup-cf-account" className="block text-sm font-medium mb-1.5">Account ID</label>
+                  <input id="setup-cf-account" value={provision.cloudflareAccountId} onChange={(e) => setProvision({ ...provision, cloudflareAccountId: e.target.value })} autoComplete="off" spellCheck={false} className="input" />
+                </div>
               </div>
               <div className="mt-3">
-                <input value={provision.dnsServerIp} onChange={(e) => setProvision({ ...provision, dnsServerIp: e.target.value })} placeholder="Point DNS to server IP (optional, e.g. 203.0.113.10)" className="w-full bg-gray-700 text-white px-4 py-2.5 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none" />
-                <label className="mt-2 flex items-center gap-2 text-xs text-text-muted cursor-pointer">
-                  <input type="checkbox" checked={provision.dnsWww} onChange={(e) => setProvision({ ...provision, dnsWww: e.target.checked })} />
+                <label htmlFor="setup-dns-ip" className="block text-sm font-medium mb-1.5">Point DNS to server IP (optional)</label>
+                <input id="setup-dns-ip" value={provision.dnsServerIp} onChange={(e) => setProvision({ ...provision, dnsServerIp: e.target.value })} placeholder="203.0.113.10" autoComplete="off" spellCheck={false} className="input" />
+                <label className="mt-2 flex items-start gap-2 text-sm text-text-secondary cursor-pointer">
+                  <input type="checkbox" className="mt-1 shrink-0" checked={provision.dnsWww} onChange={(e) => setProvision({ ...provision, dnsWww: e.target.checked })} />
                   <span>Also create a <span className="font-mono">www</span> record. Requires the API token to have DNS edit permission on the zone.</span>
                 </label>
               </div>
@@ -465,33 +515,41 @@ export default function SetupWizard() {
 
             {/* Optional: connect any other integration now. Same catalog as
                 Settings → Integrations; provision saves the values to the site database. */}
-            <div className="border-t border-gray-700 pt-4">
-              <label className="block text-gray-300 font-semibold mb-2 text-sm">More integrations (optional)</label>
+            <div className="border-t border-dark-border pt-4">
+              <h2 className="text-sm font-semibold text-text-primary mb-1">More integrations (optional)</h2>
               <p className="text-xs text-text-muted mb-3">Telegram, Stripe, reCAPTCHA, analytics and more — add any now, or later in Settings → Integrations.</p>
               <div className="space-y-2">
                 {INTEGRATIONS.filter((i) => !['brevo', 'smtp', 'cloudflare', 'misc'].includes(i.id)).map((i) => {
                   const set = i.fields.filter((f) => (extraSecrets[f.envVar] || '').trim()).length;
                   return (
-                    <div key={i.id} className="border border-gray-700 rounded-lg overflow-hidden">
+                    <div key={i.id} className="rounded-lg border border-dark-border overflow-hidden">
                       <button type="button" onClick={() => setOpenIntegration(openIntegration === i.id ? null : i.id)}
-                        className="w-full flex items-center justify-between px-3 py-2 text-left text-sm text-gray-200 hover:bg-gray-700/50">
+                        aria-expanded={openIntegration === i.id}
+                        className="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left text-sm text-text-primary hover:bg-dark-lighter transition-colors">
                         <span>{i.name}</span>
-                        <span className="text-xs text-gray-500">{set}/{i.fields.length}</span>
+                        <span className="flex items-center gap-2 text-xs text-text-muted">
+                          {set}/{i.fields.length}
+                          <FaChevronDown className={`transition-transform ${openIntegration === i.id ? 'rotate-180' : ''}`} aria-hidden="true" />
+                        </span>
                       </button>
                       {openIntegration === i.id && (
-                        <div className="px-3 pb-3 pt-1 space-y-2">
+                        <div className="px-3 pb-3 pt-1 space-y-3">
                           {i.fields.map((f) => (
-                            f.type === 'longtext' ? (
-                              <textarea key={f.envVar} rows={4} value={extraSecrets[f.envVar] || ''}
-                                onChange={(e) => setExtraSecrets((p) => ({ ...p, [f.envVar]: e.target.value }))}
-                                placeholder={f.label}
-                                className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none text-xs font-mono" />
-                            ) : (
-                              <input key={f.envVar} type={f.type === 'secret' ? 'password' : 'text'} value={extraSecrets[f.envVar] || ''}
-                                onChange={(e) => setExtraSecrets((p) => ({ ...p, [f.envVar]: e.target.value }))}
-                                placeholder={f.example ? `${f.label} (e.g. ${f.example})` : f.label}
-                                className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none text-sm" />
-                            )
+                            <div key={f.envVar}>
+                              <label htmlFor={`int-${f.envVar}`} className="block text-sm font-medium mb-1.5">{f.label}</label>
+                              {f.type === 'longtext' ? (
+                                <textarea id={`int-${f.envVar}`} rows={4} value={extraSecrets[f.envVar] || ''}
+                                  onChange={(e) => setExtraSecrets((p) => ({ ...p, [f.envVar]: e.target.value }))}
+                                  autoComplete="off" spellCheck={false}
+                                  className="input text-xs font-mono" />
+                              ) : (
+                                <input id={`int-${f.envVar}`} type={f.type === 'secret' ? 'password' : 'text'} value={extraSecrets[f.envVar] || ''}
+                                  onChange={(e) => setExtraSecrets((p) => ({ ...p, [f.envVar]: e.target.value }))}
+                                  placeholder={f.example ? `e.g. ${f.example}` : undefined}
+                                  autoComplete="off" spellCheck={false}
+                                  className="input" />
+                              )}
+                            </div>
                           ))}
                         </div>
                       )}
@@ -502,42 +560,50 @@ export default function SetupWizard() {
             </div>
 
             {provisionResult && (
-              <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-3 space-y-1 text-sm">
-                {provisionResult.validation.length === 0 && provisionResult.dns.length === 0 && <div className="text-gray-300">Saved.</div>}
+              <div role="status" className="rounded-lg border border-dark-border bg-dark-lighter p-4 space-y-1.5 text-sm text-text-primary">
+                {provisionResult.validation.length === 0 && provisionResult.dns.length === 0 && <div className="text-text-secondary">Saved.</div>}
                 {provisionResult.validation.map((v, i) => (
-                  <div key={`v${i}`} className={v.ok ? 'text-green-300' : 'text-yellow-300'}>
-                    {v.ok ? '✓' : '⚠'} {v.service}: {v.message}
+                  <div key={`v${i}`} className="flex items-start gap-2">
+                    <StatusIcon ok={v.ok} />
+                    <span>{v.service}: {v.message}</span>
                   </div>
                 ))}
                 {provisionResult.dns.map((d, i) => (
-                  <div key={`d${i}`} className={d.ok ? 'text-green-300' : 'text-yellow-300'}>
-                    {d.ok ? '✓' : '⚠'} DNS {d.type} {d.name}: {d.ok ? d.action : d.message}
+                  <div key={`d${i}`} className="flex items-start gap-2">
+                    <StatusIcon ok={d.ok} />
+                    <span>DNS {d.type} {d.name}: {d.ok ? d.action : d.message}</span>
                   </div>
                 ))}
                 {provisionResult.database && (
-                  <div className={provisionResult.database.ok ? 'text-green-300' : 'text-yellow-300'}>
-                    {provisionResult.database.ok ? '✓' : '⚠'} Database ({provisionResult.database.driver}){provisionResult.database.ok ? ' configured' : `: ${provisionResult.database.error}`}
+                  <div className="flex items-start gap-2">
+                    <StatusIcon ok={provisionResult.database.ok} />
+                    <span>Database ({provisionResult.database.driver}){provisionResult.database.ok ? ' configured' : `: ${provisionResult.database.error}`}</span>
                   </div>
                 )}
-                {provisionResult.restartRequired && <div className="text-yellow-200 text-xs">⚠ Domain/Cloudflare/database changes apply after restarting the app.</div>}
+                {provisionResult.restartRequired && (
+                  <div className="flex items-start gap-2 pt-1 text-xs text-text-secondary">
+                    <FaExclamationTriangle className="mt-0.5 shrink-0 text-yellow-400" aria-hidden="true" />
+                    <span>Domain/Cloudflare/database changes apply after restarting the app.</span>
+                  </div>
+                )}
               </div>
             )}
 
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               {/* Primary ALWAYS re-submits the latest values (so edits after a first
                   save aren't silently dropped); a separate Continue advances. */}
               <button onClick={submitProvision} disabled={provisioning}
-                className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition flex items-center justify-center gap-2">
-                {provisioning ? 'Saving…' : (<><FaCog /> {provisionResult ? 'Re-save & validate' : 'Save & validate'}</>)}
+                className={`${provisionResult ? 'btn-secondary' : 'btn-primary'} flex-1 py-2.5`}>
+                {provisioning ? 'Saving…' : (<><FaCog aria-hidden="true" /> {provisionResult ? 'Re-save & validate' : 'Save & validate'}</>)}
               </button>
               {provisionResult && (
                 <button onClick={() => setStep(3)} disabled={provisioning}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition flex items-center gap-2">
-                  Continue <FaUser />
+                  className="btn-primary py-2.5 px-6">
+                  Continue <FaUser aria-hidden="true" />
                 </button>
               )}
               <button onClick={() => { setError(''); setStep(3); }} disabled={provisioning}
-                className="bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-3 px-6 rounded-lg transition">
+                className="btn-secondary py-2.5">
                 Skip
               </button>
             </div>
@@ -546,18 +612,14 @@ export default function SetupWizard() {
 
         {/* Step 3: Admin Account */}
         {step === 3 && (
-          <form onSubmit={handleSubmit} className="space-y-6 transition-slide-up transition-delay-5">
-            {error && (
-              <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded">
-                {error}
-              </div>
-            )}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && <ErrorAlert message={error} />}
 
-            <div className="bg-blue-900/20 border border-blue-700/60 rounded-lg p-4 text-sm text-blue-100 space-y-2">
-              <div className="flex items-center gap-2 font-semibold text-blue-200">
-                <FaInfoCircle /> Create the first admin
+            <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4 text-sm text-text-secondary space-y-2">
+              <div className="flex items-center gap-2 font-semibold text-text-primary">
+                <FaInfoCircle className="shrink-0 text-[var(--adm-info)]" aria-hidden="true" /> Create the first admin
               </div>
-              <ul className="list-disc list-inside space-y-1 text-blue-100/85">
+              <ul className="list-disc pl-5 space-y-1">
                 <li>This becomes the <strong>only</strong> way back into the admin until you create more accounts from <span className="font-mono">/admin/users</span>.</li>
                 <li>Use a real, reachable email &mdash; it&apos;s also your login and where password-reset mail is sent.</li>
                 <li>Password must be <strong>at least 8 characters</strong>; a long, unique passphrase is strongly recommended. You&apos;ll add a 2FA code on the next step.</li>
@@ -565,48 +627,54 @@ export default function SetupWizard() {
             </div>
 
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">
-                Full Name
+              <label htmlFor="setup-admin-name" className="block text-sm font-medium mb-1.5">
+                Full name
               </label>
               <input
+                id="setup-admin-name"
                 type="text"
+                autoComplete="name"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none"
+                className="input py-2.5"
                 placeholder="John Doe"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">
-                Email Address
+              <label htmlFor="setup-admin-email" className="block text-sm font-medium mb-1.5">
+                Email address
               </label>
               <input
+                id="setup-admin-email"
                 type="email"
+                autoComplete="username"
                 value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
                 }
-                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none"
+                className="input py-2.5"
                 placeholder="admin@example.com"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">
+              <label htmlFor="setup-admin-password" className="block text-sm font-medium mb-1.5">
                 Password
               </label>
               <input
+                id="setup-admin-password"
                 type="password"
+                autoComplete="new-password"
                 value={formData.password}
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
-                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none"
+                className="input py-2.5"
                 placeholder="Minimum 8 characters"
                 required
                 minLength={8}
@@ -614,16 +682,18 @@ export default function SetupWizard() {
             </div>
 
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">
-                Confirm Password
+              <label htmlFor="setup-admin-confirm" className="block text-sm font-medium mb-1.5">
+                Confirm password
               </label>
               <input
+                id="setup-admin-confirm"
                 type="password"
+                autoComplete="new-password"
                 value={formData.confirmPassword}
                 onChange={(e) =>
                   setFormData({ ...formData, confirmPassword: e.target.value })
                 }
-                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none"
+                className="input py-2.5"
                 placeholder="Re-enter password"
                 required
               />
@@ -632,13 +702,13 @@ export default function SetupWizard() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition flex items-center justify-center gap-2"
+              className="btn-primary w-full py-2.5"
             >
               {submitting ? (
                 'Creating Account...'
               ) : (
                 <>
-                  Continue <FaLock />
+                  Continue <FaLock aria-hidden="true" />
                 </>
               )}
             </button>
@@ -647,17 +717,17 @@ export default function SetupWizard() {
 
         {/* Step 4: 2FA Setup */}
         {step === 4 && mfaData && (
-          <div className="space-y-6 transition-slide-up transition-delay-5">
-            <div className="bg-green-900 bg-opacity-30 border border-green-700 text-green-200 px-4 py-3 rounded flex items-center gap-2">
-              <FaCheckCircle />
+          <div className="space-y-5">
+            <div role="status" className="flex items-start gap-2 rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-sm text-text-primary">
+              <FaCheckCircle className="mt-0.5 shrink-0 text-green-400" aria-hidden="true" />
               <span>Admin account created successfully!</span>
             </div>
 
-            <div className="bg-blue-900/20 border border-blue-700/60 rounded-lg p-4 text-sm text-blue-100 space-y-2">
-              <div className="flex items-center gap-2 font-semibold text-blue-200">
-                <FaInfoCircle /> Two-factor authentication is required
+            <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4 text-sm text-text-secondary space-y-2">
+              <div className="flex items-center gap-2 font-semibold text-text-primary">
+                <FaInfoCircle className="shrink-0 text-[var(--adm-info)]" aria-hidden="true" /> Two-factor authentication is required
               </div>
-              <ol className="list-decimal list-inside space-y-1 text-blue-100/85">
+              <ol className="list-decimal pl-5 space-y-1">
                 <li>Open Google Authenticator, Authy, 1Password or any TOTP app.</li>
                 <li>Scan the QR code below (or paste the secret key manually).</li>
                 <li>After clicking <strong>Complete Setup</strong>, sign in with your email/password &mdash; you&apos;ll be prompted for a 6-digit code from this same authenticator entry to finish enabling 2FA. <em>You won&apos;t need to scan a second QR.</em></li>
@@ -665,10 +735,10 @@ export default function SetupWizard() {
             </div>
 
             <div className="text-center">
-              <h3 className="text-xl font-semibold text-white mb-4">
+              <h2 className="text-base font-semibold text-text-primary mb-1">
                 Scan this QR Code with your authenticator app
-              </h3>
-              <p className="text-gray-400 mb-6">
+              </h2>
+              <p className="text-sm text-text-secondary mb-4">
                 Use Google Authenticator, Authy, or any TOTP-compatible app
               </p>
 
@@ -681,103 +751,54 @@ export default function SetupWizard() {
               </div>
             </div>
 
-            <div className="bg-gray-700 p-4 rounded-lg">
-              <p className="text-gray-300 text-sm mb-2">
+            <div className="rounded-lg border border-dark-border bg-dark-lighter p-4">
+              <p className="text-text-secondary text-sm mb-2">
                 Can't scan? Enter this secret key manually:
               </p>
-              <code className="text-blue-300 font-mono text-lg break-all">
+              <code className="block text-[var(--adm-info)] font-mono text-base break-all select-all">
                 {mfaData.secret}
               </code>
             </div>
 
-            <div className="bg-yellow-900 bg-opacity-30 border border-yellow-700 text-yellow-200 px-4 py-3 rounded text-sm">
-              ⚠️ <strong>Important:</strong> Save this secret key in a password
-              manager (1Password, Bitwarden, etc.). If you lose access to your
-              authenticator app and don&apos;t have the secret saved, you&apos;ll be
-              locked out and need server access to reset MFA.
+            <div className="flex items-start gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-text-secondary">
+              <FaExclamationTriangle className="mt-0.5 shrink-0 text-yellow-400" aria-hidden="true" />
+              <p>
+                <strong className="text-text-primary">Important:</strong> Save this secret key in a password
+                manager (1Password, Bitwarden, etc.). If you lose access to your
+                authenticator app and don&apos;t have the secret saved, you&apos;ll be
+                locked out and need server access to reset MFA.
+              </p>
             </div>
 
             <button
               onClick={handleFinish}
-              className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition flex items-center justify-center gap-2"
+              className="btn-primary w-full py-2.5"
             >
-              <FaCheckCircle />
+              <FaCheckCircle aria-hidden="true" />
               Complete Setup & Go to Login
             </button>
           </div>
         )}
         </div>
       </div>
-      <style jsx>{`
-        .transition-stage {
-          position: relative;
-          min-height: 100vh;
-          background: radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.12), transparent 25%),
-            radial-gradient(circle at 80% 0%, rgba(168, 85, 247, 0.12), transparent 30%),
-            #0b1020;
-          overflow: hidden;
-        }
+    </div>
+  );
+}
 
-        .transition-overlay {
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(135deg, rgba(17, 24, 39, 0.92), rgba(15, 23, 42, 0.92));
-          z-index: 0;
-          animation: transition-overlay 1s ease forwards;
-          transform-origin: right;
-        }
+// Status glyph for a provisioning result line; the text beside it carries the meaning.
+function StatusIcon({ ok }: { ok: boolean }) {
+  return ok ? (
+    <FaCheckCircle className="mt-0.5 shrink-0 text-green-400" aria-hidden="true" />
+  ) : (
+    <FaExclamationTriangle className="mt-0.5 shrink-0 text-yellow-400" aria-hidden="true" />
+  );
+}
 
-        .transition-container {
-          position: relative;
-          z-index: 1;
-          animation: transition-expand 0.8s ease forwards;
-          transform: translateX(1200px);
-        }
-
-        .transition-card {
-          animation: transition-slide-up 0.8s ease forwards;
-          transform: translateY(80px);
-          opacity: 0;
-        }
-
-        .transition-slide-up {
-          animation: transition-slide-up 0.8s ease forwards;
-          transform: translateY(80px);
-          opacity: 0;
-        }
-
-        .transition-delay-1 { animation-delay: 0.15s; }
-        .transition-delay-2 { animation-delay: 0.25s; }
-        .transition-delay-3 { animation-delay: 0.35s; }
-        .transition-delay-4 { animation-delay: 0.45s; }
-        .transition-delay-5 { animation-delay: 0.55s; }
-
-        @keyframes transition-expand {
-          from { transform: translateX(1200px); }
-          to { transform: translateX(0); }
-        }
-
-        @keyframes transition-slide-up {
-          from { transform: translateY(80px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-
-        @keyframes transition-overlay {
-          from { transform: scaleX(1.1); opacity: 0; }
-          to { transform: scaleX(1); opacity: 1; }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .transition-container,
-          .transition-card,
-          .transition-slide-up,
-          .transition-overlay {
-            animation: none !important;
-            transform: none !important;
-            opacity: 1 !important;
-          }
-        }
-      `}</style>
+function ErrorAlert({ message }: { message: string }) {
+  return (
+    <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+      <FaExclamationCircle className="mt-0.5 shrink-0" aria-hidden="true" />
+      <span>{message}</span>
     </div>
   );
 }

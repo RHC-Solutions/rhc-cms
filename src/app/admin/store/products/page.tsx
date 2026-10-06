@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaBoxOpen, FaSpinner, FaPlus, FaTrash, FaEdit, FaTimes, FaSave } from 'react-icons/fa';
+import { FaSpinner, FaPlus, FaTrash, FaEdit, FaTimes, FaSave } from 'react-icons/fa';
 
 interface Variant {
   id?: string;
@@ -147,28 +147,28 @@ export default function StoreProductsPage() {
 
   return (
     <AdminShell title="Store — Products">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <FaBoxOpen className="text-2xl text-cyber-green" />
-            <h2 className="text-2xl font-bold">Products</h2>
+      <div className="max-w-6xl">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="heading-xl">Products</h1>
+            <p className="text-text-secondary text-sm mt-1">Products sold in the store, with their price, status, stock and variants.</p>
           </div>
           <button
             onClick={openCreate}
-            className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-linear-to-r from-cyber-green to-cyber-cyan text-dark font-semibold"
+            className="btn-primary"
           >
-            <FaPlus />
+            <FaPlus aria-hidden="true" />
             <span>New product</span>
           </button>
         </div>
 
         {error && (
-          <div className="mb-4 px-4 py-3 rounded-lg bg-cyber-red/10 border border-cyber-red/40 text-cyber-red text-sm">
+          <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
             {error}
           </div>
         )}
 
-        <div className="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
+        <div className="bg-dark-card border border-dark-border rounded-xl overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-dark-lighter text-text-muted text-left">
               <tr>
@@ -183,7 +183,7 @@ export default function StoreProductsPage() {
               {loading && (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-text-muted">
-                    <FaSpinner className="animate-spin inline mr-2" /> Loading…
+                    <FaSpinner className="animate-spin inline mr-2" aria-hidden="true" /> Loading…
                   </td>
                 </tr>
               )}
@@ -212,11 +212,11 @@ export default function StoreProductsPage() {
                         : '∞'}
                   </td>
                   <td className="px-4 py-3 text-right space-x-2">
-                    <button onClick={() => openEdit(p)} className="text-cyber-cyan hover:text-cyber-green" title="Edit">
-                      <FaEdit />
+                    <button onClick={() => openEdit(p)} className="text-cyber-cyan hover:text-cyber-green" title="Edit" aria-label={`Edit ${p.name}`}>
+                      <FaEdit aria-hidden="true" />
                     </button>
-                    <button onClick={() => remove(p)} className="text-cyber-red/80 hover:text-cyber-red" title="Delete">
-                      <FaTrash />
+                    <button onClick={() => remove(p)} className="text-cyber-red/80 hover:text-cyber-red" title="Delete" aria-label={`Delete ${p.name}`}>
+                      <FaTrash aria-hidden="true" />
                     </button>
                   </td>
                 </tr>
@@ -228,49 +228,49 @@ export default function StoreProductsPage() {
 
       {editing && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4">
-          <div className="bg-dark-card border border-dark-border rounded-xl w-full max-w-2xl my-8">
+          <div role="dialog" aria-modal="true" aria-labelledby="product-form-title" className="bg-dark-card border border-dark-border rounded-xl w-full max-w-2xl my-8">
             <div className="flex items-center justify-between p-4 border-b border-dark-border">
-              <h3 className="text-lg font-bold">{editing.id ? 'Edit product' : 'New product'}</h3>
-              <button onClick={() => setEditing(null)} className="text-text-muted hover:text-cyber-red">
-                <FaTimes />
+              <h2 id="product-form-title" className="heading-md">{editing.id ? 'Edit product' : 'New product'}</h2>
+              <button onClick={() => setEditing(null)} className="text-text-muted hover:text-cyber-red" aria-label="Close">
+                <FaTimes aria-hidden="true" />
               </button>
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-xs text-text-muted mb-1">Name</label>
-                <input className={input} value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+                <label htmlFor="product-name" className="block text-sm font-medium text-text-secondary mb-1.5">Name</label>
+                <input id="product-name" className={input} value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-text-muted mb-1">Price ({editing.currency.toUpperCase()})</label>
-                  <input className={input} type="number" step="0.01" value={editing.price} onChange={(e) => setEditing({ ...editing, price: e.target.value })} />
+                  <label htmlFor="product-price" className="block text-sm font-medium text-text-secondary mb-1.5">Price ({editing.currency.toUpperCase()})</label>
+                  <input id="product-price" className={input} type="number" step="0.01" value={editing.price} onChange={(e) => setEditing({ ...editing, price: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-xs text-text-muted mb-1">Currency</label>
-                  <input className={input} value={editing.currency} onChange={(e) => setEditing({ ...editing, currency: e.target.value })} />
+                  <label htmlFor="product-currency" className="block text-sm font-medium text-text-secondary mb-1.5">Currency</label>
+                  <input id="product-currency" className={input} value={editing.currency} onChange={(e) => setEditing({ ...editing, currency: e.target.value })} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-text-muted mb-1">Status</label>
-                  <select className={input} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as Product['status'] })}>
+                  <label htmlFor="product-status" className="block text-sm font-medium text-text-secondary mb-1.5">Status</label>
+                  <select id="product-status" className={input} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as Product['status'] })}>
                     <option value="active">active</option>
                     <option value="draft">draft</option>
                     <option value="archived">archived</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-text-muted mb-1">Category</label>
-                  <input className={input} value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value })} />
+                  <label htmlFor="product-category" className="block text-sm font-medium text-text-secondary mb-1.5">Category</label>
+                  <input id="product-category" className={input} value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value })} />
                 </div>
               </div>
               <div>
-                <label className="block text-xs text-text-muted mb-1">Description</label>
-                <textarea className={input} rows={3} value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
+                <label htmlFor="product-description" className="block text-sm font-medium text-text-secondary mb-1.5">Description</label>
+                <textarea id="product-description" className={input} rows={3} value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs text-text-muted mb-1">Image URLs (comma-separated)</label>
-                <input className={input} value={editing.images} onChange={(e) => setEditing({ ...editing, images: e.target.value })} />
+                <label htmlFor="product-images" className="block text-sm font-medium text-text-secondary mb-1.5">Image URLs (comma-separated)</label>
+                <input id="product-images" className={input} value={editing.images} onChange={(e) => setEditing({ ...editing, images: e.target.value })} />
               </div>
               <div className="flex items-center space-x-4">
                 <label className="flex items-center space-x-2 text-sm">
@@ -278,13 +278,13 @@ export default function StoreProductsPage() {
                   <span>Track stock</span>
                 </label>
                 {editing.trackStock && (
-                  <input className={input + ' max-w-[8rem]'} type="number" placeholder="Stock" value={editing.stock} onChange={(e) => setEditing({ ...editing, stock: e.target.value })} />
+                  <input className={input + ' max-w-[8rem]'} type="number" placeholder="Stock" aria-label="Stock" value={editing.stock} onChange={(e) => setEditing({ ...editing, stock: e.target.value })} />
                 )}
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs text-text-muted">Variants (optional)</label>
+                  <span className="text-sm font-medium text-text-secondary">Variants (optional)</span>
                   <button
                     onClick={() => setEditing({ ...editing, variants: [...editing.variants, { label: '', sku: '', priceCents: null, stock: null }] })}
                     className="text-cyber-cyan text-xs hover:text-cyber-green"
@@ -298,8 +298,8 @@ export default function StoreProductsPage() {
                     <input className={input + ' col-span-3'} placeholder="SKU" value={v.sku || ''} onChange={(e) => setVariant(i, { sku: e.target.value })} />
                     <input className={input + ' col-span-2'} type="number" placeholder="¢ price" value={v.priceCents ?? ''} onChange={(e) => setVariant(i, { priceCents: e.target.value === '' ? null : Number(e.target.value) })} />
                     <input className={input + ' col-span-2'} type="number" placeholder="stock" value={v.stock ?? ''} onChange={(e) => setVariant(i, { stock: e.target.value === '' ? null : Number(e.target.value) })} />
-                    <button className="col-span-1 text-cyber-red/80 hover:text-cyber-red" onClick={() => setEditing({ ...editing, variants: editing.variants.filter((_, idx) => idx !== i) })}>
-                      <FaTrash />
+                    <button className="col-span-1 text-cyber-red/80 hover:text-cyber-red" aria-label={`Remove variant ${v.label || i + 1}`} onClick={() => setEditing({ ...editing, variants: editing.variants.filter((_, idx) => idx !== i) })}>
+                      <FaTrash aria-hidden="true" />
                     </button>
                   </div>
                 ))}
@@ -307,11 +307,11 @@ export default function StoreProductsPage() {
               </div>
             </div>
             <div className="flex items-center justify-end space-x-2 p-4 border-t border-dark-border">
-              <button onClick={() => setEditing(null)} className="px-4 py-2 rounded-lg bg-dark-lighter text-text-secondary">
+              <button onClick={() => setEditing(null)} className="btn-secondary">
                 Cancel
               </button>
-              <button onClick={save} disabled={saving || !editing.name.trim()} className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-linear-to-r from-cyber-green to-cyber-cyan text-dark font-semibold disabled:opacity-50">
-                {saving ? <FaSpinner className="animate-spin" /> : <FaSave />}
+              <button onClick={save} disabled={saving || !editing.name.trim()} className="btn-primary">
+                {saving ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaSave aria-hidden="true" />}
                 <span>Save</span>
               </button>
             </div>

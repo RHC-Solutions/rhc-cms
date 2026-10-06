@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import AdminShell from "@adminpanel/components/admin/AdminShell";
 import IntegrationsPanel from "@adminpanel/components/admin/IntegrationsPanel";
-import { FaCog, FaEnvelope, FaGlobe, FaShieldAlt } from "react-icons/fa";
+import { FaCheckCircle, FaCog, FaEnvelope, FaExclamationTriangle, FaGlobe, FaShieldAlt } from "react-icons/fa";
 import { useToast } from "@adminpanel/components/admin/Toast";
 import { TIMEZONES, getGeoTimezone } from "@adminpanel/lib/timezones";
 
@@ -67,6 +67,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<Settings | null>(null);
+  // Full settings document, for read-only status the form doesn't edit (backup scheduler).
+  const [raw, setRaw] = useState<Record<string, any>>({});
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
 
   useEffect(() => {
@@ -85,6 +87,7 @@ export default function SettingsPage() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      setRaw(data || {});
       const social = (data.footer?.socialLinks || []) as SocialLink[];
 
       // Get default timezone from geo IP if not set
@@ -209,11 +212,18 @@ export default function SettingsPage() {
       if (!res.ok) {
         const text = await res.text();
         console.error(`Save failed: ${text || res.status}`);
+        let reason = text;
+        try {
+          reason = JSON.parse(text).error || text;
+        } catch {}
+        addToast("error", `Settings were not saved: ${(reason || `HTTP ${res.status}`).slice(0, 200)}`, 6000);
         return;
       }
       await fetchSettings();
+      addToast("success", "Settings saved.");
     } catch (e) {
       console.error("Save settings failed", e);
+      addToast("error", "Settings were not saved: the request did not reach the server.", 6000);
     } finally {
       setSaving(false);
     }
@@ -224,6 +234,43 @@ export default function SettingsPage() {
   };
 
 ;
+
+  // Shown read-only: each is enforced outside this form (the TLS proxy or
+  // CDN in front of the site, the admin login gate, the backup scheduler).
+  // The old checkboxes here were never read or saved.
+  const servedOverHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+  const scheduler = raw.scheduler as
+    | { enabled?: boolean; frequency?: string; time?: string; dayOfWeek?: string }
+    | undefined;
+  const backupSchedule =
+    scheduler?.frequency === "weekly" && scheduler.dayOfWeek
+      ? `weekly on ${scheduler.dayOfWeek.charAt(0).toUpperCase()}${scheduler.dayOfWeek.slice(1)}`
+      : scheduler?.frequency || "daily";
+  const securityStatus: { label: string; detail: string; on: boolean; href?: string; linkLabel?: string }[] = [
+    {
+      label: "HTTPS",
+      detail: servedOverHttps
+        ? "This admin is served over HTTPS. The http:// redirect and HSTS belong on the proxy or CDN in front of the site."
+        : "This admin is not served over HTTPS. Put the site behind TLS before going live.",
+      on: servedOverHttps,
+    },
+    {
+      label: "Two-factor authentication",
+      detail: "Required for every admin account. The login gate refuses access until it is set up.",
+      on: true,
+      href: "/admin/users",
+      linkLabel: "Manage users",
+    },
+    {
+      label: "Automatic backups",
+      detail: scheduler?.enabled
+        ? `Runs ${backupSchedule} at ${scheduler.time || "02:00"}.`
+        : "The backup scheduler is switched off.",
+      on: !!scheduler?.enabled,
+      href: "/admin/backups",
+      linkLabel: "Manage backups",
+    },
+  ];
 
   if (loading || !form) {
     return (
@@ -270,7 +317,7 @@ export default function SettingsPage() {
       {/* General Settings */}
       <div className="card-cyber p-8 mb-8">
         <div className="flex items-center space-x-3 mb-6">
-          <FaCog className="text-3xl text-cyber-green" />
+          <FaCog className="text-3xl text-cyber-green" aria-hidden="true" />
           <h2 className="text-xl font-bold text-text-primary">General Settings</h2>
         </div>
         <div className="space-y-6">
@@ -331,7 +378,7 @@ export default function SettingsPage() {
       {/* Contact Information */}
       <div className="card-cyber p-8 mb-8">
         <div className="flex items-center space-x-3 mb-6">
-          <FaEnvelope className="text-3xl text-cyber-cyan" />
+          <FaEnvelope className="text-3xl text-cyber-cyan" aria-hidden="true" />
           <h2 className="text-xl font-bold text-text-primary">Contact Information</h2>
         </div>
         <div className="space-y-6">
@@ -421,7 +468,7 @@ export default function SettingsPage() {
       {/* Regional Settings */}
       <div className="card-cyber p-8 mb-8">
         <div className="flex items-center space-x-3 mb-6">
-          <FaGlobe className="text-3xl text-cyber-blue" />
+          <FaGlobe className="text-3xl text-cyber-blue" aria-hidden="true" />
           <h2 className="text-xl font-bold text-text-primary">Regional Settings</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -468,27 +515,32 @@ export default function SettingsPage() {
       {/* Security Settings */}
       <div className="card-cyber p-8 mb-8">
         <div className="flex items-center space-x-3 mb-6">
-          <FaShieldAlt className="text-3xl text-cyber-red" />
+          <FaShieldAlt className="text-3xl text-cyber-red" aria-hidden="true" />
           <h2 className="text-xl font-bold text-text-primary">Security & Maintenance</h2>
         </div>
-        <div className="space-y-4">
-          <div className="flex items-center space-x-3">
-            <input type="checkbox" id="ssl" className="w-5 h-5" defaultChecked />
-            <label htmlFor="ssl" className="text-text-primary">Force HTTPS (SSL)</label>
-          </div>
-          <div className="flex items-center space-x-3">
-            <input type="checkbox" id="two-factor" className="w-5 h-5" defaultChecked />
-            <label htmlFor="two-factor" className="text-text-primary">Enable two-factor authentication for admin</label>
-          </div>
-          <div className="flex items-center space-x-3">
-            <input type="checkbox" id="auto-backup" className="w-5 h-5" defaultChecked />
-            <label htmlFor="auto-backup" className="text-text-primary">Enable automatic backups</label>
-          </div>
-          <div className="flex items-center space-x-3">
-            <input type="checkbox" id="maintenance" className="w-5 h-5" />
-            <label htmlFor="maintenance" className="text-text-primary">Enable maintenance mode</label>
-          </div>
-        </div>
+        <ul className="divide-y divide-dark-border">
+          {securityStatus.map((item) => (
+            <li key={item.label} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3 first:pt-0 last:pb-0">
+              <div className="min-w-0">
+                <p className="text-text-primary font-medium">{item.label}</p>
+                <p className="text-text-muted text-sm">{item.detail}</p>
+              </div>
+              <div className="flex items-center gap-4 shrink-0">
+                <span className={`inline-flex w-14 items-center gap-1.5 text-sm font-medium ${item.on ? "text-green-400" : "text-yellow-400"}`}>
+                  {item.on ? <FaCheckCircle aria-hidden="true" /> : <FaExclamationTriangle aria-hidden="true" />}
+                  {item.on ? "On" : "Off"}
+                </span>
+                <span className="w-36 whitespace-nowrap text-right">
+                  {item.href && (
+                    <Link href={item.href} className="text-sm text-cyber-cyan hover:underline">
+                      {item.linkLabel}
+                    </Link>
+                  )}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
 
       {/* Save Button */}

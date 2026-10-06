@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaClock, FaSpinner, FaSave, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaSpinner, FaSave, FaPlus, FaTrash } from 'react-icons/fa';
 
 interface TimeWindow {
   start: string;
@@ -78,51 +78,51 @@ export default function BookingAvailabilityPage() {
 
   return (
     <AdminShell title="Booking — Availability">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <FaClock className="text-2xl text-cyber-green" />
-            <h2 className="text-2xl font-bold">Availability</h2>
+      <div className="max-w-3xl">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="heading-xl">Availability</h1>
+            <p className="text-text-secondary text-sm mt-1">Weekly opening hours that bookable time slots are generated from.</p>
           </div>
-          <button onClick={save} disabled={saving || !config} className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-linear-to-r from-cyber-green to-cyber-cyan text-dark font-semibold disabled:opacity-50">
-            {saving ? <FaSpinner className="animate-spin" /> : <FaSave />}
+          <button onClick={save} disabled={saving || !config} className="btn-primary">
+            {saving ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaSave aria-hidden="true" />}
             <span>Save</span>
           </button>
         </div>
 
-        {error && <div className="mb-4 px-4 py-3 rounded-lg bg-cyber-red/10 border border-cyber-red/40 text-cyber-red text-sm">{error}</div>}
-        {saved && <div className="mb-4 px-4 py-3 rounded-lg bg-cyber-green/10 border border-cyber-green/40 text-cyber-green text-sm">Saved.</div>}
+        {error && <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">{error}</div>}
+        {saved && <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-sm text-green-300">Saved.</div>}
 
         {loading || !config ? (
-          <div className="text-text-muted"><FaSpinner className="animate-spin inline mr-2" />Loading…</div>
+          <div className="text-text-muted"><FaSpinner className="animate-spin inline mr-2" aria-hidden="true" />Loading…</div>
         ) : (
           <div className="space-y-4">
-            <div className="bg-dark-card border border-dark-border rounded-xl p-4 grid grid-cols-2 gap-4">
+            <div className="bg-dark-card border border-dark-border rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-text-muted mb-1">Timezone (informational — times are treated as UTC for now)</label>
-                <input className={input + ' w-full'} value={config.timezone} onChange={(e) => setConfig({ ...config, timezone: e.target.value })} />
+                <label htmlFor="availability-timezone" className="block text-sm font-medium text-text-secondary mb-1.5">Timezone (informational — times are treated as UTC for now)</label>
+                <input id="availability-timezone" className={input + ' w-full'} value={config.timezone} onChange={(e) => setConfig({ ...config, timezone: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs text-text-muted mb-1">Slot interval (min)</label>
-                <input className={input + ' w-full'} type="number" value={config.slotIntervalMins} onChange={(e) => setConfig({ ...config, slotIntervalMins: parseInt(e.target.value, 10) || 30 })} />
+                <label htmlFor="availability-interval" className="block text-sm font-medium text-text-secondary mb-1.5">Slot interval (min)</label>
+                <input id="availability-interval" className={input + ' w-full'} type="number" value={config.slotIntervalMins} onChange={(e) => setConfig({ ...config, slotIntervalMins: parseInt(e.target.value, 10) || 30 })} />
               </div>
             </div>
 
             {DAYS.map((label, day) => (
               <div key={day} className="bg-dark-card border border-dark-border rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium">{label}</span>
+                  <h2 className="heading-sm">{label}</h2>
                   <button onClick={() => addWindow(day)} className="text-cyber-cyan text-xs hover:text-cyber-green flex items-center space-x-1">
-                    <FaPlus /> <span>Add window</span>
+                    <FaPlus aria-hidden="true" /> <span>Add window</span>
                   </button>
                 </div>
                 {(config.weekly[day] || []).length === 0 && <p className="text-text-muted text-sm">Closed</p>}
                 {(config.weekly[day] || []).map((w, idx) => (
                   <div key={idx} className="flex items-center space-x-2 mb-2">
-                    <input type="time" className={input} value={w.start} onChange={(e) => setWindow(day, idx, { start: e.target.value })} />
+                    <input type="time" className={input} aria-label={`${label} window ${idx + 1} start`} value={w.start} onChange={(e) => setWindow(day, idx, { start: e.target.value })} />
                     <span className="text-text-muted">to</span>
-                    <input type="time" className={input} value={w.end} onChange={(e) => setWindow(day, idx, { end: e.target.value })} />
-                    <button onClick={() => removeWindow(day, idx)} className="text-cyber-red/80 hover:text-cyber-red"><FaTrash /></button>
+                    <input type="time" className={input} aria-label={`${label} window ${idx + 1} end`} value={w.end} onChange={(e) => setWindow(day, idx, { end: e.target.value })} />
+                    <button onClick={() => removeWindow(day, idx)} className="text-cyber-red/80 hover:text-cyber-red" aria-label={`Remove ${label} window ${idx + 1}`}><FaTrash aria-hidden="true" /></button>
                   </div>
                 ))}
               </div>

@@ -1,30 +1,43 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { motion } from 'framer-motion';
 import AdminSearch from './AdminSearch';
-import { ADMIN_NAV, type AdminNavEntry } from '@adminpanel/lib/admin-nav';
+import { useToast } from './Toast';
+import {
+  ADMIN_NAV,
+  ADMIN_NAV_SECTIONS,
+  type AdminNavEntry,
+  type AdminNavSection,
+  type AdminRole,
+} from '@adminpanel/lib/admin-nav';
 import {
   FaHome, FaFileAlt, FaImages, FaUsers, FaCog, FaChartLine,
   FaBars, FaTimes, FaSignOutAlt, FaEdit, FaCookie, FaSearch, FaList, FaDatabase,
-  FaPalette, FaListAlt, FaCloud, FaChevronDown, FaChevronRight, FaTrash, FaSpinner, FaShieldAlt,
+  FaPalette, FaListAlt, FaCloud, FaChevronDown, FaTrash, FaSpinner, FaShieldAlt,
   FaPlug, FaBullhorn, FaRobot, FaSyncAlt, FaHistory, FaStore, FaBoxOpen, FaShoppingCart, FaUserFriends,
   FaCalendarAlt, FaConciergeBell, FaCalendarCheck, FaClock, FaGift, FaLanguage, FaUser,
+  FaExternalLinkAlt, FaAngleDoubleLeft, FaAngleDoubleRight,
 } from 'react-icons/fa';
+import type { IconType } from 'react-icons';
 
 interface NavItem {
   name: string;
   href: string;
-  icon: any;
-  roles: string[];
+  icon: IconType;
+  roles: AdminRole[];
   children?: NavItem[];
+}
+
+interface NavSection {
+  label: AdminNavSection | null;
+  items: NavItem[];
 }
 
 // Resolve admin-nav.ts iconName strings to components. The nav tree itself lives in
 // src/lib/admin-nav.ts (shared with search) and carries no React imports.
-const NAV_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+const NAV_ICONS: Record<string, IconType> = {
   FaHome, FaChartLine, FaCog, FaFileAlt, FaBullhorn, FaStore, FaBoxOpen, FaShoppingCart,
   FaGift, FaUserFriends, FaCalendarAlt, FaCalendarCheck, FaConciergeBell, FaClock, FaImages,
   FaEdit, FaList, FaListAlt, FaPalette, FaLanguage, FaUsers, FaSearch, FaCookie, FaCloud,
@@ -36,56 +49,79 @@ interface AdminShellProps {
   title: string;
 }
 
-export default function AdminShell({ children, title }: AdminShellProps) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { data: session, status } = useSession();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+const SIDEBAR_KEY = 'adm-sidebar-collapsed';
 
-  const role = (session?.user as any)?.role as 'admin' | 'editor' | undefined;
+export default function AdminShell({ children, title }: AdminShellProps) {
+  const pathname = usePathname() || '';
+  const { data: session } = useSession();
+  const { addToast } = useToast();
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [purgingCache, setPurgingCache] = useState(false);
-  const [cacheMessage, setCacheMessage] = useState('');
 
-  const navigation: NavItem[] = useMemo(() => {
+  const role = (session?.user as any)?.role as AdminRole | undefined;
+
+  // Sidebar groups, in ADMIN_NAV_SECTIONS order; entries without a section lead, unlabelled.
+  const sections = useMemo<NavSection[]>(() => {
+    const allowed = (n: AdminNavEntry) => !n.hidden && (role ? n.roles.includes(role) : true);
     const toItem = (n: AdminNavEntry): NavItem => ({
       name: n.name,
       href: n.href,
       roles: n.roles,
       icon: NAV_ICONS[n.iconName] || FaCog,
-      children: n.children?.filter((c) => !c.hidden).map(toItem),
+      children: n.children?.filter(allowed).map(toItem),
     });
-    return ADMIN_NAV.filter((n) => !n.hidden).map(toItem);
+    const visible = ADMIN_NAV.filter(allowed);
+    return [null, ...ADMIN_NAV_SECTIONS]
+      .map((label) => ({
+        label,
+        items: visible.filter((n) => (n.section ?? null) === label).map(toItem),
+      }))
+      .filter((section) => section.items.length > 0);
+  }, [role]);
+
+  // Remembered per browser; a convenience, so storage failures are ignored.
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem(SIDEBAR_KEY) === '1');
+    } catch {}
   }, []);
 
-  const filterNavigation = (items: NavItem[]): NavItem[] => {
-    return items
-      .filter((item) => (role ? item.roles.includes(role) : true))
-      .map((item) => ({
-        ...item,
-        children: item.children ? filterNavigation(item.children) : undefined,
-      }));
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      try {
+        localStorage.setItem(SIDEBAR_KEY, prev ? '0' : '1');
+      } catch {}
+      return !prev;
+    });
   };
 
-  const filteredNavigation = useMemo(
-    () => filterNavigation(navigation),
-    [navigation, role]
-  );
-
-  // Auto-expand parent items if child is active
+  // Expand the parent of the current page.
   useEffect(() => {
     const expanded: string[] = [];
-    filteredNavigation.forEach((item) => {
-      if (item.children) {
-        const hasActiveChild = item.children.some((child) => pathname === child.href);
-        if (hasActiveChild || pathname.startsWith(item.href + '/')) {
+    for (const section of sections) {
+      for (const item of section.items) {
+        if (item.children?.length && (pathname === item.href || item.children.some((c) => pathname === c.href))) {
           expanded.push(item.name);
         }
       }
-    });
+    }
     setExpandedItems(expanded);
-  }, [pathname, filteredNavigation]);
+  }, [pathname, sections]);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobileMenuOpen]);
 
   const toggleExpand = (itemName: string) => {
     setExpandedItems((prev) =>
@@ -95,312 +131,256 @@ export default function AdminShell({ children, title }: AdminShellProps) {
 
   const handleLogout = async () => {
     const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
-    const callbackUrl = `${base}/admin/login`;
-    await signOut({ callbackUrl });
+    await signOut({ callbackUrl: `${base}/admin/login` });
   };
 
   const handlePurgeCache = async () => {
-    if (!confirm('Are you sure you want to purge the entire Cloudflare cache? This will clear all cached content.')) {
+    if (!confirm('Purge the entire Cloudflare cache? Every page will be fetched from the server again until the cache refills.')) {
       return;
     }
-
     setPurgingCache(true);
-    setCacheMessage('');
-
     try {
       const response = await fetch('/api/cms/cloudflare', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'purge-cache' }),
       });
-
       const data = await response.json();
-
       if (response.ok) {
-        setCacheMessage('✓ Cache purged successfully');
-        setTimeout(() => setCacheMessage(''), 3000);
+        addToast('success', 'Cloudflare cache purged.');
       } else {
-        setCacheMessage('✗ ' + (data.error || 'Failed to purge cache'));
-        setTimeout(() => setCacheMessage(''), 5000);
+        addToast('error', `Cache purge failed: ${data.error || `HTTP ${response.status}`}`, 6000);
       }
     } catch (error) {
       console.error('Cache purge error:', error);
-      setCacheMessage('✗ Error purging cache');
-      setTimeout(() => setCacheMessage(''), 5000);
+      addToast('error', 'Cache purge failed: the request did not reach the server.', 6000);
     } finally {
       setPurgingCache(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-dark text-text-primary">
-      {/* Top Navigation Bar */}
-      <nav className="bg-dark-card border-b border-dark-border fixed w-full top-0 z-50">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Left side */}
-            <div className="flex items-center">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="hidden lg:block p-2 rounded-lg text-text-secondary hover:text-cyber-green hover:bg-dark-lighter transition-colors"
-              >
-                <FaBars className="text-xl" />
-              </button>
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 rounded-lg text-text-secondary hover:text-cyber-green hover:bg-dark-lighter transition-colors"
-              >
-                {mobileMenuOpen ? <FaTimes className="text-xl" /> : <FaBars className="text-xl" />}
-              </button>
-              <div className="ml-4">
-                <h1 className="text-xl font-bold">
-                  <span className="text-gradient">RHC</span> CMS
-                </h1>
-                <p className="text-xs text-text-muted font-mono hidden sm:block">&gt; {title}</p>
-              </div>
-            </div>
-
-            {/* Right side */}
-            <div className="flex items-center space-x-4">
-              <AdminSearch />
-              {session?.user && (
-                <Link
-                  href="/admin/account"
-                  title="Account settings"
-                  className="hidden md:flex items-center space-x-2 text-sm rounded-lg px-2 py-1 hover:bg-dark-lighter transition-colors"
-                >
-                  <div className="w-8 h-8 rounded-full bg-linear-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-semibold">
-                    {session.user.name?.charAt(0) || 'U'}
-                  </div>
-                  <div>
-                    <p className="text-text-primary font-medium">{session.user.name}</p>
-                    <p className="text-text-muted text-xs">{session.user.email}</p>
-                  </div>
-                </Link>
-              )}
-              <Link
-                href="/"
-                target="_blank"
-                className="text-text-secondary hover:text-cyber-cyan transition-colors text-sm hidden sm:block"
-              >
-                View Site →
-              </Link>
-              {role === 'admin' && (
-                <button
-                  onClick={handlePurgeCache}
-                  disabled={purgingCache}
-                  className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-dark-lighter hover:bg-orange-500/20 
-                           text-text-secondary hover:text-orange-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Purge Entire Cache"
-                >
-                  {purgingCache ? <FaSpinner className="animate-spin" /> : <FaTrash />}
-                  <span className="hidden lg:inline">Purge Cache</span>
-                </button>
-              )}
-              <button
-                onClick={handleLogout}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-dark-lighter hover:bg-cyber-red/20 
-                         text-text-secondary hover:text-cyber-red transition-all"
-              >
-                <FaSignOutAlt />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Cache Message Notification */}
-      {cacheMessage && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className={`fixed top-20 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${
-            cacheMessage.startsWith('✓')
-              ? 'bg-green-500/90 text-white'
-              : 'bg-red-500/90 text-white'
-          }`}
-        >
-          {cacheMessage}
-        </motion.div>
-      )}
-
-      {/* Sidebar - Desktop */}
-      <aside
-        className={`hidden lg:block fixed left-0 top-16 h-[calc(100vh-4rem)] bg-dark-card border-r border-dark-border 
-                   transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-20'} overflow-y-auto`}
-      >
-        <nav className="p-4 space-y-2">
-          {filteredNavigation.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            const hasChildren = item.children && item.children.length > 0;
-            const isExpanded = expandedItems.includes(item.name);
-            const hasActiveChild = item.children?.some((child) => pathname === child.href);
-            
-            return (
-              <div key={item.name}>
-                {hasChildren ? (
-                  <>
-                    <div className="relative">
-                      <Link
-                        href={item.href}
-                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
-                          isActive || hasActiveChild
-                            ? 'bg-linear-to-r from-cyber-green to-cyber-cyan text-dark font-bold shadow-glow-cyber-green'
-                            : 'text-text-secondary hover:text-cyber-green hover:bg-dark-lighter'
-                        }`}
-                      >
-                        <Icon className="text-xl shrink-0" />
-                        {sidebarOpen && <span className="whitespace-nowrap flex-1">{item.name}</span>}
-                      </Link>
-                      {sidebarOpen && (
-                        <button
-                          onClick={() => toggleExpand(item.name)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-dark-lighter/50 rounded"
-                        >
-                          {isExpanded ? <FaChevronDown /> : <FaChevronRight />}
-                        </button>
-                      )}
-                    </div>
-                    {sidebarOpen && isExpanded && (
-                      <div className="ml-8 mt-1 space-y-1">
-                        {item.children?.map((child) => {
-                          const ChildIcon = child.icon;
-                          const isChildActive = pathname === child.href;
-                          return (
-                            <Link
-                              key={child.name}
-                              href={child.href}
-                              className={`flex items-center space-x-3 px-4 py-2 rounded-lg transition-all text-sm ${
-                                isChildActive
-                                  ? 'bg-cyber-cyan/20 text-cyber-cyan font-semibold'
-                                  : 'text-text-secondary hover:text-cyber-green hover:bg-dark-lighter'
-                              }`}
-                            >
-                              <ChildIcon className="text-base shrink-0" />
-                              <span className="whitespace-nowrap">{child.name}</span>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <Link
-                    href={item.href}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
-                      isActive
-                        ? 'bg-linear-to-r from-cyber-green to-cyber-cyan text-dark font-bold shadow-glow-cyber-green'
-                        : 'text-text-secondary hover:text-cyber-green hover:bg-dark-lighter'
-                    }`}
-                  >
-                    <Icon className="text-xl shrink-0" />
-                    {sidebarOpen && <span className="whitespace-nowrap">{item.name}</span>}
-                  </Link>
-                )}
-              </div>
-            );
-          })}
-        </nav>
-      </aside>
-
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <motion.div
-          initial={{ x: -300, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: -300, opacity: 0 }}
-          className="lg:hidden fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-dark-card border-r border-dark-border z-40 overflow-y-auto"
-        >
-          <nav className="p-4 space-y-2">
-            {filteredNavigation.map((item) => {
+  const renderNav = (compact: boolean) => (
+    <nav aria-label="Admin" className="px-3 py-3">
+      {sections.map((section, si) => (
+        <div key={section.label ?? si} className={si > 0 ? 'mt-4' : undefined}>
+          {section.label &&
+            (compact ? (
+              <div className="mx-2 mb-2 border-t border-dark-border" aria-hidden="true" />
+            ) : (
+              <p className="px-3 mb-1 text-xs font-semibold uppercase tracking-[0.06em] text-text-muted">
+                {section.label}
+              </p>
+            ))}
+          <ul className="space-y-0.5">
+            {section.items.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
-              const hasChildren = item.children && item.children.length > 0;
+              const hasChildren = !compact && !!item.children?.length;
+              const childActive = !!item.children?.some((c) => pathname === c.href);
               const isExpanded = expandedItems.includes(item.name);
-              const hasActiveChild = item.children?.some((child) => pathname === child.href);
-              
+              const highlighted = isActive || (compact && childActive);
+
               return (
-                <div key={item.name}>
-                  {hasChildren ? (
-                    <>
-                      <div className="relative">
-                        <Link
-                          href={item.href}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
-                            isActive || hasActiveChild
-                              ? 'bg-linear-to-r from-cyber-green to-cyber-cyan text-dark font-bold'
-                              : 'text-text-secondary hover:text-cyber-green hover:bg-dark-lighter'
-                          }`}
-                        >
-                          <Icon className="text-xl" />
-                          <span className="flex-1">{item.name}</span>
-                        </Link>
-                        <button
-                          onClick={() => toggleExpand(item.name)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-dark-lighter/50 rounded"
-                        >
-                          {isExpanded ? <FaChevronDown /> : <FaChevronRight />}
-                        </button>
-                      </div>
-                      {isExpanded && (
-                        <div className="ml-8 mt-1 space-y-1">
-                          {item.children?.map((child) => {
-                            const ChildIcon = child.icon;
-                            const isChildActive = pathname === child.href;
-                            return (
-                              <Link
-                                key={child.name}
-                                href={child.href}
-                                onClick={() => setMobileMenuOpen(false)}
-                                className={`flex items-center space-x-3 px-4 py-2 rounded-lg transition-all text-sm ${
-                                  isChildActive
-                                    ? 'bg-cyber-cyan/20 text-cyber-cyan font-semibold'
-                                    : 'text-text-secondary hover:text-cyber-green hover:bg-dark-lighter'
-                                }`}
-                              >
-                                <ChildIcon className="text-base" />
-                                <span>{child.name}</span>
-                              </Link>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </>
-                  ) : (
+                <li key={item.name}>
+                  <div className="relative flex items-center">
                     <Link
                       href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
-                        isActive
-                          ? 'bg-linear-to-r from-cyber-green to-cyber-cyan text-dark font-bold'
-                          : 'text-text-secondary hover:text-cyber-green hover:bg-dark-lighter'
+                      aria-current={isActive ? 'page' : undefined}
+                      title={compact ? item.name : undefined}
+                      aria-label={compact ? item.name : undefined}
+                      className={`flex flex-1 items-center gap-3 h-9 rounded-lg text-sm transition-colors ${
+                        compact ? 'justify-center px-0' : 'px-3'
+                      } ${hasChildren ? 'pr-9' : ''} ${
+                        highlighted
+                          ? 'bg-[var(--adm-accent-soft)] text-[var(--adm-accent)] font-medium'
+                          : childActive
+                          ? 'text-text-primary font-medium hover:bg-dark-lighter'
+                          : 'text-text-secondary hover:text-text-primary hover:bg-dark-lighter'
                       }`}
                     >
-                      <Icon className="text-xl" />
-                      <span>{item.name}</span>
+                      <Icon className="text-[15px] shrink-0" aria-hidden="true" />
+                      {!compact && <span className="truncate">{item.name}</span>}
                     </Link>
+                    {hasChildren && (
+                      <button
+                        type="button"
+                        onClick={() => toggleExpand(item.name)}
+                        aria-expanded={isExpanded}
+                        aria-label={`${isExpanded ? 'Hide' : 'Show'} ${item.name} pages`}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded-md text-text-muted hover:text-text-primary hover:bg-dark-lighter transition-colors"
+                      >
+                        <FaChevronDown
+                          className={`text-[10px] transition-transform duration-150 ${isExpanded ? '' : '-rotate-90'}`}
+                          aria-hidden="true"
+                        />
+                      </button>
+                    )}
+                  </div>
+                  {hasChildren && isExpanded && (
+                    <ul className="mt-0.5 mb-1 ml-[1.375rem] pl-3 border-l border-dark-border space-y-0.5">
+                      {item.children!.map((child) => {
+                        const isChildActive = pathname === child.href;
+                        return (
+                          <li key={child.href}>
+                            <Link
+                              href={child.href}
+                              aria-current={isChildActive ? 'page' : undefined}
+                              className={`flex items-center h-8 px-3 rounded-lg text-[13px] transition-colors ${
+                                isChildActive
+                                  ? 'bg-[var(--adm-accent-soft)] text-[var(--adm-accent)] font-medium'
+                                  : 'text-text-secondary hover:text-text-primary hover:bg-dark-lighter'
+                              }`}
+                            >
+                              <span className="truncate">{child.name}</span>
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   )}
-                </div>
+                </li>
               );
             })}
-          </nav>
-        </motion.div>
-      )}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  );
 
-      {/* Main Content */}
-      <main
-        className={`pt-16 transition-all duration-300 ${
-          sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'
+  const userName = session?.user?.name || session?.user?.email || '';
+
+  return (
+    <div className="adm min-h-screen">
+      <a
+        href="#adm-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-[var(--adm-accent)] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-[var(--adm-accent-ink)]"
+      >
+        Skip to content
+      </a>
+
+      {/* Top bar */}
+      <header className="fixed inset-x-0 top-0 z-50 h-14 bg-[var(--adm-sidebar)] border-b border-dark-border">
+        <div className="flex h-full items-center gap-3 px-3 sm:px-4">
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((o) => !o)}
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="adm-drawer"
+            className="lg:hidden grid place-items-center w-9 h-9 rounded-lg text-text-secondary hover:text-text-primary hover:bg-dark-lighter transition-colors"
+          >
+            {mobileMenuOpen ? <FaTimes aria-hidden="true" /> : <FaBars aria-hidden="true" />}
+          </button>
+
+          <Link href="/admin/dashboard" className="flex items-center gap-2 shrink-0 rounded-md">
+            <span className="text-[15px] font-bold tracking-[-0.01em] text-text-primary">
+              <span className="text-[var(--adm-accent)]">RHC</span> CMS
+            </span>
+          </Link>
+          <span className="hidden sm:block h-5 w-px bg-dark-border" aria-hidden="true" />
+          <p className="hidden sm:block min-w-0 truncate text-sm text-text-secondary">{title}</p>
+
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+            <AdminSearch />
+            <Link
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="View site (opens in a new tab)"
+              className="flex items-center gap-2 h-9 px-2.5 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-dark-lighter transition-colors"
+            >
+              <FaExternalLinkAlt className="text-xs" aria-hidden="true" />
+              <span className="hidden md:inline">View site</span>
+            </Link>
+            {role === 'admin' && (
+              <button
+                type="button"
+                onClick={handlePurgeCache}
+                disabled={purgingCache}
+                title="Purge the entire Cloudflare cache"
+                aria-label="Purge Cloudflare cache"
+                className="flex items-center gap-2 h-9 px-2.5 rounded-lg text-sm text-text-secondary hover:text-orange-300 hover:bg-orange-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {purgingCache ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaTrash className="text-xs" aria-hidden="true" />}
+                <span className="hidden xl:inline">Purge cache</span>
+              </button>
+            )}
+            {session?.user && (
+              <Link
+                href="/admin/account"
+                title="Account settings"
+                aria-label={`Account settings${session.user.email ? ` for ${session.user.email}` : ''}`}
+                className="hidden md:flex items-center gap-2 h-9 pl-2 pr-2.5 ml-1 rounded-lg border-l border-dark-border hover:bg-dark-lighter transition-colors"
+              >
+                <span
+                  className="grid place-items-center w-8 h-8 rounded-full bg-[var(--adm-accent-soft)] text-[var(--adm-accent)] text-sm font-semibold"
+                  aria-hidden="true"
+                >
+                  {userName.charAt(0).toUpperCase() || 'U'}
+                </span>
+                <span className="hidden xl:block max-w-[12rem] truncate text-sm text-text-primary">{session.user.name}</span>
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={handleLogout}
+              aria-label="Log out"
+              className="flex items-center gap-2 h-9 px-2.5 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-dark-lighter transition-colors"
+            >
+              <FaSignOutAlt aria-hidden="true" />
+              <span className="hidden sm:inline">Log out</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Sidebar, desktop */}
+      <aside
+        className={`hidden lg:flex flex-col fixed left-0 top-14 bottom-0 z-40 bg-[var(--adm-sidebar)] border-r border-dark-border transition-[width] duration-200 ${
+          collapsed ? 'w-16' : 'w-60'
         }`}
       >
-        <div className="p-4 sm:p-6 lg:p-8">
-          {children}
+        <div className="flex-1 overflow-y-auto overscroll-contain">{renderNav(collapsed)}</div>
+        <div className="border-t border-dark-border p-3">
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className={`flex w-full items-center gap-3 h-9 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-dark-lighter transition-colors ${
+              collapsed ? 'justify-center' : 'px-3'
+            }`}
+          >
+            {collapsed ? <FaAngleDoubleRight aria-hidden="true" /> : <FaAngleDoubleLeft aria-hidden="true" />}
+            {!collapsed && <span>Collapse</span>}
+          </button>
         </div>
-      </main>
+      </aside>
+
+      {/* Drawer, mobile */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 top-14 z-40">
+          <button
+            type="button"
+            aria-label="Close menu"
+            tabIndex={-1}
+            onClick={() => setMobileMenuOpen(false)}
+            className="absolute inset-0 bg-black/60"
+          />
+          <aside
+            id="adm-drawer"
+            className="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] overflow-y-auto overscroll-contain bg-[var(--adm-sidebar)] border-r border-dark-border"
+          >
+            {renderNav(false)}
+          </aside>
+        </div>
+      )}
+
+      <div className={`pt-14 transition-[padding] duration-200 ${collapsed ? 'lg:pl-16' : 'lg:pl-60'}`}>
+        <main id="adm-content" tabIndex={-1} className="adm-main mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 focus:outline-none">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

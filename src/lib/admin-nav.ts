@@ -9,9 +9,14 @@
  * `iconName` is a react-icons/fa component name resolved to a component in
  * AdminShell's NAV_ICONS map. `hidden` entries are searchable but not rendered in
  * the sidebar (e.g. the top-bar account page, deep settings pages).
+ * `section` groups top-level entries under a sidebar heading, in
+ * ADMIN_NAV_SECTIONS order; entries without one sit at the top, unlabelled.
  */
 
 export type AdminRole = 'admin' | 'editor';
+
+export const ADMIN_NAV_SECTIONS = ['Content', 'Commerce', 'Growth', 'Site', 'Operations'] as const;
+export type AdminNavSection = (typeof ADMIN_NAV_SECTIONS)[number];
 
 export interface AdminNavEntry {
   name: string;
@@ -21,16 +26,17 @@ export interface AdminNavEntry {
   description?: string;
   keywords?: string[];
   hidden?: boolean; // searchable but not shown in the sidebar
+  section?: AdminNavSection; // sidebar group heading (top level only)
   children?: AdminNavEntry[];
 }
 
 export const ADMIN_NAV: AdminNavEntry[] = [
   { name: 'Dashboard', href: '/admin/dashboard', iconName: 'FaHome', roles: ['admin', 'editor'], description: 'View dashboard overview', keywords: ['dashboard', 'overview', 'stats', 'home'] },
   { name: 'Analytics', href: '/admin/analytics', iconName: 'FaChartLine', roles: ['admin', 'editor'], description: 'View site analytics and traffic', keywords: ['analytics', 'stats', 'traffic', 'visitors', 'engagement', 'ga4', 'google analytics'] },
-  { name: 'Pages', href: '/admin/pages', iconName: 'FaFileAlt', roles: ['admin', 'editor'], description: 'Manage website pages', keywords: ['pages', 'content', 'create', 'edit', 'delete', 'homepage', 'contact'] },
-  { name: 'Landing Pages', href: '/admin/landing-pages', iconName: 'FaBullhorn', roles: ['admin', 'editor'], description: 'Manage marketing landing pages', keywords: ['landing', 'campaigns', 'marketing', 'lead', 'pages'] },
+  { name: 'Pages', section: 'Content', href: '/admin/pages', iconName: 'FaFileAlt', roles: ['admin', 'editor'], description: 'Manage website pages', keywords: ['pages', 'content', 'create', 'edit', 'delete', 'homepage', 'contact'] },
+  { name: 'Landing Pages', section: 'Content', href: '/admin/landing-pages', iconName: 'FaBullhorn', roles: ['admin', 'editor'], description: 'Manage marketing landing pages', keywords: ['landing', 'campaigns', 'marketing', 'lead', 'pages'] },
   {
-    name: 'Store', href: '/admin/store/products', iconName: 'FaStore', roles: ['admin', 'editor'],
+    name: 'Store', section: 'Commerce', href: '/admin/store/products', iconName: 'FaStore', roles: ['admin', 'editor'],
     children: [
       { name: 'Products', href: '/admin/store/products', iconName: 'FaBoxOpen', roles: ['admin', 'editor'], description: 'Manage store products, prices, variants and stock', keywords: ['store', 'shop', 'products', 'ecommerce', 'catalog', 'price', 'variants', 'stock', 'inventory'] },
       { name: 'Orders', href: '/admin/store/orders', iconName: 'FaShoppingCart', roles: ['admin', 'editor'], description: 'View and fulfil store orders', keywords: ['store', 'orders', 'sales', 'fulfil', 'fulfill', 'payments', 'stripe', 'checkout'] },
@@ -39,31 +45,31 @@ export const ADMIN_NAV: AdminNavEntry[] = [
     ],
   },
   {
-    name: 'Booking', href: '/admin/booking/appointments', iconName: 'FaCalendarAlt', roles: ['admin', 'editor'],
+    name: 'Booking', section: 'Commerce', href: '/admin/booking/appointments', iconName: 'FaCalendarAlt', roles: ['admin', 'editor'],
     children: [
       { name: 'Appointments', href: '/admin/booking/appointments', iconName: 'FaCalendarCheck', roles: ['admin', 'editor'], description: 'View and manage appointments', keywords: ['booking', 'appointments', 'calendar', 'schedule', 'reservations'] },
       { name: 'Services', href: '/admin/booking/services', iconName: 'FaConciergeBell', roles: ['admin', 'editor'], description: 'Manage bookable services, duration and price', keywords: ['booking', 'services', 'duration', 'price', 'offerings'] },
       { name: 'Availability', href: '/admin/booking/availability', iconName: 'FaClock', roles: ['admin', 'editor'], description: 'Weekly opening hours and slot intervals', keywords: ['booking', 'availability', 'hours', 'opening', 'schedule', 'slots'] },
     ],
   },
-  { name: 'Media', href: '/admin/media', iconName: 'FaImages', roles: ['admin', 'editor'], description: 'Manage images and files', keywords: ['media', 'images', 'files', 'upload', 'gallery', 'logo', 'favicon'] },
-  { name: 'Forms', href: '/admin/forms', iconName: 'FaEdit', roles: ['admin', 'editor'], description: 'Manage contact forms and submissions', keywords: ['forms', 'submissions', 'contact', 'messages', 'inquiries'] },
-  { name: 'Menu', href: '/admin/menu', iconName: 'FaList', roles: ['admin', 'editor'], description: 'Configure site navigation', keywords: ['menu', 'navigation', 'links', 'structure'] },
-  { name: 'Footer', href: '/admin/footer', iconName: 'FaListAlt', roles: ['admin', 'editor'], description: 'Manage footer content and social links', keywords: ['footer', 'links', 'social', 'linkedin', 'facebook', 'instagram', 'telegram'] },
-  { name: 'Theme Settings', href: '/admin/theme', iconName: 'FaPalette', roles: ['admin', 'editor'], description: 'Customize site theme colors and appearance', keywords: ['theme', 'colors', 'appearance', 'branding', 'logo', 'favicon', 'styling'] },
-  { name: 'Languages', href: '/admin/i18n', iconName: 'FaLanguage', roles: ['admin'], description: 'Locales and machine translation', keywords: ['languages', 'i18n', 'locale', 'translation', 'translate', 'multilingual'] },
-  { name: 'Users', href: '/admin/users', iconName: 'FaUsers', roles: ['admin'], description: 'Manage user accounts and permissions', keywords: ['users', 'accounts', 'roles', 'permissions', 'access'] },
-  { name: 'SEO', href: '/admin/seo', iconName: 'FaSearch', roles: ['admin', 'editor'], description: 'SEO, GTM, Analytics, Ahrefs, IPinfo, OG image', keywords: ['seo', 'meta', 'og image', 'gtm', 'google tag manager', 'analytics', 'ahrefs', 'ipinfo', 'sitemap', 'robots'] },
-  { name: 'Cookie Settings', href: '/admin/cookies', iconName: 'FaCookie', roles: ['admin', 'editor'], description: 'Manage cookie consent and tracking', keywords: ['cookies', 'consent', 'privacy', 'gdpr', 'tracking'] },
-  { name: 'Cloudflare', href: '/admin/cloudflare', iconName: 'FaCloud', roles: ['admin'], description: 'Cache, DNS, Turnstile, and WAF status (API token in Settings → Integrations)', keywords: ['cloudflare', 'cdn', 'cache', 'dns', 'turnstile', 'waf'] },
-  { name: 'Integrations', href: '/admin/settings?tab=integrations', iconName: 'FaPlug', roles: ['admin'], description: 'Connect third-party services (under Settings)', keywords: ['integrations', 'smtp', 'telegram', 'whatsapp', 'brevo', 'stripe', 'recaptcha', 'cloudflare', 'email', 'notifications', 'api keys', 'secrets'] },
-  { name: 'Backups', href: '/admin/backups', iconName: 'FaDatabase', roles: ['admin'], description: 'Manage database backups', keywords: ['backups', 'restore', 'database', 'recovery'] },
-  { name: 'Automation', href: '/admin/automation', iconName: 'FaRobot', roles: ['admin'], description: 'Daily site audit, dependency PRs, panel updates', keywords: ['automation', 'audit', 'cron', 'schedule', 'dependencies', 'auto-fix', 'reports', 'updates'] },
-  { name: 'OODA', href: '/admin/ooda', iconName: 'FaSyncAlt', roles: ['admin'], description: 'Self-improvement loop — observe, orient, decide, act', keywords: ['ooda', 'automation', 'self-healing', 'loop', 'observe', 'orient', 'decide', 'act'] },
-  { name: 'Security (Aikido)', href: '/admin/aikido', iconName: 'FaShieldAlt', roles: ['admin'], description: 'Aikido scanner — issues, blocked IPs, brute-force protection', keywords: ['security', 'aikido', 'blocked', 'ips', 'brute force', 'protection', 'scanner', 'issues'] },
-  { name: 'Audit Log', href: '/admin/audit', iconName: 'FaHistory', roles: ['admin'], description: 'Admin action history — who did what and when', keywords: ['audit', 'log', 'history', 'activity', 'security', 'accountability', 'trail'] },
+  { name: 'Media', section: 'Content', href: '/admin/media', iconName: 'FaImages', roles: ['admin', 'editor'], description: 'Manage images and files', keywords: ['media', 'images', 'files', 'upload', 'gallery', 'logo', 'favicon'] },
+  { name: 'Forms', section: 'Content', href: '/admin/forms', iconName: 'FaEdit', roles: ['admin', 'editor'], description: 'Manage contact forms and submissions', keywords: ['forms', 'submissions', 'contact', 'messages', 'inquiries'] },
+  { name: 'Menu', section: 'Content', href: '/admin/menu', iconName: 'FaList', roles: ['admin', 'editor'], description: 'Configure site navigation', keywords: ['menu', 'navigation', 'links', 'structure'] },
+  { name: 'Footer', section: 'Content', href: '/admin/footer', iconName: 'FaListAlt', roles: ['admin', 'editor'], description: 'Manage footer content and social links', keywords: ['footer', 'links', 'social', 'linkedin', 'facebook', 'instagram', 'telegram'] },
+  { name: 'Theme Settings', section: 'Site', href: '/admin/theme', iconName: 'FaPalette', roles: ['admin', 'editor'], description: 'Customize site theme colors and appearance', keywords: ['theme', 'colors', 'appearance', 'branding', 'logo', 'favicon', 'styling'] },
+  { name: 'Languages', section: 'Site', href: '/admin/i18n', iconName: 'FaLanguage', roles: ['admin'], description: 'Locales and machine translation', keywords: ['languages', 'i18n', 'locale', 'translation', 'translate', 'multilingual'] },
+  { name: 'Users', section: 'Site', href: '/admin/users', iconName: 'FaUsers', roles: ['admin'], description: 'Manage user accounts and permissions', keywords: ['users', 'accounts', 'roles', 'permissions', 'access'] },
+  { name: 'SEO', section: 'Growth', href: '/admin/seo', iconName: 'FaSearch', roles: ['admin', 'editor'], description: 'SEO, GTM, Analytics, Ahrefs, IPinfo, OG image', keywords: ['seo', 'meta', 'og image', 'gtm', 'google tag manager', 'analytics', 'ahrefs', 'ipinfo', 'sitemap', 'robots'] },
+  { name: 'Cookie Settings', section: 'Site', href: '/admin/cookies', iconName: 'FaCookie', roles: ['admin', 'editor'], description: 'Manage cookie consent and tracking', keywords: ['cookies', 'consent', 'privacy', 'gdpr', 'tracking'] },
+  { name: 'Cloudflare', section: 'Site', href: '/admin/cloudflare', iconName: 'FaCloud', roles: ['admin'], description: 'Cache, DNS, Turnstile, and WAF status (API token in Settings → Integrations)', keywords: ['cloudflare', 'cdn', 'cache', 'dns', 'turnstile', 'waf'] },
+  { name: 'Integrations', section: 'Site', href: '/admin/settings?tab=integrations', iconName: 'FaPlug', roles: ['admin'], description: 'Connect third-party services (under Settings)', keywords: ['integrations', 'smtp', 'telegram', 'whatsapp', 'brevo', 'stripe', 'recaptcha', 'cloudflare', 'email', 'notifications', 'api keys', 'secrets'] },
+  { name: 'Backups', section: 'Operations', href: '/admin/backups', iconName: 'FaDatabase', roles: ['admin'], description: 'Manage database backups', keywords: ['backups', 'restore', 'database', 'recovery'] },
+  { name: 'Automation', section: 'Operations', href: '/admin/automation', iconName: 'FaRobot', roles: ['admin'], description: 'Daily site audit, dependency PRs, panel updates', keywords: ['automation', 'audit', 'cron', 'schedule', 'dependencies', 'auto-fix', 'reports', 'updates'] },
+  { name: 'OODA', section: 'Operations', href: '/admin/ooda', iconName: 'FaSyncAlt', roles: ['admin'], description: 'Self-improvement loop — observe, orient, decide, act', keywords: ['ooda', 'automation', 'self-healing', 'loop', 'observe', 'orient', 'decide', 'act'] },
+  { name: 'Security (Aikido)', section: 'Operations', href: '/admin/aikido', iconName: 'FaShieldAlt', roles: ['admin'], description: 'Aikido scanner — issues, blocked IPs, brute-force protection', keywords: ['security', 'aikido', 'blocked', 'ips', 'brute force', 'protection', 'scanner', 'issues'] },
+  { name: 'Audit Log', section: 'Operations', href: '/admin/audit', iconName: 'FaHistory', roles: ['admin'], description: 'Admin action history — who did what and when', keywords: ['audit', 'log', 'history', 'activity', 'security', 'accountability', 'trail'] },
   {
-    name: 'Settings', href: '/admin/settings', iconName: 'FaCog', roles: ['admin', 'editor'],
+    name: 'Settings', section: 'Site', href: '/admin/settings', iconName: 'FaCog', roles: ['admin', 'editor'],
     description: 'Site identity, branding, integrations, infrastructure', keywords: ['settings', 'configuration', 'general', 'site', 'domain', 'identity', 'branding'],
     children: [
       { name: 'Environment', href: '/admin/settings/environment', iconName: 'FaCog', roles: ['admin'], description: 'Build-time settings (stored in the site database)', keywords: ['environment', 'env', 'variables', 'config', 'nextauth', 'database'] },
