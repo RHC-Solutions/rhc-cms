@@ -8,12 +8,14 @@ interface TurnstileWidget {
   remove: (widgetId?: string) => void;
 }
 
-declare global {
-  interface Window {
-    turnstile?: TurnstileWidget;
-    turnstileScriptLoaded?: boolean;
-  }
-}
+// A local view of window, not a `declare global` augmentation: a host site that
+// embeds this panel can declare its own `turnstile` type, and two global
+// declarations with different types fail type-checking (TS2717, 2026-10-06).
+type TurnstileWindow = Window & {
+  turnstile?: TurnstileWidget;
+  turnstileScriptLoaded?: boolean;
+};
+const tw = () => window as TurnstileWindow;
 
 interface CloudflareTurnstileProps {
   onVerify: (token: string) => void;
@@ -29,7 +31,7 @@ export default function CloudflareTurnstile({ onVerify, onError, theme = 'dark',
 
   useEffect(() => {
     // Check if script already exists globally
-    if (window.turnstileScriptLoaded && window.turnstile) {
+    if (tw().turnstileScriptLoaded && tw().turnstile) {
       setIsScriptLoaded(true);
       return;
     }
@@ -38,7 +40,7 @@ export default function CloudflareTurnstile({ onVerify, onError, theme = 'dark',
     const existingScript = document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]');
     if (existingScript) {
       existingScript.addEventListener('load', () => {
-        window.turnstileScriptLoaded = true;
+        tw().turnstileScriptLoaded = true;
         setIsScriptLoaded(true);
       });
       return;
@@ -51,7 +53,7 @@ export default function CloudflareTurnstile({ onVerify, onError, theme = 'dark',
     script.defer = true;
 
     script.onload = () => {
-      window.turnstileScriptLoaded = true;
+      tw().turnstileScriptLoaded = true;
       setIsScriptLoaded(true);
     };
 
@@ -64,9 +66,10 @@ export default function CloudflareTurnstile({ onVerify, onError, theme = 'dark',
 
     // Cleanup only removes widget, not script (script persists for reuse)
     return () => {
-      if (widgetIdRef.current && window.turnstile) {
+      const turnstile = tw().turnstile;
+      if (widgetIdRef.current && turnstile) {
         try {
-          window.turnstile.remove(widgetIdRef.current);
+          turnstile.remove(widgetIdRef.current);
           widgetIdRef.current = null;
         } catch (error) {
           console.error('[Turnstile] Cleanup error:', error);
@@ -77,7 +80,8 @@ export default function CloudflareTurnstile({ onVerify, onError, theme = 'dark',
 
   useEffect(() => {
     // Don't render if script not loaded or container not ready
-    if (!isScriptLoaded || !containerRef.current || !window.turnstile) {
+    const turnstile = tw().turnstile;
+    if (!isScriptLoaded || !containerRef.current || !turnstile) {
       return;
     }
 
@@ -96,7 +100,7 @@ export default function CloudflareTurnstile({ onVerify, onError, theme = 'dark',
       }
 
       // Render Turnstile widget
-      widgetIdRef.current = window.turnstile.render(containerRef.current, {
+      widgetIdRef.current = turnstile.render(containerRef.current, {
         sitekey: siteKey,
         theme,
         size,
