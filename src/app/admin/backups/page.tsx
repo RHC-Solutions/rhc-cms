@@ -27,6 +27,8 @@ export default function BackupsPage() {
   const [testingTelegram, setTestingTelegram] = useState(false);
   const [telegramStatus, setTelegramStatus] = useState<{ success: boolean; message: string; botName?: string } | null>(null);
   const [telegramConfigured, setTelegramConfigured] = useState(false);
+  // Masked tail of what backups will actually use (never the full values).
+  const [savedTelegram, setSavedTelegram] = useState<{ botToken: string; chatId: string } | null>(null);
   const [schedulerSettings, setSchedulerSettings] = useState({
     enabled: false,
     frequency: 'daily', // daily, weekly, custom
@@ -53,20 +55,18 @@ export default function BackupsPage() {
     }
   };
 
+  // The public settings response no longer carries bot tokens, so ask the
+  // admin-only endpoint, which resolves credentials the way the backup sender
+  // does (Integrations keys first) and returns masked values only.
   const fetchTelegramSettings = async () => {
     try {
-      const response = await fetch('/api/cms/settings');
+      const response = await fetch('/api/cms/telegram', { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
-        if (data.telegram?.botToken && data.telegram?.chatId) {
-          setBackupSettings({
-            botToken: data.telegram.botToken,
-            chatId: data.telegram.chatId,
-          });
-          setTelegramConfigured(true);
-        } else {
-          setTelegramConfigured(false);
-        }
+        setTelegramConfigured(!!data.configured);
+        setSavedTelegram(data.configured ? { botToken: data.botToken, chatId: data.chatId } : null);
+      } else {
+        setTelegramConfigured(false);
       }
     } catch (error) {
       console.error('Error fetching Telegram settings:', error);
@@ -191,8 +191,14 @@ export default function BackupsPage() {
   };
 
   const handleTestTelegram = async () => {
-    if (!backupSettings.botToken || !backupSettings.chatId) {
-      addToast('error', 'Please enter both bot token and chat ID');
+    // Empty fields test the saved configuration; typed values test those instead.
+    const typed = !!(backupSettings.botToken.trim() || backupSettings.chatId.trim());
+    if (typed && (!backupSettings.botToken.trim() || !backupSettings.chatId.trim())) {
+      addToast('error', 'Enter both the bot token and the chat ID, or leave both empty to test the saved ones.');
+      return;
+    }
+    if (!typed && !telegramConfigured) {
+      addToast('error', 'Enter a bot token and chat ID first.');
       return;
     }
 
@@ -202,10 +208,9 @@ export default function BackupsPage() {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          botToken: backupSettings.botToken.trim(),
-          chatId: backupSettings.chatId.trim(),
-        }),
+        body: JSON.stringify(
+          typed ? { botToken: backupSettings.botToken.trim(), chatId: backupSettings.chatId.trim() } : {}
+        ),
       });
 
       const data = await response.json();
@@ -256,7 +261,8 @@ export default function BackupsPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setTelegramConfigured(true);
+        setBackupSettings({ botToken: '', chatId: '' });
+        await fetchTelegramSettings();
         addToast('success', 'Telegram settings saved successfully!');
       } else {
         addToast('error', data.error || 'Failed to save Telegram settings');
@@ -417,7 +423,7 @@ export default function BackupsPage() {
             <label className="block text-sm font-medium text-text-secondary mb-1.5">Telegram Bot Token</label>
             <input
               type="password"
-              placeholder="123456:ABCDEfghIjklmnopqrSTUVwxyz"
+              placeholder={savedTelegram ? `Saved (${savedTelegram.botToken}). Enter a new token to replace it.` : '123456:ABCDEfghIjklmnopqrSTUVwxyz'}
               value={backupSettings.botToken}
               onChange={(e) => setBackupSettings({ ...backupSettings, botToken: e.target.value })}
               className="w-full bg-dark-input border border-dark-border rounded-lg py-2 px-3 text-text-primary 
@@ -430,7 +436,7 @@ export default function BackupsPage() {
             <label className="block text-sm font-medium text-text-secondary mb-1.5">Telegram Chat ID</label>
             <input
               type="text"
-              placeholder="123456789"
+              placeholder={savedTelegram ? `Saved (${savedTelegram.chatId}). Enter a new chat ID to replace it.` : '123456789'}
               value={backupSettings.chatId}
               onChange={(e) => setBackupSettings({ ...backupSettings, chatId: e.target.value })}
               className="w-full bg-dark-input border border-dark-border rounded-lg py-2 px-3 text-text-primary 

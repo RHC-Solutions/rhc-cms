@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { getBackupTelegramConfig } from '@adminpanel/lib/backup-telegram';
+
+// A well-formed Telegram bot token contains only digits, a colon and url-safe
+// characters — none of which can change the host/path of the api.telegram.org
+// request, so this also serves as an SSRF guard.
+function isValidBotToken(token: unknown): token is string {
+  return typeof token === 'string' && /^\d{6,}:[A-Za-z0-9_-]{30,}$/.test(token);
+}
 
 // Test Telegram credentials
 async function checkAdmin(request: NextRequest) {
@@ -20,11 +28,28 @@ export async function POST(request: NextRequest) {
     const auth = await checkAdmin(request);
     if (!auth.authorized) return auth.response;
 
-    const { botToken, chatId } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    let { botToken, chatId } = body as { botToken?: string; chatId?: string };
+    // No values sent: test what backups will actually use.
+    if (!botToken && !chatId) {
+      const saved = await getBackupTelegramConfig();
+      botToken = saved.telegramBotToken || '';
+      chatId = saved.telegramChatId || '';
+    }
 
     if (!botToken || !chatId) {
       return NextResponse.json(
         { success: false, message: 'Bot token and chat ID are required' },
+        { status: 400 }
+      );
+    }
+
+    // Telegram bot tokens are "<bot_id>:<auth_token>" (digits + url-safe chars).
+    // Validating the exact shape keeps the value from altering the request
+    // target when interpolated into the api.telegram.org URL (guards SSRF).
+    if (!isValidBotToken(botToken)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid bot token format' },
         { status: 400 }
       );
     }
