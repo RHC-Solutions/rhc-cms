@@ -484,6 +484,57 @@ async function testHubSpot(): Promise<TestResult> {
   }
 }
 
+async function testBuffer(): Promise<TestResult> {
+  const token = getSecret('BUFFER_ACCESS_TOKEN');
+  const aiKeys = ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'OPENROUTER_API_KEY', 'QWEN_API_KEY', 'GEMINI_API_KEY'].filter((k) => getSecret(k));
+  const aiCheck = aiKeys.length
+    ? ok('AI keys', `Set: ${aiKeys.join(', ')}`)
+    : fail('AI keys', 'No AI provider key set: add one so posts can be written');
+  if (!token) {
+    return { ok: false, summary: 'Not configured', checks: [fail('Buffer key', 'BUFFER_ACCESS_TOKEN not set'), aiCheck] };
+  }
+  const gql = async (query: string, variables?: Record<string, unknown>) => {
+    const res = await fetch('https://api.buffer.com', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ query, variables }),
+      signal: AbortSignal.timeout(TIMEOUT),
+    });
+    const data = await res.json().catch(() => ({}));
+    const err = data?.errors?.[0]?.message || (!res.ok ? data?.message || `HTTP ${res.status}` : '');
+    if (err) throw new Error(err);
+    return data.data;
+  };
+  try {
+    const acct = await gql('query { account { email organizations { id name } } }');
+    const org = acct?.account?.organizations?.[0];
+    if (!org) return { ok: false, summary: 'No Buffer organization on this account', checks: [fail('Account', 'No organization found'), aiCheck] };
+    const ch = await gql('query ($input: ChannelsInput!) { channels(input: $input) { name service isDisconnected } }', { input: { organizationId: org.id } });
+    const channels: { name: string; service: string; isDisconnected?: boolean }[] = ch?.channels || [];
+    const down = channels.filter((c) => c.isDisconnected);
+    const checks: Check[] = [
+      ok('Account', `${acct.account.email} — organization "${org.name}"`),
+      channels.length
+        ? ok('Channels', channels.map((c) => `${c.service}: ${c.name}${c.isDisconnected ? ' (disconnected)' : ''}`).join(', '))
+        : fail('Channels', 'No channels connected in Buffer yet'),
+      ...(down.length ? [fail('Reconnect', `Reconnect in Buffer: ${down.map((c) => `${c.service} ${c.name}`).join(', ')}`)] : []),
+      aiCheck,
+    ];
+    return {
+      ok: channels.length > 0 && aiKeys.length > 0,
+      summary: `Connected to Buffer as ${acct.account.email} — ${channels.length} channel(s)${down.length ? `, ${down.length} disconnected` : ''}`,
+      checks,
+    };
+  } catch (e: any) {
+    const msg = e?.message || 'Failed';
+    return {
+      ok: false,
+      summary: /unauthori|forbidden|401|403|permission/i.test(msg) ? 'Buffer rejected the key (check its permissions and expiry)' : 'Buffer test failed',
+      checks: [fail('Buffer', msg), aiCheck],
+    };
+  }
+}
+
 const HANDLERS: Record<string, () => Promise<TestResult>> = {
   telegram: testTelegram,
   smtp: testSmtp,
@@ -495,6 +546,7 @@ const HANDLERS: Record<string, () => Promise<TestResult>> = {
   pagespeed: testPageSpeed,
   brevo: testBrevo,
   hubspot: testHubSpot,
+  'buffer-social': testBuffer,
 };
 
 export async function POST(request: NextRequest) {

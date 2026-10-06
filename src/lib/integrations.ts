@@ -144,6 +144,21 @@ export const INTEGRATIONS: Integration[] = [
     ],
   },
   {
+    id: 'buffer-social',
+    name: 'Social Autopilot (Buffer + AI)',
+    description:
+      'Powers /admin/buffer: AI-written social posts with illustrations, published to your Buffer channels after an email approval. Create the Buffer key at publish.buffer.com/settings/api → Personal Access → + New Key, with the postsWrite, postsRead and accountRead permissions and a 1-year expiry (renew it before it expires). Text can come from any provider below; illustrations from OpenAI or Gemini. Use Test to check the key and see your channels.',
+    dashboardLink: 'https://publish.buffer.com/settings/api',
+    fields: [
+      { envVar: 'BUFFER_ACCESS_TOKEN', label: 'Buffer API key', type: 'secret', group: 'Buffer', description: 'Personal key from publish.buffer.com/settings/api (needs postsWrite, postsRead, accountRead). Sent as a Bearer token to api.buffer.com.' },
+      { envVar: 'ANTHROPIC_API_KEY', label: 'Anthropic (Claude) API key', type: 'secret', group: 'AI model providers', description: 'Writes the post text. console.anthropic.com → API Keys.' },
+      { envVar: 'OPENAI_API_KEY', label: 'OpenAI API key', type: 'secret', group: 'AI model providers', description: 'Text (gpt-*) and illustrations (gpt-image-1). platform.openai.com/api-keys.' },
+      { envVar: 'OPENROUTER_API_KEY', label: 'OpenRouter API key', type: 'secret', group: 'AI model providers', description: 'Text via many models behind one key. openrouter.ai/keys.' },
+      { envVar: 'QWEN_API_KEY', label: 'Qwen (Alibaba DashScope) API key', type: 'secret', group: 'AI model providers', description: 'Text via DashScope OpenAI-compatible mode. bailian.console.alibabacloud.com.' },
+      { envVar: 'GEMINI_API_KEY', label: 'Google Gemini API key', type: 'secret', group: 'AI model providers', description: 'Illustrations (Imagen/Gemini) and text. aistudio.google.com/apikey. Image generation needs a Google project with billing on.' },
+    ],
+  },
+  {
     id: 'misc',
     name: 'Miscellaneous',
     description: 'Other server-side values that aren\'t tied to a specific third-party.',
