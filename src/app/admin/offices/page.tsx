@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FaMapMarkerAlt, FaPlus, FaEdit, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
+import { useToast } from '@adminpanel/components/admin/Toast';
 
 interface Office {
   id: string;
@@ -23,6 +24,17 @@ export default function OfficesAdmin() {
   const [editing, setEditing] = useState<Office | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<Partial<Office>>({});
+  const [saving, setSaving] = useState(false);
+  const { addToast } = useToast();
+
+  // The API answers failures with { error }; fall back to the status code.
+  const errorReason = async (response: Response) => {
+    try {
+      const data = await response.json();
+      if (data?.error) return String(data.error);
+    } catch {}
+    return `HTTP ${response.status}`;
+  };
 
   // Fetch offices
   useEffect(() => {
@@ -32,9 +44,12 @@ export default function OfficesAdmin() {
         if (response.ok) {
           const data = await response.json();
           setOffices(data.sort((a: Office, b: Office) => (a.order ?? 0) - (b.order ?? 0)));
+        } else {
+          addToast('error', `Offices could not be loaded: ${await errorReason(response)}`, 6000);
         }
       } catch (error) {
         console.error('Failed to fetch offices:', error);
+        addToast('error', 'Offices could not be loaded: the request did not reach the server.', 6000);
       } finally {
         setLoading(false);
       }
@@ -42,6 +57,15 @@ export default function OfficesAdmin() {
 
     fetchOffices();
   }, []);
+
+  useEffect(() => {
+    if (!showForm) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowForm(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showForm]);
 
   const handleEditClick = (office: Office) => {
     setEditing(office);
@@ -67,11 +91,20 @@ export default function OfficesAdmin() {
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? parseFloat(value) : type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
+      [name]: type === 'number' ? (value === '' ? NaN : parseFloat(value)) : type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
     }));
   };
 
   const handleSave = async () => {
+    if (!formData.city?.trim()) {
+      addToast('error', 'Add a city before saving.', 5000);
+      return;
+    }
+    if (!Number.isFinite(formData.lat) || !Number.isFinite(formData.lng)) {
+      addToast('error', 'Latitude and longitude must both be numbers.', 5000);
+      return;
+    }
+    setSaving(true);
     try {
       const method = editing ? 'PUT' : 'POST';
       const payload = editing ? { ...formData, id: editing.id } : formData;
@@ -91,9 +124,15 @@ export default function OfficesAdmin() {
         }
         setShowForm(false);
         setEditing(null);
+        addToast('success', `${updatedOffice.city || 'Office'} saved.`);
+      } else {
+        addToast('error', `Office was not saved: ${await errorReason(response)}`, 6000);
       }
     } catch (error) {
       console.error('Failed to save office:', error);
+      addToast('error', 'Office was not saved: the request did not reach the server.', 6000);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -109,9 +148,13 @@ export default function OfficesAdmin() {
 
       if (response.ok) {
         setOffices(offices.filter(o => o.id !== id));
+        addToast('success', 'Office deleted.');
+      } else {
+        addToast('error', `Office was not deleted: ${await errorReason(response)}`, 6000);
       }
     } catch (error) {
       console.error('Failed to delete office:', error);
+      addToast('error', 'Office was not deleted: the request did not reach the server.', 6000);
     }
   };
 
@@ -173,6 +216,7 @@ export default function OfficesAdmin() {
                   <label htmlFor="office-city" className="block text-sm font-medium mb-1.5">City</label>
                   <input
                     id="office-city"
+                    autoFocus
                     type="text"
                     name="city"
                     value={formData.city || ''}
@@ -202,7 +246,7 @@ export default function OfficesAdmin() {
                     name="lat"
                     step="0.0001"
                     placeholder="e.g., 40.7128"
-                    value={formData.lat || ''}
+                    value={Number.isFinite(formData.lat) ? formData.lat : ''}
                     onChange={handleInputChange}
                     className="input"
                   />
@@ -215,7 +259,7 @@ export default function OfficesAdmin() {
                     name="lng"
                     step="0.0001"
                     placeholder="e.g., -74.0060"
-                    value={formData.lng || ''}
+                    value={Number.isFinite(formData.lng) ? formData.lng : ''}
                     onChange={handleInputChange}
                     className="input"
                   />
@@ -262,12 +306,15 @@ export default function OfficesAdmin() {
 
               <div className="flex gap-3 pt-4 border-t border-dark-border">
                 <button
+                  type="button"
                   onClick={handleSave}
+                  disabled={saving}
                   className="btn-primary flex-1"
                 >
-                  <FaSave aria-hidden="true" /> Save Office
+                  <FaSave aria-hidden="true" /> {saving ? 'Saving…' : 'Save Office'}
                 </button>
                 <button
+                  type="button"
                   onClick={() => setShowForm(false)}
                   className="btn-secondary flex-1"
                 >

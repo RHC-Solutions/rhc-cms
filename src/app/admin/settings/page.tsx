@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import AdminShell from "@adminpanel/components/admin/AdminShell";
-import { FaCog, FaEnvelope, FaGlobe, FaPalette, FaShieldAlt } from "react-icons/fa";
+import Link from "next/link";
+import { FaCheckCircle, FaCog, FaEnvelope, FaExclamationTriangle, FaGlobe, FaPalette, FaShieldAlt } from "react-icons/fa";
 import { useToast } from "@adminpanel/components/admin/Toast";
 import { TIMEZONES, getGeoTimezone } from "@adminpanel/lib/timezones";
 
@@ -251,11 +252,18 @@ export default function SettingsPage() {
       if (!res.ok) {
         const text = await res.text();
         console.error(`Save failed: ${text || res.status}`);
+        let reason = text;
+        try {
+          reason = JSON.parse(text).error || text;
+        } catch {}
+        addToast("error", `Settings were not saved: ${(reason || `HTTP ${res.status}`).slice(0, 200)}`, 6000);
         return;
       }
       await fetchSettings();
+      addToast("success", "Settings saved.");
     } catch (e) {
       console.error("Save settings failed", e);
+      addToast("error", "Settings were not saved: the request did not reach the server.", 6000);
     } finally {
       setSaving(false);
     }
@@ -266,6 +274,40 @@ export default function SettingsPage() {
   };
 
 ;
+
+  // Shown read-only: each is enforced outside this form (in front of the
+  // site, by the admin login gate, by the backup scheduler). The old
+  // checkboxes here were never read or saved.
+  const scheduler = raw.scheduler as
+    | { enabled?: boolean; frequency?: string; time?: string; dayOfWeek?: string }
+    | undefined;
+  const backupSchedule =
+    scheduler?.frequency === "weekly" && scheduler.dayOfWeek
+      ? `weekly on ${scheduler.dayOfWeek.charAt(0).toUpperCase()}${scheduler.dayOfWeek.slice(1)}`
+      : scheduler?.frequency || "daily";
+  const securityStatus: { label: string; detail: string; on: boolean; href?: string; linkLabel?: string }[] = [
+    {
+      label: "HTTPS",
+      detail: "Every http:// request redirects to https://, and HSTS is on. This is enforced in front of the site, not by a setting here.",
+      on: true,
+    },
+    {
+      label: "Two-factor authentication",
+      detail: "Required for every admin account. The login gate refuses access until it is set up.",
+      on: true,
+      href: "/admin/users",
+      linkLabel: "Manage users",
+    },
+    {
+      label: "Automatic backups",
+      detail: scheduler?.enabled
+        ? `Runs ${backupSchedule} at ${scheduler.time || "02:00"}.`
+        : "The backup scheduler is switched off.",
+      on: !!scheduler?.enabled,
+      href: "/admin/backups",
+      linkLabel: "Manage backups",
+    },
+  ];
 
   if (loading || !form) {
     return (
@@ -726,24 +768,29 @@ export default function SettingsPage() {
           <FaShieldAlt className="text-3xl text-cyber-red" aria-hidden="true" />
           <h2 className="text-xl font-bold text-text-primary">Security & Maintenance</h2>
         </div>
-        <div className="space-y-4">
-          <div className="flex items-center space-x-3">
-            <input type="checkbox" id="ssl" className="w-5 h-5" defaultChecked />
-            <label htmlFor="ssl" className="text-text-primary">Force HTTPS (SSL)</label>
-          </div>
-          <div className="flex items-center space-x-3">
-            <input type="checkbox" id="two-factor" className="w-5 h-5" defaultChecked />
-            <label htmlFor="two-factor" className="text-text-primary">Enable two-factor authentication for admin</label>
-          </div>
-          <div className="flex items-center space-x-3">
-            <input type="checkbox" id="auto-backup" className="w-5 h-5" defaultChecked />
-            <label htmlFor="auto-backup" className="text-text-primary">Enable automatic backups</label>
-          </div>
-          <div className="flex items-center space-x-3">
-            <input type="checkbox" id="maintenance" className="w-5 h-5" />
-            <label htmlFor="maintenance" className="text-text-primary">Enable maintenance mode</label>
-          </div>
-        </div>
+        <ul className="divide-y divide-dark-border">
+          {securityStatus.map((item) => (
+            <li key={item.label} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3 first:pt-0 last:pb-0">
+              <div className="min-w-0">
+                <p className="text-text-primary font-medium">{item.label}</p>
+                <p className="text-text-muted text-sm">{item.detail}</p>
+              </div>
+              <div className="flex items-center gap-4 shrink-0">
+                <span className={`inline-flex w-14 items-center gap-1.5 text-sm font-medium ${item.on ? "text-green-400" : "text-yellow-400"}`}>
+                  {item.on ? <FaCheckCircle aria-hidden="true" /> : <FaExclamationTriangle aria-hidden="true" />}
+                  {item.on ? "On" : "Off"}
+                </span>
+                <span className="w-36 whitespace-nowrap text-right">
+                  {item.href && (
+                    <Link href={item.href} className="text-sm text-cyber-cyan hover:underline">
+                      {item.linkLabel}
+                    </Link>
+                  )}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
 
       {/* Save Button */}
