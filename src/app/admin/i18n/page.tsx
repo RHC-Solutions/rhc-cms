@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaLanguage, FaSpinner, FaSave, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaSpinner, FaSave, FaPlus, FaTrash } from 'react-icons/fa';
 
 interface Locale {
   code: string;
@@ -95,30 +95,30 @@ export default function I18nPage() {
 
   return (
     <AdminShell title="Languages">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <FaLanguage className="text-2xl text-cyber-green" />
-            <h2 className="text-2xl font-bold">Languages</h2>
+      <div className="max-w-3xl">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="heading-xl">Languages</h1>
+            <p className="text-text-secondary text-sm mt-1">Languages the site is offered in, the source language, and on-demand machine translation.</p>
           </div>
-          <button onClick={save} disabled={saving || !config} className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-linear-to-r from-cyber-green to-cyber-cyan text-dark font-semibold disabled:opacity-50">
-            {saving ? <FaSpinner className="animate-spin" /> : <FaSave />}
+          <button onClick={save} disabled={saving || !config} className="btn-primary">
+            {saving ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaSave aria-hidden="true" />}
             <span>Save</span>
           </button>
         </div>
 
-        {error && <div className="mb-4 px-4 py-3 rounded-lg bg-cyber-red/10 border border-cyber-red/40 text-cyber-red text-sm">{error}</div>}
-        {saved && <div className="mb-4 px-4 py-3 rounded-lg bg-cyber-green/10 border border-cyber-green/40 text-cyber-green text-sm">Saved.</div>}
+        {error && <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">{error}</div>}
+        {saved && <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-sm text-green-300">Saved.</div>}
 
         {loading || !config ? (
-          <div className="text-text-muted"><FaSpinner className="animate-spin inline mr-2" />Loading…</div>
+          <div className="text-text-muted"><FaSpinner className="animate-spin inline mr-2" aria-hidden="true" />Loading…</div>
         ) : (
           <div className="space-y-6">
             <div className="bg-dark-card border border-dark-border rounded-xl p-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4 items-end">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                 <div>
-                  <label className="block text-xs text-text-muted mb-1">Default (source) language</label>
-                  <select className={input + ' w-full'} value={config.defaultLocale} onChange={(e) => setConfig({ ...config, defaultLocale: e.target.value })}>
+                  <label htmlFor="i18n-default-locale" className="block text-sm font-medium text-text-secondary mb-1.5">Default (source) language</label>
+                  <select id="i18n-default-locale" className={input + ' w-full'} value={config.defaultLocale} onChange={(e) => setConfig({ ...config, defaultLocale: e.target.value })}>
                     {config.locales.map((l) => <option key={l.code} value={l.code}>{l.label} ({l.code})</option>)}
                   </select>
                 </div>
@@ -131,9 +131,9 @@ export default function I18nPage() {
 
             <div className="bg-dark-card border border-dark-border rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="font-medium">Locales</span>
+                <h2 className="heading-sm">Locales</h2>
                 <button onClick={() => setConfig({ ...config, locales: [...config.locales, { code: '', label: '', enabled: true }] })} className="text-cyber-cyan text-xs hover:text-cyber-green flex items-center space-x-1">
-                  <FaPlus /> <span>Add locale</span>
+                  <FaPlus aria-hidden="true" /> <span>Add locale</span>
                 </button>
               </div>
               {config.locales.map((l, i) => (
@@ -144,19 +144,19 @@ export default function I18nPage() {
                     <input type="checkbox" checked={l.enabled} onChange={(e) => setLocale(i, { enabled: e.target.checked })} />
                     <span>enabled</span>
                   </label>
-                  <button onClick={() => setConfig({ ...config, locales: config.locales.filter((_, idx) => idx !== i) })} className="text-cyber-red/80 hover:text-cyber-red" disabled={l.code === config.defaultLocale}><FaTrash /></button>
+                  <button onClick={() => setConfig({ ...config, locales: config.locales.filter((_, idx) => idx !== i) })} className="text-cyber-red/80 hover:text-cyber-red disabled:opacity-40 disabled:cursor-not-allowed" disabled={l.code === config.defaultLocale} aria-label={`Remove ${l.label || l.code || 'locale'}`}><FaTrash aria-hidden="true" /></button>
                 </div>
               ))}
             </div>
 
             <div className="bg-dark-card border border-dark-border rounded-xl p-4 space-y-3">
-              <span className="font-medium">Test translation</span>
+              <h2 className="heading-sm">Test translation</h2>
               <p className="text-text-muted text-xs">Requires a Google Translate API key in Integrations.</p>
               <div className="flex items-center space-x-2">
                 <input className={input + ' flex-1'} placeholder="Text to translate" value={testText} onChange={(e) => setTestText(e.target.value)} />
                 <input className={input + ' w-24'} placeholder="target" value={testTarget} onChange={(e) => setTestTarget(e.target.value)} />
-                <button onClick={runTest} disabled={testing} className="px-4 py-2 rounded-lg bg-dark-lighter text-text-secondary hover:text-cyber-green disabled:opacity-50">
-                  {testing ? <FaSpinner className="animate-spin" /> : 'Translate'}
+                <button onClick={runTest} disabled={testing} className="btn-secondary">
+                  {testing ? <FaSpinner className="animate-spin" aria-hidden="true" /> : 'Translate'}
                 </button>
               </div>
               {testResult && <div className="px-3 py-2 rounded-lg bg-dark border border-dark-border text-text-primary text-sm">{testResult}</div>}

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaCheckCircle, FaTimesCircle, FaInfoCircle } from 'react-icons/fa';
+import { FaCheckCircle, FaTimesCircle, FaInfoCircle, FaTimes } from 'react-icons/fa';
 
 interface ToastMessage {
   id: string;
@@ -87,29 +87,35 @@ export function Toast() {
   }, []);
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 max-w-md">
-      <AnimatePresence>
+    <div
+      className="fixed bottom-4 right-4 z-[70] w-[min(24rem,calc(100vw-2rem))] space-y-2"
+      aria-live="polite"
+      aria-label="Notifications"
+    >
+      <AnimatePresence initial={false}>
         {toasts.map((toast) => (
           <motion.div
             key={toast.id}
-            initial={{ opacity: 0, x: 400, y: 20 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            exit={{ opacity: 0, x: 400 }}
-            className={`mb-3 p-4 rounded-lg flex items-center gap-3 text-white shadow-lg backdrop-blur-sm ${
-              toast.type === 'success' ? 'bg-neon-green/90' :
-              toast.type === 'error' ? 'bg-neon-red/90' :
-              'bg-neon-cyan/90'
-            }`}
+            role={toast.type === 'error' ? 'alert' : 'status'}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="flex items-start gap-3 rounded-xl border border-dark-border bg-dark-lighter p-3 pr-2 text-sm text-text-primary shadow-[0_8px_24px_rgb(0_0_0/0.35)]"
           >
-            {toast.type === 'success' && <FaCheckCircle className="text-lg shrink-0" />}
-            {toast.type === 'error' && <FaTimesCircle className="text-lg shrink-0" />}
-            {toast.type === 'info' && <FaInfoCircle className="text-lg shrink-0" />}
-            <span className="flex-1">{toast.message}</span>
+            <span className="pt-0.5 text-base shrink-0" aria-hidden="true">
+              {toast.type === 'success' && <FaCheckCircle className="text-green-400" />}
+              {toast.type === 'error' && <FaTimesCircle className="text-red-400" />}
+              {toast.type === 'info' && <FaInfoCircle className="text-cyber-cyan" />}
+            </span>
+            <span className="flex-1 pt-px leading-5">{toast.message}</span>
             <button
+              type="button"
               onClick={() => removeToastFromUI(toast.id)}
-              className="text-white hover:opacity-70"
+              aria-label="Dismiss notification"
+              className="grid place-items-center w-7 h-7 shrink-0 rounded-md text-text-muted hover:text-text-primary hover:bg-dark-card transition-colors"
             >
-              ✕
+              <FaTimes className="text-xs" aria-hidden="true" />
             </button>
           </motion.div>
         ))}

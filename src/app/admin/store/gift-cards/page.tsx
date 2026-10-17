@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaGift, FaSpinner, FaPlus, FaTimes, FaSave, FaBan } from 'react-icons/fa';
+import { FaSpinner, FaPlus, FaTimes, FaSave, FaBan } from 'react-icons/fa';
 
 interface GiftCard {
   id: string;
@@ -113,33 +113,33 @@ export default function GiftCardsPage() {
 
   return (
     <AdminShell title="Store — Gift Cards">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <FaGift className="text-2xl text-cyber-green" />
-            <h2 className="text-2xl font-bold">Gift Cards</h2>
+      <div className="max-w-5xl">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="heading-xl">Gift Cards</h1>
+            <p className="text-text-secondary text-sm mt-1">Issue gift cards, redeem amounts from their balance, and disable cards.</p>
           </div>
-          <button onClick={() => setCreating(true)} className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-linear-to-r from-cyber-green to-cyber-cyan text-dark font-semibold">
-            <FaPlus />
+          <button onClick={() => setCreating(true)} className="btn-primary">
+            <FaPlus aria-hidden="true" />
             <span>Issue gift card</span>
           </button>
         </div>
 
-        {error && <div className="mb-4 px-4 py-3 rounded-lg bg-cyber-red/10 border border-cyber-red/40 text-cyber-red text-sm">{error}</div>}
+        {error && <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">{error}</div>}
 
         {created && (
-          <div className="mb-4 p-4 rounded-xl bg-cyber-green/10 border border-cyber-green/40 flex items-center space-x-4">
+          <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-sm flex items-center space-x-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={created.qr} alt="Gift card QR" className="w-24 h-24 rounded bg-white p-1" />
             <div>
-              <p className="text-text-muted text-sm">New gift card issued</p>
+              <p className="text-sm font-semibold text-green-300">New gift card issued</p>
               <p className="font-mono text-lg text-cyber-green">{created.code}</p>
               <button onClick={() => setCreated(null)} className="text-text-muted text-xs hover:text-text-primary mt-1">dismiss</button>
             </div>
           </div>
         )}
 
-        <div className="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
+        <div className="bg-dark-card border border-dark-border rounded-xl overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-dark-lighter text-text-muted text-left">
               <tr>
@@ -152,7 +152,7 @@ export default function GiftCardsPage() {
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-text-muted"><FaSpinner className="animate-spin inline mr-2" />Loading…</td></tr>
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-text-muted"><FaSpinner className="animate-spin inline mr-2" aria-hidden="true" />Loading…</td></tr>
               )}
               {!loading && cards.length === 0 && (
                 <tr><td colSpan={5} className="px-4 py-8 text-center text-text-muted">No gift cards yet.</td></tr>
@@ -167,7 +167,7 @@ export default function GiftCardsPage() {
                     {c.status === 'active' && (
                       <>
                         <button onClick={() => redeem(c)} className="text-cyber-cyan hover:text-cyber-green text-xs">Redeem</button>
-                        <button onClick={() => setStatus(c, 'disabled')} className="text-cyber-red/80 hover:text-cyber-red" title="Disable"><FaBan /></button>
+                        <button onClick={() => setStatus(c, 'disabled')} className="text-cyber-red/80 hover:text-cyber-red" title="Disable" aria-label={`Disable ${c.code}`}><FaBan aria-hidden="true" /></button>
                       </>
                     )}
                     {c.status === 'disabled' && (
@@ -183,43 +183,43 @@ export default function GiftCardsPage() {
 
       {creating && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4">
-          <div className="bg-dark-card border border-dark-border rounded-xl w-full max-w-lg my-8">
+          <div role="dialog" aria-modal="true" aria-labelledby="giftcard-form-title" className="bg-dark-card border border-dark-border rounded-xl w-full max-w-lg my-8">
             <div className="flex items-center justify-between p-4 border-b border-dark-border">
-              <h3 className="text-lg font-bold">Issue gift card</h3>
-              <button onClick={() => setCreating(false)} className="text-text-muted hover:text-cyber-red"><FaTimes /></button>
+              <h2 id="giftcard-form-title" className="heading-md">Issue gift card</h2>
+              <button onClick={() => setCreating(false)} className="text-text-muted hover:text-cyber-red" aria-label="Close"><FaTimes aria-hidden="true" /></button>
             </div>
             <div className="p-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-text-muted mb-1">Amount ({form.currency.toUpperCase()})</label>
-                  <input className={input} type="number" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+                  <label htmlFor="giftcard-amount" className="block text-sm font-medium text-text-secondary mb-1.5">Amount ({form.currency.toUpperCase()})</label>
+                  <input id="giftcard-amount" className={input} type="number" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-xs text-text-muted mb-1">Currency</label>
-                  <input className={input} value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} />
+                  <label htmlFor="giftcard-currency" className="block text-sm font-medium text-text-secondary mb-1.5">Currency</label>
+                  <input id="giftcard-currency" className={input} value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} />
                 </div>
               </div>
               <div>
-                <label className="block text-xs text-text-muted mb-1">Recipient email (optional)</label>
-                <input className={input} value={form.recipientEmail} onChange={(e) => setForm({ ...form, recipientEmail: e.target.value })} />
+                <label htmlFor="giftcard-recipient-email" className="block text-sm font-medium text-text-secondary mb-1.5">Recipient email (optional)</label>
+                <input id="giftcard-recipient-email" className={input} value={form.recipientEmail} onChange={(e) => setForm({ ...form, recipientEmail: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs text-text-muted mb-1">Recipient name (optional)</label>
-                <input className={input} value={form.recipientName} onChange={(e) => setForm({ ...form, recipientName: e.target.value })} />
+                <label htmlFor="giftcard-recipient-name" className="block text-sm font-medium text-text-secondary mb-1.5">Recipient name (optional)</label>
+                <input id="giftcard-recipient-name" className={input} value={form.recipientName} onChange={(e) => setForm({ ...form, recipientName: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs text-text-muted mb-1">Message (optional)</label>
-                <textarea className={input} rows={2} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
+                <label htmlFor="giftcard-message" className="block text-sm font-medium text-text-secondary mb-1.5">Message (optional)</label>
+                <textarea id="giftcard-message" className={input} rows={2} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs text-text-muted mb-1">Expires (optional)</label>
-                <input className={input} type="date" value={form.expiresAt} onChange={(e) => setForm({ ...form, expiresAt: e.target.value })} />
+                <label htmlFor="giftcard-expires" className="block text-sm font-medium text-text-secondary mb-1.5">Expires (optional)</label>
+                <input id="giftcard-expires" className={input} type="date" value={form.expiresAt} onChange={(e) => setForm({ ...form, expiresAt: e.target.value })} />
               </div>
             </div>
             <div className="flex items-center justify-end space-x-2 p-4 border-t border-dark-border">
-              <button onClick={() => setCreating(false)} className="px-4 py-2 rounded-lg bg-dark-lighter text-text-secondary">Cancel</button>
-              <button onClick={create} disabled={saving || !parseFloat(form.amount || '0')} className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-linear-to-r from-cyber-green to-cyber-cyan text-dark font-semibold disabled:opacity-50">
-                {saving ? <FaSpinner className="animate-spin" /> : <FaSave />}
+              <button onClick={() => setCreating(false)} className="btn-secondary">Cancel</button>
+              <button onClick={create} disabled={saving || !parseFloat(form.amount || '0')} className="btn-primary">
+                {saving ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaSave aria-hidden="true" />}
                 <span>Issue</span>
               </button>
             </div>

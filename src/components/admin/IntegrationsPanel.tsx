@@ -144,22 +144,22 @@ export default function IntegrationsPanel() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64 text-text-muted">
-        <FaSpinner className="animate-spin mr-3" /> Loading current values…
+        <FaSpinner className="animate-spin mr-3" aria-hidden="true" /> Loading current values…
       </div>
     );
   }
 
   return (
     <>
-      <div className="mb-8">
-        <h1 className="heading-xl text-gradient mb-2">Integrations</h1>
-        <p className="text-text-secondary">
+      <div className="mb-4">
+        <h2 className="heading-md">Integrations</h2>
+        <p className="text-text-secondary text-sm mt-1">
           Manage server-side credentials for third-party services. Saved values are stored in the site database
           and take effect immediately — no <code>pm2 restart</code> required.
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="rounded-lg border border-dark-border bg-dark-card divide-y divide-dark-border overflow-hidden">
         {INTEGRATIONS.map((integration) => {
           const isOpen = expanded[integration.id] ?? false;
           const filled = integration.fields.filter((f) => (values[f.envVar] ?? '').trim() !== '').length;
@@ -167,46 +167,53 @@ export default function IntegrationsPanel() {
           const msg = messages[integration.id];
 
           return (
-            <div key={integration.id} className="card-cyber overflow-hidden">
+            <div key={integration.id}>
               <button
                 type="button"
                 onClick={() => toggleExpanded(integration.id)}
-                className="w-full p-6 flex items-center gap-4 hover:bg-dark-lighter transition-colors text-left"
+                aria-expanded={isOpen}
+                title={integration.description}
+                className={`w-full px-4 py-2.5 flex items-center gap-3 hover:bg-dark-lighter transition-colors text-left ${
+                  isOpen ? 'bg-dark-lighter' : ''
+                }`}
               >
-                <div className="text-cyber-cyan text-2xl">
+                <span className="text-cyber-cyan text-xs shrink-0" aria-hidden="true">
                   {isOpen ? <FaChevronDown /> : <FaChevronRight />}
-                </div>
-                <div className="flex-1">
-                  <h2 className="heading-md text-text-primary">{integration.name}</h2>
-                  <p className="text-text-muted text-sm mt-1">{integration.description}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`px-3 py-1 rounded text-xs font-semibold ${
-                      filled === total && total > 0
-                        ? 'bg-green-500/20 text-green-400'
-                        : filled === 0
-                        ? 'bg-red-500/20 text-red-400'
-                        : 'bg-yellow-500/20 text-yellow-400'
-                    }`}
-                  >
-                    {filled} / {total} set
+                </span>
+                <span className="min-w-0 truncate sm:shrink-0 text-sm font-semibold text-text-primary">{integration.name}</span>
+                {!isOpen && (
+                  <span className="hidden sm:block flex-1 min-w-0 truncate text-xs text-text-muted">
+                    {integration.description}
                   </span>
-                </div>
+                )}
+                <span
+                  className={`ml-auto shrink-0 px-2 py-0.5 rounded text-[11px] font-semibold ${
+                    filled === total && total > 0
+                      ? 'bg-green-500/20 text-green-400'
+                      : filled === 0
+                      ? 'bg-red-500/20 text-red-400'
+                      : 'bg-yellow-500/20 text-yellow-400'
+                  }`}
+                >
+                  {filled} / {total} set
+                </span>
               </button>
 
               {isOpen && (
-                <div className="px-6 pb-6 pt-0 border-t border-dark-border">
-                  {integration.dashboardLink && (
-                    <a
-                      href={integration.dashboardLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-cyber-cyan hover:text-cyber-green text-sm mt-4 mb-2"
-                    >
-                      <FaLink className="text-xs" /> Open provider dashboard
-                    </a>
-                  )}
+                <div className="px-4 pt-3 pb-4 border-t border-dark-border">
+                  <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-xs text-text-muted">
+                    <p className="flex-1 min-w-[16rem]">{integration.description}</p>
+                    {integration.dashboardLink && (
+                      <a
+                        href={integration.dashboardLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-cyber-cyan hover:text-cyber-green shrink-0"
+                      >
+                        <FaLink aria-hidden="true" /> Open provider dashboard
+                      </a>
+                    )}
+                  </div>
 
                   <FieldGroup
                     fields={integration.fields}
@@ -219,7 +226,7 @@ export default function IntegrationsPanel() {
 
                   {msg && (
                     <div
-                      className={`mt-4 p-3 rounded text-sm ${
+                      className={`mt-3 px-3 py-2 rounded text-sm ${
                         msg.type === 'success'
                           ? 'bg-green-500/20 text-green-400'
                           : 'bg-red-500/20 text-red-400'
@@ -233,16 +240,16 @@ export default function IntegrationsPanel() {
                     <TestResultPanel result={testResults[integration.id]!} />
                   )}
 
-                  <div className="mt-4 flex justify-end gap-2">
+                  <div className="mt-3 flex justify-end gap-2">
                     {!INTEGRATIONS_WITHOUT_TESTS.has(integration.id) && (
                       <button
                         type="button"
                         onClick={() => handleTest(integration)}
                         disabled={testing[integration.id] || saving[integration.id]}
                         title="Run a live test against the saved credentials"
-                        className="flex items-center gap-2 px-4 py-2 rounded border border-cyber-cyan/40 text-cyber-cyan hover:bg-cyber-cyan/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="btn-secondary px-3 py-1.5"
                       >
-                        {testing[integration.id] ? <FaSpinner className="animate-spin" /> : <FaFlask />}
+                        {testing[integration.id] ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaFlask aria-hidden="true" />}
                         {testing[integration.id] ? 'Testing…' : 'Test connection'}
                       </button>
                     )}
@@ -250,10 +257,10 @@ export default function IntegrationsPanel() {
                       type="button"
                       onClick={() => handleSave(integration)}
                       disabled={saving[integration.id]}
-                      className="btn-primary flex items-center gap-2"
+                      className="btn-primary px-3 py-1.5"
                     >
-                      {saving[integration.id] ? <FaSpinner className="animate-spin" /> : <FaSave />}
-                      {saving[integration.id] ? 'Saving…' : `Save ${integration.name}`}
+                      {saving[integration.id] ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaSave aria-hidden="true" />}
+                      {saving[integration.id] ? 'Saving…' : 'Save'}
                     </button>
                   </div>
                 </div>
@@ -269,7 +276,7 @@ export default function IntegrationsPanel() {
 function TestResultPanel({ result }: { result: TestResult }) {
   return (
     <div
-      className={`mt-4 rounded border ${
+      className={`mt-3 rounded border ${
         result.ok ? 'border-green-500/40 bg-green-500/5' : 'border-red-500/40 bg-red-500/5'
       }`}
     >
@@ -278,7 +285,7 @@ function TestResultPanel({ result }: { result: TestResult }) {
           result.ok ? 'text-green-400' : 'text-red-400'
         }`}
       >
-        {result.ok ? <FaCheckCircle /> : <FaTimesCircle />}
+        {result.ok ? <FaCheckCircle className="shrink-0" aria-hidden="true" /> : <FaTimesCircle className="shrink-0" aria-hidden="true" />}
         <span>{result.summary}</span>
       </div>
       {result.checks.length > 0 && (
@@ -290,9 +297,9 @@ function TestResultPanel({ result }: { result: TestResult }) {
             >
               <span className="shrink-0">
                 {c.ok ? (
-                  <FaCheckCircle className="text-green-400" />
+                  <FaCheckCircle className="text-green-400" aria-hidden="true" />
                 ) : (
-                  <FaTimesCircle className="text-red-400" />
+                  <FaTimesCircle className="text-red-400" aria-hidden="true" />
                 )}
               </span>
               <span className="font-mono text-text-muted">{c.name}:</span>
@@ -329,15 +336,15 @@ function FieldGroup({ fields, drafts, values, revealed, onChange, onToggleReveal
   }
 
   return (
-    <div className="space-y-6 mt-4">
+    <div className="space-y-4 mt-3">
       {groups.map((g, idx) => (
         <div key={idx}>
           {g.name && (
-            <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wide mb-3">
+            <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">
               {g.name}
             </h3>
           )}
-          <div className="space-y-3">
+          <div className="grid gap-x-4 gap-y-3 md:grid-cols-2 items-start">
             {g.fields.map((field) => {
               const isSecret = field.type === 'secret';
               const isLong = field.type === 'longtext';
@@ -345,57 +352,60 @@ function FieldGroup({ fields, drafts, values, revealed, onChange, onToggleReveal
               const draft = drafts[field.envVar] ?? '';
               const stored = (values[field.envVar] ?? '').trim() !== '';
               const inputType = isSecret && !isRevealed ? 'password' : 'text';
+              const inputId = `integration-field-${field.envVar}`;
 
               return (
-                <div key={field.envVar}>
-                  <label className="flex items-center justify-between text-sm font-medium text-text-secondary mb-1.5">
-                    <span>
+                <div key={field.envVar} className={isLong ? 'md:col-span-2' : undefined}>
+                  <label htmlFor={inputId} className="flex items-center justify-between gap-2 text-xs font-medium text-text-secondary mb-1">
+                    <span className="min-w-0 break-words">
                       {field.label}{' '}
                       <code className="text-xs text-text-muted">{field.envVar}</code>
                     </span>
                     {stored ? (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-green-500/20 text-green-400 flex items-center gap-1">
-                        <FaCheckCircle /> SET
+                      <span className="shrink-0 px-1.5 py-px rounded text-[10px] font-semibold bg-green-500/20 text-green-400 flex items-center gap-1">
+                        <FaCheckCircle aria-hidden="true" /> SET
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-red-500/20 text-red-400 flex items-center gap-1">
-                        <FaTimesCircle /> EMPTY
+                      <span className="shrink-0 px-1.5 py-px rounded text-[10px] font-semibold bg-red-500/20 text-red-400 flex items-center gap-1">
+                        <FaTimesCircle aria-hidden="true" /> EMPTY
                       </span>
                     )}
                   </label>
 
                   {isLong ? (
                     <textarea
+                      id={inputId}
                       value={draft}
                       onChange={(e) => onChange(field.envVar, e.target.value)}
                       placeholder={field.example || ''}
-                      rows={6}
-                      className="w-full px-3 py-2 bg-dark-lighter border border-dark-border rounded-lg text-text-primary focus:border-cyber-cyan focus:outline-none font-mono text-xs"
+                      rows={4}
+                      className="w-full px-2.5 py-1.5 bg-dark-lighter border border-dark-border rounded-md text-text-primary focus:border-cyber-cyan focus:outline-none font-mono text-xs"
                     />
                   ) : (
                     <div className="relative">
                       <input
+                        id={inputId}
                         type={inputType}
                         value={draft}
                         onChange={(e) => onChange(field.envVar, e.target.value)}
                         placeholder={field.example || ''}
-                        className="w-full px-3 py-2 bg-dark-lighter border border-dark-border rounded-lg text-text-primary focus:border-cyber-cyan focus:outline-none pr-10"
+                        className="w-full px-2.5 py-1.5 text-sm bg-dark-lighter border border-dark-border rounded-md text-text-primary focus:border-cyber-cyan focus:outline-none pr-9"
                       />
                       {isSecret && (
                         <button
                           type="button"
                           onClick={() => onToggleReveal(field.envVar)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-cyber-cyan"
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-text-muted hover:text-cyber-cyan"
                           aria-label={isRevealed ? 'Hide value' : 'Reveal value'}
                         >
-                          {isRevealed ? <FaEyeSlash /> : <FaEye />}
+                          {isRevealed ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
                         </button>
                       )}
                     </div>
                   )}
 
                   {field.description && (
-                    <p className="text-text-muted text-xs mt-1">{field.description}</p>
+                    <p className="text-text-muted text-xs mt-0.5">{field.description}</p>
                   )}
                 </div>
               );

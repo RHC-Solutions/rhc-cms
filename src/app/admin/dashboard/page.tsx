@@ -356,19 +356,19 @@ export default function AdminDashboard() {
         className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4"
       >
         <a href="/admin/pages" className="card-dark p-6 text-center hover:border-cyber-green group transition-all">
-          <FaFileAlt className="text-4xl text-cyber-green mx-auto mb-3 group-hover:scale-110 transition-transform" />
+          <FaFileAlt className="text-2xl text-cyber-green mx-auto mb-3" aria-hidden="true" />
           <h3 className="text-text-primary font-semibold">Manage Pages</h3>
         </a>
         <a href="/admin/media" className="card-dark p-6 text-center hover:border-cyber-cyan group transition-all">
-          <FaImages className="text-4xl text-cyber-cyan mx-auto mb-3 group-hover:scale-110 transition-transform" />
+          <FaImages className="text-2xl text-cyber-cyan mx-auto mb-3" aria-hidden="true" />
           <h3 className="text-text-primary font-semibold">Media Library</h3>
         </a>
         <a href="/admin/analytics" className="card-dark p-6 text-center hover:border-cyber-blue group transition-all">
-          <FaChartLine className="text-4xl text-cyber-blue mx-auto mb-3 group-hover:scale-110 transition-transform" />
+          <FaChartLine className="text-2xl text-cyber-blue mx-auto mb-3" aria-hidden="true" />
           <h3 className="text-text-primary font-semibold">Full Analytics</h3>
         </a>
         <a href="/admin/users" className="card-dark p-6 text-center hover:border-cyber-purple group transition-all">
-          <FaUsers className="text-4xl text-cyber-purple mx-auto mb-3 group-hover:scale-110 transition-transform" />
+          <FaUsers className="text-2xl text-cyber-purple mx-auto mb-3" aria-hidden="true" />
           <h3 className="text-text-primary font-semibold">User Management</h3>
         </a>
       </motion.div>

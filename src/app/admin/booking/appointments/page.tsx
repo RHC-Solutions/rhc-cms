@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaCalendarCheck, FaSpinner, FaSyncAlt } from 'react-icons/fa';
+import { FaSpinner, FaSyncAlt } from 'react-icons/fa';
 
 interface Appointment {
   id: string;
@@ -64,21 +64,21 @@ export default function BookingAppointmentsPage() {
 
   return (
     <AdminShell title="Booking — Appointments">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <FaCalendarCheck className="text-2xl text-cyber-green" />
-            <h2 className="text-2xl font-bold">Appointments</h2>
+      <div className="max-w-6xl">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="heading-xl">Appointments</h1>
+            <p className="text-text-secondary text-sm mt-1">Bookings made by customers. Change a booking&apos;s status to confirm, complete or cancel it.</p>
           </div>
-          <button onClick={load} disabled={loading} className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-dark-lighter text-text-secondary hover:text-cyber-green disabled:opacity-50">
-            {loading ? <FaSpinner className="animate-spin" /> : <FaSyncAlt />}
+          <button onClick={load} disabled={loading} className="btn-secondary">
+            {loading ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaSyncAlt aria-hidden="true" />}
             <span>Refresh</span>
           </button>
         </div>
 
-        {error && <div className="mb-4 px-4 py-3 rounded-lg bg-cyber-red/10 border border-cyber-red/40 text-cyber-red text-sm">{error}</div>}
+        {error && <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">{error}</div>}
 
-        <div className="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
+        <div className="bg-dark-card border border-dark-border rounded-xl overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-dark-lighter text-text-muted text-left">
               <tr>
@@ -104,7 +104,7 @@ export default function BookingAppointmentsPage() {
                     <div className="text-text-muted text-xs">{a.customerEmail || ''}{a.customerPhone ? ` · ${a.customerPhone}` : ''}</div>
                   </td>
                   <td className="px-4 py-3">
-                    <select value={a.status} onChange={(e) => changeStatus(a, e.target.value)} className={`px-2 py-1 rounded text-xs border-0 ${statusColor[a.status] || 'bg-dark-lighter'}`}>
+                    <select value={a.status} onChange={(e) => changeStatus(a, e.target.value)} aria-label={`Status of ${a.customerName || 'appointment'} on ${new Date(a.startsAt).toLocaleDateString()}`} className={`px-2 py-1 rounded text-xs border-0 ${statusColor[a.status] || 'bg-dark-lighter'}`}>
                       {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </td>

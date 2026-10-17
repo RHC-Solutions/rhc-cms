@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { getBackupTelegramConfig } from '@adminpanel/lib/backup-telegram';
 
 // A well-formed Telegram bot token contains only digits, a colon and url-safe
 // characters — none of which can change the host/path of the api.telegram.org
@@ -27,7 +28,14 @@ export async function POST(request: NextRequest) {
     const auth = await checkAdmin(request);
     if (!auth.authorized) return auth.response;
 
-    const { botToken, chatId } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    let { botToken, chatId } = body as { botToken?: string; chatId?: string };
+    // No values sent: test what backups will actually use.
+    if (!botToken && !chatId) {
+      const saved = await getBackupTelegramConfig();
+      botToken = saved.telegramBotToken || '';
+      chatId = saved.telegramChatId || '';
+    }
 
     if (!botToken || !chatId) {
       return NextResponse.json(

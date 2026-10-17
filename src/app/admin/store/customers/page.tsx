@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaUserFriends, FaSpinner, FaSyncAlt } from 'react-icons/fa';
+import { FaSpinner, FaSyncAlt } from 'react-icons/fa';
 
 interface Customer {
   id: string;
@@ -42,28 +42,25 @@ export default function StoreCustomersPage() {
 
   return (
     <AdminShell title="Store — Customers">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <FaUserFriends className="text-2xl text-cyber-green" />
-            <div>
-              <h2 className="text-2xl font-bold">Customers</h2>
-              <p className="text-text-muted text-sm">{total} account{total === 1 ? '' : 's'}</p>
-            </div>
+      <div className="max-w-5xl">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="heading-xl">Customers</h1>
+            <p className="text-text-secondary text-sm mt-1">Store customer accounts: {total} account{total === 1 ? '' : 's'}.</p>
           </div>
-          <button onClick={load} disabled={loading} className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-dark-lighter text-text-secondary hover:text-cyber-green disabled:opacity-50">
-            {loading ? <FaSpinner className="animate-spin" /> : <FaSyncAlt />}
+          <button onClick={load} disabled={loading} className="btn-secondary">
+            {loading ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaSyncAlt aria-hidden="true" />}
             <span>Refresh</span>
           </button>
         </div>
 
         {error && (
-          <div className="mb-4 px-4 py-3 rounded-lg bg-cyber-red/10 border border-cyber-red/40 text-cyber-red text-sm">
+          <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
             {error}
           </div>
         )}
 
-        <div className="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
+        <div className="bg-dark-card border border-dark-border rounded-xl overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-dark-lighter text-text-muted text-left">
               <tr>

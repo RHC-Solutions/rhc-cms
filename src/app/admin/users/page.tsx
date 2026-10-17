@@ -238,7 +238,7 @@ export default function UsersManagement() {
             <h2 className="text-lg font-semibold text-text-primary">Add New User</h2>
             <p className="text-text-secondary text-sm">Passwords must meet NIST SP 800-63B guidelines: minimum 8 characters, avoid common passwords</p>
           </div>
-          <FaUserPlus className="text-cyber-green text-xl" />
+          <FaUserPlus className="text-cyber-green text-xl" aria-hidden="true" />
         </div>
         <form className="space-y-4" onSubmit={createUser}>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -340,10 +340,12 @@ export default function UsersManagement() {
             </div>
           )}
 
-          <button type="submit" className="btn-primary w-full justify-center" disabled={loading}>
-            <FaUserPlus />
-            <span>Create User</span>
-          </button>
+          <div className="flex justify-end">
+            <button type="submit" className="btn-primary" disabled={loading}>
+              <FaUserPlus aria-hidden="true" />
+              <span>Create User</span>
+            </button>
+          </div>
         </form>
       </div>
 
@@ -459,8 +461,9 @@ export default function UsersManagement() {
                             </div>
                           )}
                           {passwordValidations[user.id]!.valid && (
-                            <div className={getStrengthColor(passwordValidations[user.id]!.strength)}>
-                              ✓ {getStrengthText(passwordValidations[user.id]!.strength)}
+                            <div className={`flex items-center gap-1 ${getStrengthColor(passwordValidations[user.id]!.strength)}`}>
+                              <FaCheckCircle className="shrink-0 text-green-400" aria-hidden="true" />
+                              {getStrengthText(passwordValidations[user.id]!.strength)}
                             </div>
                           )}
                         </div>

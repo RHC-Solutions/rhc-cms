@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaHistory, FaSpinner, FaSyncAlt } from 'react-icons/fa';
+import { FaSpinner, FaSyncAlt } from 'react-icons/fa';
 
 interface AuditEntry {
   id: string;
@@ -46,29 +46,26 @@ export default function AuditLogPage() {
 
   return (
     <AdminShell title="Audit Log">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <FaHistory className="text-2xl text-cyber-green" />
-            <div>
-              <h2 className="text-2xl font-bold">Audit Log</h2>
-              <p className="text-text-muted text-sm">
-                {total} recorded admin action{total === 1 ? '' : 's'}
-              </p>
-            </div>
+      <div className="max-w-6xl">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="heading-xl">Audit Log</h1>
+            <p className="text-text-secondary text-sm mt-1">
+              {total} recorded admin action{total === 1 ? '' : 's'}
+            </p>
           </div>
           <button
             onClick={load}
             disabled={loading}
-            className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-dark-lighter hover:bg-dark-border text-text-secondary hover:text-cyber-green transition-all disabled:opacity-50"
+            className="btn-secondary"
           >
-            {loading ? <FaSpinner className="animate-spin" /> : <FaSyncAlt />}
+            {loading ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaSyncAlt aria-hidden="true" />}
             <span>Refresh</span>
           </button>
         </div>
 
         {error && (
-          <div className="mb-4 px-4 py-3 rounded-lg bg-cyber-red/10 border border-cyber-red/40 text-cyber-red text-sm">
+          <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
             {error}
           </div>
         )}

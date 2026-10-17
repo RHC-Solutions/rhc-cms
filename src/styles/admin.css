@@ -1,0 +1,249 @@
+/* ============================================================
+   Admin UI: calm, compact, consistent (2026-10-06).
+
+   Everything is scoped to `.adm`, the root AdminShell renders (and
+   the standalone login/setup screens), so the public site is
+   untouched. Plain CSS on purpose: no @apply, so it compiles the
+   same with any Tailwind setup.
+
+   Three levers, in order of reach:
+   1. Tokens. The legacy theme tokens every page uses (neon green,
+      dark-card, text-*) are re-pointed to a calmer palette, and the
+      Tailwind type scale is compressed so text-3xl..7xl read as
+      app headings, not marketing heroes. Inside .adm-main the
+      Tailwind spacing unit is 87.5%, which tightens every p-*, gap-*,
+      m-* and space-* on every page in proportion.
+   2. Components (@layer components). card-cyber/card-dark,
+      heading-*, btn-*, and the input classes the pages reference
+      but globals.css never defined (.input, .input-cyber). Page
+      utilities still win over these, as before.
+   3. A few unlayered normalisations that must beat page utilities:
+      form-control borders >=3:1, 1px instead of 2px borders,
+      neutral heading colour, no hover lifts.
+
+   Contrast (measured): text #E8ECF4 / #AAB4C8 / #8892A6 on the card
+   surface #111832 = 14.3 / 9.2 / 5.6:1; control border #5F6A8F =
+   3.3:1 on cards, 3.6:1 on inputs; button ink on mint = 11.7:1;
+   white on danger #D7374A = 4.6:1.
+   ============================================================ */
+
+@layer theme, base, components, utilities;
+
+.adm {
+  --adm-bg: #070A19;
+  --adm-sidebar: #0A0E1F;
+  --adm-surface: #111832;
+  --adm-surface-2: #161E3B;
+  --adm-input: #0B1022;
+  --adm-border: #232B4D;
+  --adm-border-ctl: #5F6A8F;
+  --adm-accent: #46E5A0;
+  --adm-accent-hover: #6BEDB6;
+  --adm-accent-ink: #05140D;
+  --adm-accent-soft: rgb(70 229 160 / 0.12);
+  --adm-info: #6FD3E6;
+  --adm-text: #E8ECF4;
+  --adm-text-2: #AAB4C8;
+  --adm-text-3: #8892A6;
+  --adm-danger: #D7374A;
+  --adm-danger-hover: #E04A5C;
+  --adm-radius: 12px;
+  --adm-radius-sm: 8px;
+  --adm-topbar-h: 56px;
+
+  /* Legacy tokens, re-pointed. Aliases are re-declared too: a custom
+     property that references another is resolved where it is declared
+     (:root), so overriding only the source would not reach them. */
+  --color-neon-green: var(--adm-accent);
+  --color-cyber-green: var(--adm-accent);
+  --color-neon-success: var(--adm-accent);
+  --color-cyber-success: var(--adm-accent);
+  --color-neon-cyan: var(--adm-info);
+  --color-cyber-cyan: var(--adm-info);
+  --color-accent: var(--adm-info);
+  --color-dark: var(--adm-bg);
+  --color-dark-card: var(--adm-surface);
+  --color-dark-lighter: var(--adm-surface-2);
+  --color-dark-border: var(--adm-border);
+  --color-dark-input: var(--adm-input);
+  --color-text-primary: var(--adm-text);
+  --color-text-secondary: var(--adm-text-2);
+  --color-text-muted: var(--adm-text-3);
+  --shadow-glow-green: none;
+  --shadow-glow-cyan: none;
+  --shadow-glow-blue: none;
+
+  /* App type scale: headings top out at 26px. */
+  --text-lg: 1.0625rem;  --text-lg--line-height: 1.5;
+  --text-xl: 1.125rem;   --text-xl--line-height: 1.45;
+  --text-2xl: 1.25rem;   --text-2xl--line-height: 1.35;
+  --text-3xl: 1.375rem;  --text-3xl--line-height: 1.3;
+  --text-4xl: 1.5rem;    --text-4xl--line-height: 1.25;
+  --text-5xl: 1.625rem;  --text-5xl--line-height: 1.2;
+  --text-6xl: 1.625rem;  --text-6xl--line-height: 1.2;
+  --text-7xl: 1.625rem;  --text-7xl--line-height: 1.2;
+
+  background-color: var(--adm-bg);
+  color: var(--adm-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Page content only, so the shell keeps its own exact sizes. */
+.adm-main {
+  --spacing: 0.21875rem;
+}
+
+.adm,
+.adm * {
+  scrollbar-width: thin;
+  scrollbar-color: #2A3354 transparent;
+}
+
+@layer components {
+  /* ---- surfaces ---- */
+  .adm .card-cyber,
+  .adm .card-dark {
+    position: relative;
+    background-color: var(--adm-surface);
+    border: 1px solid var(--adm-border);
+    border-radius: var(--adm-radius);
+    padding: 1.25rem;
+    box-shadow: none;
+    transform: none;
+    transition-property: border-color, background-color;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+  }
+  .adm .card-cyber::before { content: none; }
+  .adm .card-cyber:hover,
+  .adm .card-dark:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--adm-border);
+  }
+  @media (hover: hover) {
+    .adm :is(a, button).card-cyber:hover,
+    .adm :is(a, button).card-dark:hover {
+      border-color: var(--adm-border-ctl);
+      background-color: var(--adm-surface-2);
+    }
+  }
+
+  /* ---- headings: one hierarchy, solid colour ---- */
+  .adm .heading-xl {
+    font-size: 1.5rem;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    font-weight: 700;
+    color: var(--adm-text);
+  }
+  .adm .heading-lg { font-size: 1.25rem; line-height: 1.3; letter-spacing: -0.005em; font-weight: 700; }
+  .adm .heading-md { font-size: 1.125rem; line-height: 1.35; letter-spacing: 0; font-weight: 600; }
+  .adm .heading-sm { font-size: 1rem; line-height: 1.4; font-weight: 600; }
+  .adm .text-gradient {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+  }
+
+  /* ---- buttons ---- */
+  .adm :is(.btn-primary, .btn-secondary, .btn-danger) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    border-radius: var(--adm-radius-sm);
+    border: 1px solid transparent;
+    box-shadow: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition-property: background-color, border-color, color, scale;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+  }
+  .adm .btn-primary {
+    background-color: var(--adm-accent);
+    background-image: none;
+    color: var(--adm-accent-ink);
+  }
+  .adm .btn-primary:hover { background-color: var(--adm-accent-hover); box-shadow: none; scale: 1; }
+  .adm .btn-secondary {
+    background-color: transparent;
+    color: var(--adm-text);
+    border-color: var(--adm-border-ctl);
+    font-weight: 500;
+  }
+  .adm .btn-secondary:hover { background-color: var(--adm-surface-2); color: var(--adm-text); box-shadow: none; }
+  .adm .btn-danger { background-color: var(--adm-danger); color: #fff; }
+  .adm .btn-danger:hover { background-color: var(--adm-danger-hover); box-shadow: none; scale: 1; }
+  .adm :is(.btn-primary, .btn-secondary, .btn-danger):disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ---- inputs (.input / .input-cyber were referenced but never defined) ---- */
+  .adm :is(.input, .input-cyber) {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: var(--adm-text);
+    background-color: var(--adm-input);
+    border: 1px solid var(--adm-border-ctl);
+    border-radius: var(--adm-radius-sm);
+  }
+  .adm :is(.input, .input-cyber)::placeholder { color: var(--adm-text-3); }
+  /* In an auto-sized table cell, width:100% collapses the control to its arrow. */
+  .adm td :is(.input, .input-cyber, select, input:not([type="checkbox"]):not([type="radio"])) { min-width: 8.5rem; }
+
+  .adm label { color: var(--adm-text-2); }
+  .adm :is(input, textarea)::placeholder { color: var(--adm-text-3); opacity: 1; }
+  .adm code { font-family: var(--font-mono); font-size: 0.9em; }
+  .adm td { font-variant-numeric: tabular-nums; }
+}
+
+/* ---- unlayered: these must beat page utilities ---- */
+
+/* Legacy perf rule in globals.css (will-change + contain: layout on every
+   card and button) makes each card a containing block for fixed-position
+   descendants, which pins modals to the card. Not needed here. */
+.adm :is(.card-cyber, .btn-primary, .btn-secondary) {
+  will-change: auto;
+  contain: none;
+}
+
+/* Form controls: one border colour that meets 3:1, 1px wide, accent on focus. */
+.adm :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]), select, textarea) {
+  border-color: var(--adm-border-ctl);
+  color-scheme: dark;
+}
+.adm :is(input, select, textarea).border-2 { border-width: 1px; }
+.adm :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea):focus {
+  border-color: var(--adm-accent);
+}
+.adm :where(input, select, textarea):focus-visible { outline-offset: 0; }
+.adm :is(input[type="checkbox"], input[type="radio"]) { accent-color: var(--adm-accent); }
+@media (max-width: 640px) {
+  /* iOS zooms into any field under 16px. */
+  .adm :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) { font-size: max(16px, 1em); }
+}
+
+/* 2px outlines read as glare at admin density; spinners and avatars keep theirs. */
+.adm .border-2:not(.rounded-full):not(.animate-spin) { border-width: 1px; }
+
+/* Headings are text, not accent: colour marks what is interactive or active. */
+.adm :is(h1, h2, h3):is(.text-cyber-green, .text-cyber-cyan, .text-neon-green, .text-neon-cyan, .text-cyber-blue) {
+  color: var(--adm-text);
+}
+
+/* No lifts or zooms on hover; feedback is colour only. */
+.adm :is([class*="hover:scale"], [class*="hover:-translate"], [class*="hover:translate"]):hover {
+  scale: none;
+  translate: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .adm :is(.btn-primary, .btn-secondary, .btn-danger):not(:disabled):active { scale: 0.96; }
+}

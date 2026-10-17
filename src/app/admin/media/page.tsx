@@ -150,7 +150,7 @@ export default function MediaLibrary() {
 
       {scanResult !== null && (
         <div className="flex items-center gap-2 mb-6 px-4 py-3 rounded-lg border border-cyber-green/40 bg-cyber-green/10 text-cyber-green text-sm">
-          <FaCheckCircle />
+          <FaCheckCircle aria-hidden="true" />
           <span>Scan complete &mdash; {scanResult.indexed} photo{scanResult.indexed === 1 ? '' : 's'} indexed</span>
           <button
             className="ml-auto text-text-secondary hover:text-text-primary text-xs"
@@ -188,7 +188,7 @@ export default function MediaLibrary() {
                   {item.type && item.type.startsWith('image') ? (
                     <img src={item.url} alt={item.alt || item.filename} className="w-full h-full object-cover" />
                   ) : (
-                    <Icon className="text-6xl text-cyber-green" />
+                    <Icon className="text-2xl text-cyber-green" aria-hidden="true" />
                   )}
                 </div>
                 <h3 className="text-text-primary font-semibold mb-1 truncate text-sm">{item.filename}</h3>
@@ -197,8 +197,8 @@ export default function MediaLibrary() {
                   <button className="flex-1 btn-secondary py-2 text-sm" onClick={() => navigator.clipboard.writeText(item.url)}>
                     Copy Link
                   </button>
-                  <button className="p-2 text-cyber-red hover:bg-cyber-red/20 rounded" onClick={() => deleteMedia(item.id)}>
-                    <FaTrash />
+                  <button className="p-2 text-cyber-red hover:bg-cyber-red/20 rounded" onClick={() => deleteMedia(item.id)} aria-label={`Delete ${item.filename}`}>
+                    <FaTrash aria-hidden="true" />
                   </button>
                 </div>
               </div>

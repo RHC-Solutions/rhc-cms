@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
-import { FaSync, FaTrash, FaGlobe, FaShieldAlt, FaDatabase, FaNetworkWired } from 'react-icons/fa';
+import { FaSync, FaTrash, FaGlobe, FaShieldAlt, FaDatabase, FaNetworkWired, FaExclamationTriangle, FaPaperPlane, FaBan, FaChartLine } from 'react-icons/fa';
 
 interface CloudflareData {
   analytics?: {
@@ -112,7 +112,7 @@ export default function CloudflareIntegrationPage() {
       <AdminShell title="Cloudflare Integration">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin text-4xl mb-4">⚙️</div>
+            <FaSync className="animate-spin text-2xl text-text-muted mx-auto mb-4" aria-hidden="true" />
             <p className="text-text-muted">Loading Cloudflare data...</p>
           </div>
         </div>
@@ -128,7 +128,7 @@ export default function CloudflareIntegrationPage() {
           <p className="text-text-secondary">Monitor your Cloudflare zone, analytics, and security events</p>
         </div>
         <div className="card-cyber p-8 text-center">
-          <div className="text-6xl mb-4">⚠️</div>
+          <FaExclamationTriangle className="text-2xl text-yellow-400 mx-auto mb-4" aria-hidden="true" />
           <h2 className="text-xl font-bold text-text-primary mb-2">Configuration Required</h2>
           <p className="text-text-muted mb-4">
             Cloudflare credentials are not configured or are invalid.
@@ -157,7 +157,7 @@ export default function CloudflareIntegrationPage() {
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-                <FaGlobe className="text-cyan-400" />
+                <FaGlobe className="text-cyan-400" aria-hidden="true" />
                 {data.zone.name}
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 text-sm">
@@ -184,7 +184,7 @@ export default function CloudflareIntegrationPage() {
               disabled={refreshing}
               className="btn-secondary px-4 py-2 flex items-center gap-2"
             >
-              <FaSync className={refreshing ? 'animate-spin' : ''} />
+              <FaSync className={refreshing ? 'animate-spin' : ''} aria-hidden="true" />
               {refreshing ? 'Refreshing...' : 'Refresh'}
             </button>
           </div>
@@ -203,10 +203,10 @@ export default function CloudflareIntegrationPage() {
                 : 'text-text-secondary hover:text-text-primary'
             }`}
           >
-            {tab === 'analytics' && '📊 Analytics'}
-            {tab === 'security' && '🛡️ Security'}
-            {tab === 'dns' && '🌐 DNS'}
-            {tab === 'cache' && '⚡ Cache'}
+            {tab === 'analytics' && 'Analytics'}
+            {tab === 'security' && 'Security'}
+            {tab === 'dns' && 'DNS'}
+            {tab === 'cache' && 'Cache'}
           </button>
         ))}
       </div>
@@ -216,12 +216,12 @@ export default function CloudflareIntegrationPage() {
         <>
           {/* Free Plan Warning */}
           {data?.zone?.plan?.name === 'Free Website' && (
-            <div className="card-cyber p-6 mb-6 border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-500/5 to-transparent">
+            <div className="mb-6 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm">
               <div className="flex items-start gap-3">
-                <span className="text-2xl">⚠️</span>
+                <FaExclamationTriangle className="mt-0.5 shrink-0 text-yellow-400" aria-hidden="true" />
                 <div>
-                  <h3 className="font-bold text-amber-400 mb-1">Analytics Not Available on Free Plan</h3>
-                  <p className="text-text-muted text-sm">
+                  <h3 className="text-sm font-semibold text-yellow-300 mb-1">Analytics Not Available on Free Plan</h3>
+                  <p className="text-text-secondary">
                     Detailed analytics require a <strong>paid Cloudflare plan</strong> (Pro or Business).
                     Upgrade your account to see detailed traffic metrics, bandwidth usage, and threat analysis in the dashboard below.
                   </p>
@@ -231,13 +231,13 @@ export default function CloudflareIntegrationPage() {
           )}
 
           {/* Cloudflare Dashboard Link Banner */}
-          <div className="card-cyber p-6 mb-6 border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-500/5 to-transparent">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-text-primary mb-2 flex items-center gap-2">
-                  📊 Live Analytics in Cloudflare Dashboard
+          <div className="mb-6 rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-cyan-300 mb-1">
+                  Live Analytics in Cloudflare Dashboard
                 </h3>
-                <p className="text-text-muted text-sm mb-3">
+                <p className="text-text-secondary">
                   View detailed real-time analytics, traffic breakdowns, and advanced metrics directly in your Cloudflare dashboard.
                 </p>
               </div>
@@ -245,7 +245,7 @@ export default function CloudflareIntegrationPage() {
                 href={`https://dash.cloudflare.com/${data?.accountId || ''}/${data?.zone?.name || ''}/analytics/traffic`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-primary px-6 py-3 whitespace-nowrap"
+                className="btn-primary"
               >
                 Open Cloudflare Analytics →
               </a>
@@ -261,7 +261,7 @@ export default function CloudflareIntegrationPage() {
                   {(data?.analytics?.requests || 0).toLocaleString()}
                 </p>
               </div>
-              <div className="text-4xl text-blue-400 opacity-20">📨</div>
+              <FaPaperPlane className="text-2xl text-blue-400 opacity-20" aria-hidden="true" />
             </div>
           </div>
 
@@ -273,7 +273,7 @@ export default function CloudflareIntegrationPage() {
                   {formatBytes(data?.analytics?.bandwidth || 0)}
                 </p>
               </div>
-              <div className="text-4xl text-cyan-400 opacity-20">🌐</div>
+              <FaGlobe className="text-2xl text-cyan-400 opacity-20" aria-hidden="true" />
             </div>
           </div>
 
@@ -285,7 +285,7 @@ export default function CloudflareIntegrationPage() {
                   {(data?.analytics?.threats || 0).toLocaleString()}
                 </p>
               </div>
-              <div className="text-4xl text-red-400 opacity-20">🚫</div>
+              <FaBan className="text-2xl text-red-400 opacity-20" aria-hidden="true" />
             </div>
           </div>
 
@@ -297,7 +297,7 @@ export default function CloudflareIntegrationPage() {
                   {(data?.analytics?.pageviews || 0).toLocaleString()}
                 </p>
               </div>
-              <div className="text-4xl text-green-400 opacity-20">📈</div>
+              <FaChartLine className="text-2xl text-green-400 opacity-20" aria-hidden="true" />
             </div>
           </div>
         </div>
@@ -357,7 +357,7 @@ export default function CloudflareIntegrationPage() {
             </div>
           ) : (
             <div className="card-cyber p-8 text-center">
-              <FaShieldAlt className="text-4xl text-cyber-green mx-auto mb-4 opacity-50" />
+              <FaShieldAlt className="text-2xl text-cyber-green mx-auto mb-4 opacity-50" aria-hidden="true" />
               <div className="space-y-2">
                 <p className="text-text-muted">No security events found</p>
                 <p className="text-xs text-text-muted">
@@ -425,7 +425,7 @@ export default function CloudflareIntegrationPage() {
             </div>
           ) : (
             <div className="card-cyber p-8 text-center">
-              <FaNetworkWired className="text-4xl text-cyber-blue mx-auto mb-4 opacity-50" />
+              <FaNetworkWired className="text-2xl text-cyber-blue mx-auto mb-4 opacity-50" aria-hidden="true" />
               <p className="text-text-muted">No DNS records found</p>
             </div>
           )}
@@ -441,16 +441,16 @@ export default function CloudflareIntegrationPage() {
                 <h3 className="text-lg font-bold text-text-primary mb-2">Cache Management</h3>
                 <p className="text-text-muted">Purge your Cloudflare cache to refresh content</p>
               </div>
-              <FaDatabase className="text-4xl text-purple-400 opacity-20" />
+              <FaDatabase className="text-2xl text-purple-400 opacity-20" aria-hidden="true" />
             </div>
           </div>
 
-          <div className="card-cyber p-6 border-l-4 border-l-yellow-500">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="text-3xl">⚠️</div>
+          <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm">
+            <div className="flex items-start gap-3">
+              <FaExclamationTriangle className="mt-0.5 shrink-0 text-yellow-400" aria-hidden="true" />
               <div>
-                <p className="font-semibold text-text-primary">About Cache Purge</p>
-                <p className="text-text-muted text-sm">
+                <p className="text-sm font-semibold text-yellow-300 mb-1">About Cache Purge</p>
+                <p className="text-text-secondary">
                   Purging the cache removes all cached content. Your website will serve fresh content but may be slower initially
                   as Cloudflare rebuilds the cache.
                 </p>
@@ -461,9 +461,9 @@ export default function CloudflareIntegrationPage() {
           <button
             onClick={handlePurgeCache}
             disabled={purging}
-            className="btn-danger px-8 py-3 flex items-center gap-2 text-lg"
+            className="btn-danger"
           >
-            <FaTrash />
+            <FaTrash aria-hidden="true" />
             {purging ? 'Purging...' : 'Purge Entire Cache'}
           </button>
 

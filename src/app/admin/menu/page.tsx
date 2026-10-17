@@ -262,7 +262,7 @@ export default function MenuManagement() {
       {/* Add New Item Section */}
       <div className="card-cyber p-6 mb-8">
         <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-          <FaPlus /> Add New Menu Item
+          <FaPlus aria-hidden="true" /> Add New Menu Item
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
@@ -321,7 +321,7 @@ export default function MenuManagement() {
             <button
               onClick={addMenuItem}
               disabled={!newItemLabel.trim() || !newItemUrl.trim()}
-              className="w-full bg-neon-green text-dark font-bold py-2 px-4 rounded-lg hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary w-full"
             >
               Add Item
             </button>
@@ -332,7 +332,7 @@ export default function MenuManagement() {
       {/* Menu Items List */}
       <div className="card-cyber p-6">
         <h2 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
-          <FaList /> Menu Items ({menu.filter(item => item.visible).length} visible)
+          <FaList aria-hidden="true" /> Menu Items ({menu.filter(item => item.visible).length} visible)
         </h2>
 
         <div className="space-y-3">
@@ -381,11 +381,12 @@ export default function MenuManagement() {
                         onClick={() => toggleVisibility(item.id)}
                         className="p-2 rounded-lg bg-dark-card hover:bg-dark-border transition-colors text-lg"
                         title={item.visible ? 'Hide item' : 'Show item'}
+                        aria-label={item.visible ? `Hide ${item.label}` : `Show ${item.label}`}
                       >
                         {item.visible ? (
-                          <FaEye className="text-neon-green" />
+                          <FaEye className="text-neon-green" aria-hidden="true" />
                         ) : (
-                          <FaEyeSlash className="text-text-muted" />
+                          <FaEyeSlash className="text-text-muted" aria-hidden="true" />
                         )}
                       </button>
 
@@ -395,8 +396,9 @@ export default function MenuManagement() {
                         disabled={index === 0}
                         className="p-2 rounded-lg bg-dark-card hover:bg-dark-border transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-lg"
                         title="Move up"
+                        aria-label={`Move ${item.label} up`}
                       >
-                        <FaArrowUp className="text-neon-cyan" />
+                        <FaArrowUp className="text-neon-cyan" aria-hidden="true" />
                       </button>
 
                       {/* Move Down */}
@@ -405,8 +407,9 @@ export default function MenuManagement() {
                         disabled={index === menu.length - 1}
                         className="p-2 rounded-lg bg-dark-card hover:bg-dark-border transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-lg"
                         title="Move down"
+                        aria-label={`Move ${item.label} down`}
                       >
-                        <FaArrowDown className="text-neon-cyan" />
+                        <FaArrowDown className="text-neon-cyan" aria-hidden="true" />
                       </button>
 
                       {/* Delete */}
@@ -414,8 +417,9 @@ export default function MenuManagement() {
                         onClick={() => deleteItem(item.id)}
                         className="p-2 rounded-lg bg-dark-card hover:bg-neon-red/20 transition-colors text-lg text-neon-red"
                         title="Delete item"
+                        aria-label={`Delete ${item.label}`}
                       >
-                        <FaTrash />
+                        <FaTrash aria-hidden="true" />
                       </button>
 
                       {/* Expand Submenu */}
@@ -424,11 +428,13 @@ export default function MenuManagement() {
                           onClick={() => toggleExpanded(item.id)}
                           className="p-2 rounded-lg bg-dark-card hover:bg-dark-border transition-colors text-lg"
                           title="Toggle submenu"
+                          aria-label={`Toggle ${item.label} submenu`}
                         >
                           <FaChevronDown
                             className={`text-neon-cyan transition-transform ${
                               expandedItems.has(item.id) ? 'rotate-180' : ''
                             }`}
+                            aria-hidden="true"
                           />
                         </button>
                       )}
@@ -489,11 +495,12 @@ export default function MenuManagement() {
                                     onClick={() => toggleVisibility(child.id, item.id)}
                                     className="p-1.5 rounded-lg bg-dark hover:bg-dark-border transition-colors"
                                     title={child.visible ? 'Hide item' : 'Show item'}
+                                    aria-label={child.visible ? `Hide ${child.label}` : `Show ${child.label}`}
                                   >
                                     {child.visible ? (
-                                      <FaEye className="text-neon-cyan text-sm" />
+                                      <FaEye className="text-neon-cyan text-sm" aria-hidden="true" />
                                     ) : (
-                                      <FaEyeSlash className="text-text-muted text-sm" />
+                                      <FaEyeSlash className="text-text-muted text-sm" aria-hidden="true" />
                                     )}
                                   </button>
 
@@ -503,8 +510,9 @@ export default function MenuManagement() {
                                     disabled={childIndex === 0}
                                     className="p-1.5 rounded-lg bg-dark hover:bg-dark-border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Move up"
+                                    aria-label={`Move ${child.label} up`}
                                   >
-                                    <FaArrowUp className="text-neon-cyan text-sm" />
+                                    <FaArrowUp className="text-neon-cyan text-sm" aria-hidden="true" />
                                   </button>
 
                                   {/* Move Down */}
@@ -513,8 +521,9 @@ export default function MenuManagement() {
                                     disabled={childIndex === (item.children?.length || 0) - 1}
                                     className="p-1.5 rounded-lg bg-dark hover:bg-dark-border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Move down"
+                                    aria-label={`Move ${child.label} down`}
                                   >
-                                    <FaArrowDown className="text-neon-cyan text-sm" />
+                                    <FaArrowDown className="text-neon-cyan text-sm" aria-hidden="true" />
                                   </button>
 
                                   {/* Delete */}
@@ -522,8 +531,9 @@ export default function MenuManagement() {
                                     onClick={() => deleteItem(child.id, item.id)}
                                     className="p-1.5 rounded-lg bg-dark hover:bg-neon-red/20 transition-colors text-neon-red"
                                     title="Delete item"
+                                    aria-label={`Delete ${child.label}`}
                                   >
-                                    <FaTrash className="text-sm" />
+                                    <FaTrash className="text-sm" aria-hidden="true" />
                                   </button>
                                 </div>
                               </div>
@@ -544,9 +554,9 @@ export default function MenuManagement() {
         <button
           onClick={saveMenu}
           disabled={saving}
-          className="flex items-center gap-2 bg-neon-green text-dark font-bold py-3 px-8 rounded-lg hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-primary flex items-center gap-2"
         >
-          <FaSave /> {saving ? 'Saving...' : 'Save Menu'}
+          <FaSave aria-hidden="true" /> {saving ? 'Saving...' : 'Save Menu'}
         </button>
       </div>
     </AdminShell>

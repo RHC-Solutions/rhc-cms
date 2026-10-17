@@ -554,8 +554,9 @@ export default function ThemeManagement() {
                     type="button"
                     onClick={saveAsPreset}
                     className="btn-primary px-4 py-2"
+                    aria-label="Save preset"
                   >
-                    <FaSave />
+                    <FaSave aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -656,8 +657,9 @@ export default function ThemeManagement() {
                           type="button"
                           onClick={() => deletePreset(preset.name)}
                           className="bg-cyber-red/20 hover:bg-cyber-red/30 text-cyber-red px-3 py-2 rounded text-sm transition-colors"
+                          aria-label={`Delete preset ${preset.name}`}
                         >
-                          <FaTimes />
+                          <FaTimes aria-hidden="true" />
                         </button>
                       </div>
                     </div>
@@ -726,7 +728,7 @@ export default function ThemeManagement() {
                       onClick={() => setPickerFor('favicon')}
                       className="btn-secondary flex items-center gap-2 w-full justify-center"
                     >
-                      <FaImages /> Choose from Media
+                      <FaImages aria-hidden="true" /> Choose from Media
                     </button>
                   </div>
                   <input
@@ -745,7 +747,7 @@ export default function ThemeManagement() {
                       onClick={() => setPickerFor('logo')}
                       className="btn-secondary flex items-center gap-2 w-full justify-center"
                     >
-                      <FaImages /> Choose from Media
+                      <FaImages aria-hidden="true" /> Choose from Media
                     </button>
                   </div>
                   <input
@@ -1039,7 +1041,7 @@ export default function ThemeManagement() {
             {/* Colors Section */}
             <div className="card-cyber p-6">
               <h2 className="heading-lg text-gradient mb-6 flex items-center gap-2">
-                <FaPalette /> Colors
+                <FaPalette aria-hidden="true" /> Colors
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {Object.entries(formData.colors).map(([key, value]) => (
@@ -1211,14 +1213,16 @@ export default function ThemeManagement() {
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={saving}
-              className="btn-primary w-full flex items-center justify-center gap-2"
-            >
-              <FaSave />
-              <span>{saving ? 'Saving...' : 'Save Theme'}</span>
-            </button>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={saving}
+                className="btn-primary flex items-center gap-2"
+              >
+                <FaSave aria-hidden="true" />
+                <span>{saving ? 'Saving...' : 'Save Theme'}</span>
+              </button>
+            </div>
           </form>
         </div>
 
@@ -1326,8 +1330,8 @@ export default function ThemeManagement() {
                 <p className="text-sm text-text-secondary">Select media for {pickerFor}</p>
                 <p className="heading-md text-text-primary">Media Library</p>
               </div>
-              <button className="text-text-secondary hover:text-cyber-red" onClick={() => setPickerFor(null)}>
-                <FaTimes />
+              <button className="text-text-secondary hover:text-cyber-red" onClick={() => setPickerFor(null)} aria-label="Close">
+                <FaTimes aria-hidden="true" />
               </button>
             </div>
 
@@ -1377,8 +1381,8 @@ export default function ThemeManagement() {
                 <p className="text-sm text-text-secondary">Select font for {fontPickerFor}</p>
                 <p className="heading-md text-text-primary">Google Fonts</p>
               </div>
-              <button className="text-text-secondary hover:text-cyber-red" onClick={() => setFontPickerFor(null)}>
-                <FaTimes />
+              <button className="text-text-secondary hover:text-cyber-red" onClick={() => setFontPickerFor(null)} aria-label="Close">
+                <FaTimes aria-hidden="true" />
               </button>
             </div>
 

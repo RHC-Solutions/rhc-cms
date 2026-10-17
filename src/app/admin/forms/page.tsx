@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
 import { useToast } from '@adminpanel/components/admin/Toast';
-import { FaDownload, FaTrash, FaEye, FaExternalLinkAlt, FaEdit, FaToggleOn, FaToggleOff, FaPlus, FaTimes } from 'react-icons/fa';
+import { FaDownload, FaTrash, FaEye, FaExternalLinkAlt, FaEdit, FaToggleOn, FaToggleOff, FaPlus, FaTimes, FaCheckCircle, FaTimesCircle, FaEnvelope, FaTelegramPlane, FaWhatsapp } from 'react-icons/fa';
 
 interface FormField {
   name: string;
@@ -340,8 +340,12 @@ export default function FormsManagement() {
                         <div className="flex items-center gap-4 text-sm">
                           {form.visibility.schedule === 'scheduled' && form.visibility.startDate ? (
                             <>
-                              <span className={form.visibility.active ? 'text-cyber-green' : 'text-cyber-red'}>
-                                {form.visibility.active ? '✓ Active' : '✗ Inactive'}
+                              <span className={`inline-flex items-center gap-1.5 ${form.visibility.active ? 'text-cyber-green' : 'text-cyber-red'}`}>
+                                {form.visibility.active ? (
+                                  <><FaCheckCircle className="text-green-400" aria-hidden="true" />Active</>
+                                ) : (
+                                  <><FaTimesCircle className="text-red-400" aria-hidden="true" />Inactive</>
+                                )}
                               </span>
                               <span className="text-text-muted">
                                 {new Date(form.visibility.startDate).toLocaleDateString()} 
@@ -349,7 +353,7 @@ export default function FormsManagement() {
                               </span>
                             </>
                           ) : (
-                            <span className="text-cyber-green">✓ Always Active</span>
+                            <span className="inline-flex items-center gap-1.5 text-cyber-green"><FaCheckCircle className="text-green-400" aria-hidden="true" />Always Active</span>
                           )}
                         </div>
                       </div>
@@ -380,8 +384,9 @@ export default function FormsManagement() {
                       <button
                         onClick={() => deleteForm(form.id)}
                         className="btn-secondary text-cyber-red px-3 py-2"
+                        aria-label={`Delete ${form.name}`}
                       >
-                        <FaTrash />
+                        <FaTrash aria-hidden="true" />
                       </button>
                     </div>
                   </div>
@@ -405,18 +410,18 @@ export default function FormsManagement() {
                     <div className="flex items-center gap-4 text-sm">
                       <span className="text-text-muted">Notifications:</span>
                       {form.notifications.email && (
-                        <span className="px-2 py-1 rounded bg-cyber-blue/20 text-cyber-blue">
-                          📧 Email
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-cyber-blue/20 text-cyber-blue">
+                          <FaEnvelope aria-hidden="true" /> Email
                         </span>
                       )}
                       {form.notifications.telegram && (
-                        <span className="px-2 py-1 rounded bg-cyber-cyan/20 text-cyber-cyan">
-                          📱 Telegram
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-cyber-cyan/20 text-cyber-cyan">
+                          <FaTelegramPlane aria-hidden="true" /> Telegram
                         </span>
                       )}
                       {form.notifications.whatsapp && (
-                        <span className="px-2 py-1 rounded bg-cyber-green/20 text-cyber-green">
-                          💬 WhatsApp
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-cyber-green/20 text-cyber-green">
+                          <FaWhatsapp aria-hidden="true" /> WhatsApp
                         </span>
                       )}
                     </div>
@@ -545,8 +550,9 @@ export default function FormsManagement() {
                           <button
                             className="text-cyber-red hover:bg-cyber-red/20 p-2 rounded"
                             onClick={() => deleteSubmission(sub.id)}
+                            aria-label={`Delete submission from ${sub.email || sub.formName}`}
                           >
-                            <FaTrash />
+                            <FaTrash aria-hidden="true" />
                           </button>
                         </td>
                       </tr>
@@ -581,8 +587,9 @@ export default function FormsManagement() {
               <button
                 onClick={() => setSelectedSubmission(null)}
                 className="text-text-muted hover:text-text-primary text-2xl"
+                aria-label="Close"
               >
-                <FaTimes />
+                <FaTimes aria-hidden="true" />
               </button>
             </div>
 
@@ -651,8 +658,9 @@ export default function FormsManagement() {
                   setIsCreatingForm(false);
                 }}
                 className="text-text-muted hover:text-text-primary text-2xl"
+                aria-label="Close"
               >
-                <FaTimes />
+                <FaTimes aria-hidden="true" />
               </button>
             </div>
 
@@ -775,9 +783,9 @@ export default function FormsManagement() {
                 <h4 className="text-lg font-bold text-text-primary mb-4">Notifications</h4>
                 <div className="space-y-3">
                   {[
-                    { key: 'email', label: 'Email', icon: '📧' },
-                    { key: 'telegram', label: 'Telegram', icon: '📱' },
-                    { key: 'whatsapp', label: 'WhatsApp', icon: '💬' },
+                    { key: 'email', label: 'Email', icon: FaEnvelope },
+                    { key: 'telegram', label: 'Telegram', icon: FaTelegramPlane },
+                    { key: 'whatsapp', label: 'WhatsApp', icon: FaWhatsapp },
                   ].map((notif) => (
                     <label key={notif.key} className="flex items-center gap-3 cursor-pointer p-3 bg-dark-lighter rounded">
                       <input
@@ -794,7 +802,7 @@ export default function FormsManagement() {
                         }
                         className="w-4 h-4"
                       />
-                      <span className="text-lg">{notif.icon}</span>
+                      <notif.icon className="text-text-secondary" aria-hidden="true" />
                       <span className="text-text-primary font-semibold">{notif.label}</span>
                     </label>
                   ))}

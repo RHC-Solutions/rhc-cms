@@ -171,48 +171,50 @@ export default function AccountPage() {
     }
   };
 
-  const inputCls = 'w-full bg-dark-card border-2 border-dark-border rounded-lg py-3 px-4 text-text-primary focus:border-cyber-cyan focus:outline-none';
+  const inputCls = 'input';
 
   return (
     <AdminShell title="Account">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div>
-          <h1 className="heading-md text-gradient">Your account</h1>
-          <p className="text-text-secondary text-sm mt-1">
-            {loading ? 'Loading…' : account ? <>Signed in as <span className="font-mono">{account.email}</span> · role <span className="font-mono">{account.role}</span></> : 'Could not load account'}
-          </p>
+      <div className="max-w-2xl space-y-6">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="heading-xl">Your account</h1>
+            <p className="text-text-secondary text-sm mt-1">
+              {loading ? 'Loading…' : account ? <>Signed in as <span className="font-mono">{account.email}</span> · role <span className="font-mono">{account.role}</span></> : 'Could not load account'}
+            </p>
+          </div>
         </div>
 
         {/* Profile */}
         <section className="card-cyber p-6">
-          <h2 className="text-lg font-bold flex items-center gap-2 mb-4"><FaUser className="text-cyber-green" /> Profile</h2>
+          <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2 mb-4"><FaUser className="text-cyber-green" aria-hidden="true" /> Profile</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-text-primary font-semibold mb-2">Name</label>
-              <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} />
+              <label htmlFor="account-name" className="block text-sm font-medium text-text-secondary mb-1.5">Name</label>
+              <input id="account-name" className={inputCls} value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div>
-              <label className="block text-text-primary font-semibold mb-2">Email</label>
-              <input className={inputCls} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <label htmlFor="account-email" className="block text-sm font-medium text-text-secondary mb-1.5">Email</label>
+              <input id="account-email" className={inputCls} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
               <p className="text-text-muted text-xs mt-1">Changing your email signs you out — you&apos;ll sign in again with the new address.</p>
             </div>
-            <button onClick={saveProfile} disabled={savingProfile || loading} className="inline-flex items-center gap-2 bg-cyber-green text-dark font-semibold px-4 py-2 rounded-lg hover:bg-cyber-green/90 disabled:opacity-60">
-              {savingProfile ? <FaSpinner className="animate-spin" /> : <FaSave />} Save profile
+            <button onClick={saveProfile} disabled={savingProfile || loading} className="btn-primary">
+              {savingProfile ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaSave aria-hidden="true" />} Save profile
             </button>
           </div>
         </section>
 
         {/* Password */}
         <section className="card-cyber p-6">
-          <h2 className="text-lg font-bold flex items-center gap-2 mb-4"><FaKey className="text-cyber-green" /> Password</h2>
+          <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2 mb-4"><FaKey className="text-cyber-green" aria-hidden="true" /> Password</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-text-primary font-semibold mb-2">Current password</label>
-              <input className={inputCls} type="password" autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+              <label htmlFor="account-current-password" className="block text-sm font-medium text-text-secondary mb-1.5">Current password</label>
+              <input id="account-current-password" className={inputCls} type="password" autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
             </div>
             <div>
-              <label className="block text-text-primary font-semibold mb-2">New password</label>
-              <input className={inputCls} type="password" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+              <label htmlFor="account-new-password" className="block text-sm font-medium text-text-secondary mb-1.5">New password</label>
+              <input id="account-new-password" className={inputCls} type="password" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
               {pwCheck && (
                 <p className={`text-xs mt-1 ${pwCheck.valid ? 'text-cyber-green' : 'text-orange-400'}`}>
                   Strength: {pwCheck.strength}{pwCheck.errors[0] ? ` — ${pwCheck.errors[0]}` : ''}
@@ -220,11 +222,11 @@ export default function AccountPage() {
               )}
             </div>
             <div>
-              <label className="block text-text-primary font-semibold mb-2">Confirm new password</label>
-              <input className={inputCls} type="password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+              <label htmlFor="account-confirm-password" className="block text-sm font-medium text-text-secondary mb-1.5">Confirm new password</label>
+              <input id="account-confirm-password" className={inputCls} type="password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
             </div>
-            <button onClick={savePassword} disabled={savingPassword || !currentPassword || !newPassword || !(pwCheck?.valid)} className="inline-flex items-center gap-2 bg-cyber-green text-dark font-semibold px-4 py-2 rounded-lg hover:bg-cyber-green/90 disabled:opacity-60">
-              {savingPassword ? <FaSpinner className="animate-spin" /> : <FaSave />} Change password
+            <button onClick={savePassword} disabled={savingPassword || !currentPassword || !newPassword || !(pwCheck?.valid)} className="btn-primary">
+              {savingPassword ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaSave aria-hidden="true" />} Change password
             </button>
             <p className="text-text-muted text-xs">Changing your password signs you out of this session.</p>
           </div>
@@ -232,7 +234,7 @@ export default function AccountPage() {
 
         {/* Two-Factor */}
         <section className="card-cyber p-6">
-          <h2 className="text-lg font-bold flex items-center gap-2 mb-4"><FaShieldAlt className="text-cyber-green" /> Two-factor authentication</h2>
+          <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2 mb-4"><FaShieldAlt className="text-cyber-green" aria-hidden="true" /> Two-factor authentication</h2>
           {recoveryCodes ? (
             <div>
               <p className="text-cyber-green font-semibold mb-2">2FA enabled. Save these recovery codes somewhere safe:</p>
@@ -241,10 +243,10 @@ export default function AccountPage() {
               </div>
             </div>
           ) : mfaEnabled ? (
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
               <p className="text-text-secondary text-sm">Two-factor authentication is <span className="text-cyber-green font-semibold">enabled</span> on your account.</p>
-              <button onClick={disableMfa} disabled={mfaBusy} className="px-4 py-2 rounded-lg bg-dark-lighter text-text-secondary hover:text-cyber-red hover:bg-cyber-red/10 disabled:opacity-60">
-                {mfaBusy ? <FaSpinner className="animate-spin" /> : 'Disable'}
+              <button onClick={disableMfa} disabled={mfaBusy} className="btn-secondary">
+                {mfaBusy ? <FaSpinner className="animate-spin" aria-hidden="true" /> : 'Disable'}
               </button>
             </div>
           ) : enrolling ? (
@@ -252,19 +254,19 @@ export default function AccountPage() {
               <p className="text-text-secondary text-sm">Scan this QR code with your authenticator app, then enter the 6-digit code to confirm.</p>
               {qr && <img src={qr} alt="2FA QR code" className="w-44 h-44 bg-white p-2 rounded-lg" />}
               {secret && <p className="text-text-muted text-xs font-mono break-all">Manual key: {secret}</p>}
-              <input className={`${inputCls} max-w-[200px] tracking-widest`} inputMode="numeric" maxLength={6} placeholder="123456" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} />
+              <input className={`${inputCls} max-w-[200px] tracking-widest`} aria-label="6-digit code" inputMode="numeric" maxLength={6} placeholder="123456" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} />
               <div className="flex gap-2">
-                <button onClick={confirmEnroll} disabled={mfaBusy || code.length !== 6} className="inline-flex items-center gap-2 bg-cyber-green text-dark font-semibold px-4 py-2 rounded-lg hover:bg-cyber-green/90 disabled:opacity-60">
-                  {mfaBusy ? <FaSpinner className="animate-spin" /> : 'Confirm & enable'}
+                <button onClick={confirmEnroll} disabled={mfaBusy || code.length !== 6} className="btn-primary">
+                  {mfaBusy ? <FaSpinner className="animate-spin" aria-hidden="true" /> : 'Confirm & enable'}
                 </button>
-                <button onClick={() => setEnrolling(false)} className="px-4 py-2 rounded-lg text-text-secondary hover:text-text-primary">Cancel</button>
+                <button onClick={() => setEnrolling(false)} className="btn-secondary">Cancel</button>
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
               <p className="text-text-secondary text-sm">Add a second factor (authenticator app) for stronger account security.</p>
-              <button onClick={beginEnroll} disabled={mfaBusy} className="inline-flex items-center gap-2 bg-cyber-green text-dark font-semibold px-4 py-2 rounded-lg hover:bg-cyber-green/90 disabled:opacity-60">
-                {mfaBusy ? <FaSpinner className="animate-spin" /> : 'Enable 2FA'}
+              <button onClick={beginEnroll} disabled={mfaBusy} className="btn-primary">
+                {mfaBusy ? <FaSpinner className="animate-spin" aria-hidden="true" /> : 'Enable 2FA'}
               </button>
             </div>
           )}

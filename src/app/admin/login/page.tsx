@@ -1,11 +1,9 @@
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
-import Image from 'next/image';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { FaLock, FaEnvelope, FaSpinner, FaKey } from 'react-icons/fa';
+import { FaSpinner, FaExclamationCircle, FaExclamationTriangle, FaCheckCircle } from 'react-icons/fa';
 
 function LoginPageInner() {
   const router = useRouter();
@@ -23,6 +21,8 @@ function LoginPageInner() {
   const [resetEmail, setResetEmail] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetMessage, setResetMessage] = useState('');
+  // Colour/icon of resetMessage; set alongside every non-empty message.
+  const [resetStatus, setResetStatus] = useState<'success' | 'error'>('error');
 
   // Check if initial setup is needed
   useEffect(() => {
@@ -51,6 +51,7 @@ function LoginPageInner() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
     setLoading(true);
 
     // Get client IP address and location (prefer internal API, fallback to ipify)
@@ -104,6 +105,7 @@ function LoginPageInner() {
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setResetMessage('');
+
     setResetLoading(true);
 
     try {
@@ -116,18 +118,21 @@ function LoginPageInner() {
       const data = await response.json();
 
       if (response.ok) {
-        setResetMessage('✓ ' + data.message);
+        setResetStatus('success');
+        setResetMessage(data.message);
         setResetEmail('');
         setTimeout(() => {
           setResetMode(false);
           setResetMessage('');
         }, 5000);
       } else {
-        setResetMessage('✗ ' + (data.error || 'Failed to reset password'));
+        setResetStatus('error');
+        setResetMessage(data.error || 'Failed to reset password');
       }
     } catch (err) {
       console.error('Reset error:', err);
-      setResetMessage('✗ An error occurred. Please try again.');
+      setResetStatus('error');
+      setResetMessage('An error occurred. Please try again.');
     } finally {
       setResetLoading(false);
     }
@@ -135,231 +140,211 @@ function LoginPageInner() {
 
   if (checkingSetup) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Checking system status...</div>
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <p role="status" className="flex items-center gap-2 text-sm text-text-secondary">
+          <FaSpinner className="animate-spin" aria-hidden="true" />
+          Checking system status...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 w-full max-w-md border border-blue-500/20"
-      >
-        {/* Logo/Header */}
-        <div className="text-center mb-8">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200 }}
-            className="w-16 h-16 mx-auto mb-4 flex items-center justify-center"
-          >
-            <Image
-              src="/logo.png"
-              alt="Your Site Name"
-              width={64}
-              height={64}
-              priority
-              unoptimized
-              className="w-16 h-16 object-contain"
-            />
-          </motion.div>
-          <h1 className="heading-xl text-gradient mb-2">RHC Admin</h1>
-          <p className="text-slate-400">{resetMode ? 'Reset Your Password' : 'Sign in to manage your content'}</p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-sm">
+        <p className="mb-6 text-center text-[15px] font-bold tracking-[-0.01em] text-text-primary">
+          <span className="text-[var(--adm-accent)]">RHC</span> CMS
+        </p>
 
-        {/* Error Message */}
-        {error && !resetMode && (
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg mb-6"
-          >
-            {error}
-          </motion.div>
-        )}
+        <div className="card-cyber p-5 sm:p-8">
+          <h1 className="text-xl font-semibold text-text-primary">
+            {resetMode ? 'Reset your password' : 'Sign in'}
+          </h1>
+          <p className="mt-1 mb-6 text-sm text-text-secondary">
+            {resetMode ? 'A new password will be sent to your configured Telegram.' : 'Sign in to manage your content.'}
+          </p>
 
-        {/* Reset Message */}
-        {resetMessage && (
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className={`px-4 py-3 rounded-lg mb-6 ${
-              resetMessage.startsWith('✓') 
-                ? 'bg-green-500/10 border border-green-500/50 text-green-400'
-                : 'bg-red-500/10 border border-red-500/50 text-red-400'
-            }`}
-          >
-            {resetMessage}
-          </motion.div>
-        )}
+          {/* Error Message */}
+          {error && !resetMode && (
+            <div
+              role="alert"
+              className="mb-5 flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2.5 text-sm text-red-300"
+            >
+              <FaExclamationCircle className="mt-0.5 shrink-0" aria-hidden="true" />
+              <span>{error}</span>
+            </div>
+          )}
 
-        {/* Password Reset Form */}
-        {resetMode ? (
-          <form onSubmit={handlePasswordReset} className="space-y-6">
-            <div>
-              <label htmlFor="reset-email" className="block text-sm font-medium text-slate-300 mb-2">
-                Admin Email Address
-              </label>
-              <div className="relative">
-                <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          {/* Reset Message */}
+          {resetMessage && (
+            <div
+              role={resetStatus === 'success' ? 'status' : 'alert'}
+              className={`mb-5 flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm ${
+                resetStatus === 'success'
+                  ? 'border-cyber-green/40 bg-cyber-green/10 text-cyber-green'
+                  : 'border-red-500/40 bg-red-500/10 text-red-300'
+              }`}
+            >
+              {resetStatus === 'success' ? (
+                <FaCheckCircle className="mt-0.5 shrink-0" aria-hidden="true" />
+              ) : (
+                <FaExclamationCircle className="mt-0.5 shrink-0" aria-hidden="true" />
+              )}
+              <span>{resetMessage}</span>
+            </div>
+          )}
+
+          {/* Password Reset Form */}
+          {resetMode ? (
+            <form onSubmit={handlePasswordReset} className="space-y-5">
+              <div>
+                <label htmlFor="reset-email" className="block text-sm font-medium mb-1.5">
+                  Admin email address
+                </label>
                 <input
                   id="reset-email"
                   type="email"
+                  autoComplete="username"
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="input py-2.5"
                   placeholder="admin@example.com"
                   required
                 />
               </div>
-            </div>
 
-            <div className="space-y-3">
-              <motion.button
+              <div className="rounded-lg border border-dark-border bg-dark-lighter p-3 text-sm text-text-secondary">
+                <p className="mb-1.5 flex items-center gap-2 font-medium text-text-primary">
+                  <FaExclamationTriangle className="shrink-0 text-amber-300" aria-hidden="true" />
+                  Security notice
+                </p>
+                <ul className="list-disc space-y-1 pl-5">
+                  <li>A new 64-character password will be generated</li>
+                  <li>Password will be sent to your configured Telegram</li>
+                  <li>2FA will be disabled (re-enable after login)</li>
+                  <li>Only available for admin accounts</li>
+                </ul>
+              </div>
+
+
+              <button
                 type="submit"
                 disabled={resetLoading}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full bg-linear-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="btn-primary w-full py-2.5"
               >
                 {resetLoading ? (
                   <>
-                    <FaSpinner className="animate-spin" />
+                    <FaSpinner className="animate-spin" aria-hidden="true" />
                     Resetting...
                   </>
                 ) : (
-                  'Reset Password'
+                  'Reset password'
                 )}
-              </motion.button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setResetMode(false);
-                  setResetMessage('');
-                  setResetEmail('');
-                }}
-                className="w-full text-slate-400 hover:text-white transition-colors py-2"
-              >
-                Back to Login
               </button>
-            </div>
 
-            <div className="mt-6 p-4 bg-slate-900/50 rounded-lg border border-slate-700 text-xs text-slate-400">
-              <p className="mb-2"><strong>⚠️ Security Notice:</strong></p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>A new 64-character password will be generated</li>
-                <li>It will be sent to whichever recovery channel this site has configured &mdash; email (Brevo or SMTP), or, if email isn&apos;t set up, your admin Telegram chat</li>
-                <li>2FA will be disabled (re-enable after login)</li>
-                <li>Only available for admin accounts</li>
-              </ul>
-            </div>
-          </form>
-        ) : (
-          <>
-            {/* Login Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Email Input */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
-              Email Address
-            </label>
-            <div className="relative">
-              <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="admin@example.com"
-              />
-            </div>
-          </div>
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetMode(false);
+                    setResetMessage('');
+                    setResetEmail('');
+                  }}
+                  className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+                >
+                  Back to sign in
+                </button>
+              </div>
+            </form>
+          ) : (
+            <>
+              {/* Login Form */}
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium mb-1.5">
+                    Email address
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    autoComplete="username"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="input py-2.5"
+                    placeholder="admin@example.com"
+                  />
+                </div>
 
-          {/* Password Input */}
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
-              Password
-            </label>
-            <div className="relative">
-              <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="••••••••"
-              />
-            </div>
-          </div>
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium mb-1.5">
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="input py-2.5"
+                  />
+                </div>
 
-          {/* TOTP Input */}
-          <div>
-            <label htmlFor="totp" className="block text-sm font-medium text-slate-300 mb-2">
-              Authenticator Code
-            </label>
-            <div className="relative">
-              <FaKey className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-              <input
-                id="totp"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={totp}
-                onChange={(e) => setTotp(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="123456 or recovery code"
-              />
-            </div>
-          </div>
+                <div>
+                  <label htmlFor="totp" className="block text-sm font-medium mb-1.5">
+                    Authenticator code
+                  </label>
+                  <input
+                    id="totp"
+                    type="text"
+                    autoComplete="one-time-code"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    value={totp}
+                    onChange={(e) => setTotp(e.target.value)}
+                    aria-describedby="totp-hint"
+                    className="input py-2.5"
+                    placeholder="123456"
+                  />
+                  <p id="totp-hint" className="mt-1.5 text-xs text-text-muted">
+                    The 6-digit code from your authenticator app, or a recovery code.
+                  </p>
+                </div>
 
-          {/* Submit Button */}
-          <motion.button
-            type="submit"
-            disabled={loading}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full bg-linear-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <FaSpinner className="animate-spin" />
-                Signing in...
-              </>
-            ) : (
-              'Sign In'
-            )}
-          </motion.button>
-        </form>
 
-        {/* Forgot Password Link */}
-        <div className="mt-6 text-center">
-          <button
-            type="button"
-            onClick={() => {
-              setResetMode(true);
-              setError('');
-            }}
-            className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-          >
-            Forgot password? Send me a new one
-          </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary w-full py-2.5"
+                >
+                  {loading ? (
+                    <>
+                      <FaSpinner className="animate-spin" aria-hidden="true" />
+                      Signing in...
+                    </>
+                  ) : (
+                    'Sign in'
+                  )}
+                </button>
+              </form>
+
+              <div className="mt-5 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetMode(true);
+                    setError('');
+                  }}
+                  className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+                >
+                  Forgot password? Reset via Telegram
+                </button>
+              </div>
+            </>
+          )}
         </div>
-
-        {/* Security Note */}
-        <div className="mt-8 p-4 bg-slate-900/50 rounded-lg border border-slate-700 text-xs text-slate-400">
-          Enter your authenticator code (or recovery code) after the password.
-        </div>
-        </>
-        )}
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -367,8 +352,11 @@ function LoginPageInner() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-linear-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <p role="status" className="flex items-center gap-2 text-sm text-text-secondary">
+          <FaSpinner className="animate-spin" aria-hidden="true" />
+          Loading...
+        </p>
       </div>
     }>
       <LoginPageInner />

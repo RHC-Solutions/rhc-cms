@@ -5,6 +5,7 @@ import AdminShell from '@adminpanel/components/admin/AdminShell';
 import {
   FaRobot, FaSave, FaSpinner, FaPlay, FaCheckCircle, FaTimesCircle,
   FaExternalLinkAlt, FaSyncAlt, FaFileAlt, FaChevronDown, FaChevronRight,
+  FaExclamationTriangle,
 } from 'react-icons/fa';
 
 type AutofixMode = 'pr' | 'off';
@@ -182,7 +183,7 @@ export default function AutomationPage() {
     return (
       <AdminShell title="Automation">
         <div className="flex items-center gap-3 text-text-secondary p-6">
-          <FaSpinner className="animate-spin" /> Loading…
+          <FaSpinner className="animate-spin" aria-hidden="true" /> Loading…
         </div>
       </AdminShell>
     );
@@ -196,18 +197,22 @@ export default function AutomationPage() {
   return (
     <AdminShell title="Automation">
       <div className="max-w-3xl space-y-6">
-        <p className="text-text-secondary text-sm flex items-center gap-2">
-          <FaRobot className="text-cyber-cyan" />
-          Daily SEO / AI-readiness / performance audits and weekly dependency updates.
-          Fixes arrive as a reviewable PR — nothing deploys automatically.
-        </p>
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="heading-xl">Automation</h1>
+            <p className="text-text-secondary text-sm mt-1">
+              Daily SEO / AI-readiness / performance audits and weekly dependency updates.
+              Fixes arrive as a reviewable PR — nothing deploys automatically.
+            </p>
+          </div>
+        </div>
 
         {msg && (
           <div className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm ${
             msg.type === 'success'
               ? 'bg-cyber-green/10 text-cyber-green border border-cyber-green/30'
               : 'bg-red-500/10 text-red-400 border border-red-500/30'}`}>
-            {msg.type === 'success' ? <FaCheckCircle /> : <FaTimesCircle />}{msg.text}
+            {msg.type === 'success' ? <FaCheckCircle className="shrink-0" aria-hidden="true" /> : <FaTimesCircle className="shrink-0" aria-hidden="true" />}{msg.text}
           </div>
         )}
 
@@ -219,11 +224,11 @@ export default function AutomationPage() {
               <p className="text-text-muted text-sm">Check GitHub for a newer version of RHC CMS. Updating takes a full backup first, then fast-forwards the vendored panel.</p>
             </div>
             <div className="flex gap-2">
-              <button onClick={checkUpdates} disabled={checking || updating} className="px-4 py-2 rounded-lg border border-cyber-cyan/40 text-cyber-cyan hover:bg-cyber-cyan/10 disabled:opacity-50">
+              <button onClick={checkUpdates} disabled={checking || updating} className="btn-secondary">
                 {checking ? 'Checking…' : 'Check for updates'}
               </button>
               {updateCheck?.ok && !updateCheck.upToDate && (
-                <button onClick={runUpdate} disabled={updating} className="btn-primary px-4 py-2">
+                <button onClick={runUpdate} disabled={updating} className="btn-primary">
                   {updating ? 'Updating…' : 'Back up & update'}
                 </button>
               )}
@@ -235,7 +240,7 @@ export default function AutomationPage() {
               {updateCheck.error ? (
                 <p className="text-red-400">{updateCheck.error}</p>
               ) : updateCheck.upToDate ? (
-                <p className="text-cyber-green">✓ Up to date{updateCheck.version ? ` (v${updateCheck.version}, ${updateCheck.current})` : ''}.</p>
+                <p className="text-cyber-green flex items-center gap-1.5"><FaCheckCircle className="shrink-0 text-green-400" aria-hidden="true" />Up to date{updateCheck.version ? ` (v${updateCheck.version}, ${updateCheck.current})` : ''}.</p>
               ) : (
                 <>
                   <p className="text-text-primary"><span className="text-yellow-400 font-semibold">{updateCheck.behind} commit(s) behind.</span> Local <code>{updateCheck.current}</code> → latest <code>{updateCheck.latest}</code>.</p>
@@ -255,7 +260,7 @@ export default function AutomationPage() {
             <div className={`rounded-lg p-4 text-sm ${updateResult.ok ? 'bg-cyber-green/10 border border-cyber-green/30' : 'bg-red-500/10 border border-red-500/30'}`}>
               <p className={updateResult.ok ? 'text-cyber-green' : 'text-red-400'}>{updateResult.message}</p>
               {updateResult.backup && <p className="text-text-muted text-xs mt-1">Backup: <code>{updateResult.backup}</code></p>}
-              {updateResult.rebuildRequired && <p className="text-yellow-200 text-xs mt-1">⚠ Run <code>npm run build &amp;&amp; pm2 restart</code> on the host to apply.</p>}
+              {updateResult.rebuildRequired && <p className="text-yellow-300 text-xs mt-1 flex items-center gap-1.5"><FaExclamationTriangle className="shrink-0 text-yellow-400" aria-hidden="true" /><span>Run <code>npm run build &amp;&amp; pm2 restart</code> on the host to apply.</span></p>}
               {updateResult.changelog?.length > 0 && (
                 <ul className="list-disc pl-5 text-text-secondary space-y-0.5 mt-2 max-h-48 overflow-y-auto">
                   {updateResult.changelog.map((c: any) => (<li key={c.sha}><code className="text-text-muted">{c.sha}</code> {c.message}</li>))}
@@ -270,7 +275,7 @@ export default function AutomationPage() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="heading-md text-text-primary">Last run</h2>
             <button onClick={load} className="text-text-muted hover:text-cyber-cyan text-sm flex items-center gap-1">
-              <FaSyncAlt /> Refresh
+              <FaSyncAlt aria-hidden="true" /> Refresh
             </button>
           </div>
           {status ? (
@@ -294,7 +299,7 @@ export default function AutomationPage() {
                   <div className="text-text-muted">Auto-fix PR</div>
                   <a href={status.prUrl} target="_blank" rel="noopener noreferrer"
                      className="text-cyber-cyan hover:underline flex items-center gap-1">
-                    {status.prUrl.split('/').slice(-2).join(' #')} <FaExternalLinkAlt size={11} />
+                    {status.prUrl.split('/').slice(-2).join(' #')} <FaExternalLinkAlt size={11} aria-hidden="true" />
                   </a>
                 </>
               )}
@@ -305,13 +310,13 @@ export default function AutomationPage() {
 
           <div className="flex flex-wrap gap-3 mt-5">
             <button onClick={() => run('daily')} disabled={running?.daily}
-              className="btn-primary flex items-center gap-2 disabled:opacity-50">
-              {running?.daily ? <FaSpinner className="animate-spin" /> : <FaPlay />}
+              className="btn-primary">
+              {running?.daily ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaPlay aria-hidden="true" />}
               {running?.daily ? 'Audit running…' : 'Run audit now'}
             </button>
             <button onClick={() => run('weekly')} disabled={running?.weekly}
-              className="btn flex items-center gap-2 disabled:opacity-50">
-              {running?.weekly ? <FaSpinner className="animate-spin" /> : <FaSyncAlt />}
+              className="btn-secondary">
+              {running?.weekly ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaSyncAlt aria-hidden="true" />}
               {running?.weekly ? 'Updating…' : 'Run dependency update now'}
             </button>
           </div>
@@ -329,8 +334,9 @@ export default function AutomationPage() {
           />
 
           <div className="pl-1">
-            <label className="block text-sm text-text-secondary mb-1">Auto-fix mode</label>
+            <label htmlFor="automation-autofix" className="block text-sm font-medium text-text-secondary mb-1.5">Auto-fix mode</label>
             <select
+              id="automation-autofix"
               value={cfg.daily.autofix}
               disabled={!cfg.daily.enabled}
               onChange={(e) => setCfg({ ...cfg, daily: { ...cfg.daily, autofix: e.target.value as AutofixMode } })}
@@ -355,8 +361,9 @@ export default function AutomationPage() {
           />
 
           <div className="pl-1">
-            <label className="block text-sm text-text-secondary mb-1">Report email recipient</label>
+            <label htmlFor="automation-recipient" className="block text-sm font-medium text-text-secondary mb-1.5">Report email recipient</label>
             <input
+              id="automation-recipient"
               type="email"
               value={cfg.recipientEmail}
               placeholder="Defaults to ADMIN_EMAIL"
@@ -369,8 +376,8 @@ export default function AutomationPage() {
             <span className="text-xs text-text-muted">
               {cfg.updatedAt ? `Saved ${new Date(cfg.updatedAt).toLocaleString()}` : 'Not saved yet'}
             </span>
-            <button onClick={save} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
-              {saving ? <FaSpinner className="animate-spin" /> : <FaSave />} Save settings
+            <button onClick={save} disabled={saving} className="btn-primary">
+              {saving ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaSave aria-hidden="true" />} Save settings
             </button>
           </div>
         </div>
@@ -420,12 +427,12 @@ export default function AutomationPage() {
 
           <div className="flex flex-wrap gap-3">
             <button onClick={() => runOoda(true)} disabled={oodaRunning}
-              className="btn flex items-center gap-2 disabled:opacity-50">
-              {oodaRunning ? <FaSpinner className="animate-spin" /> : <FaRobot />} Preview (dry-run)
+              className="btn-secondary">
+              {oodaRunning ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaRobot aria-hidden="true" />} Preview (dry-run)
             </button>
             <button onClick={() => runOoda(false)} disabled={oodaRunning}
-              className="btn-primary flex items-center gap-2 disabled:opacity-50">
-              {oodaRunning ? <FaSpinner className="animate-spin" /> : <FaPlay />} Run cycle now
+              className="btn-primary">
+              {oodaRunning ? <FaSpinner className="animate-spin" aria-hidden="true" /> : <FaPlay aria-hidden="true" />} Run cycle now
             </button>
           </div>
 
@@ -443,7 +450,7 @@ export default function AutomationPage() {
                     <div className="text-text-secondary font-medium">Auto-apply ({o.acted.length})</div>
                     {o.acted.map((a: any, i: number) => (
                       <div key={i} className={a.ok ? 'text-cyber-green' : 'text-yellow-400'}>
-                        {a.applied ? '✓' : '·'} {a.actionType}: {a.message}
+                        {a.applied ? <><FaCheckCircle className="inline -mt-0.5 text-green-400" aria-hidden="true" /><span className="sr-only">Applied:</span></> : '·'} {a.actionType}: {a.message}
                       </div>
                     ))}
                   </div>
@@ -479,8 +486,9 @@ export default function AutomationPage() {
                   <button
                     onClick={() => r.hasReport && viewReport(r.date)}
                     disabled={!r.hasReport}
+                    aria-expanded={r.hasReport ? openReport === r.date : undefined}
                     className="w-full flex items-center gap-2 text-left text-sm text-text-primary hover:text-cyber-cyan disabled:text-text-muted">
-                    {r.hasReport ? (openReport === r.date ? <FaChevronDown /> : <FaChevronRight />) : <FaFileAlt />}
+                    {r.hasReport ? (openReport === r.date ? <FaChevronDown aria-hidden="true" /> : <FaChevronRight aria-hidden="true" />) : <FaFileAlt aria-hidden="true" />}
                     {r.date} {!r.hasReport && <span className="text-text-muted">(no report)</span>}
                   </button>
                   {openReport === r.date && (
@@ -513,6 +521,7 @@ function Toggle({ label, desc, checked, onChange }: {
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={label}
         onClick={() => onChange(!checked)}
         className={`relative shrink-0 w-11 h-6 rounded-full transition-colors ${checked ? 'bg-cyber-green' : 'bg-dark-border'}`}>
         <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${checked ? 'translate-x-5' : ''}`} />

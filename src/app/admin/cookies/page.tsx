@@ -74,7 +74,7 @@ export default function CookieSettings() {
         if (res.ok) {
           const data = await res.json();
           setSettings(data || settings);
-          addToast('success', '✓ Cookie settings saved successfully!');
+          addToast('success', 'Cookie settings saved successfully!');
         } else {
           addToast('error', 'Failed to save cookie settings');
         }
@@ -128,7 +128,7 @@ export default function CookieSettings() {
         {/* Cookie Banner Settings */}
         <div className="card-cyber p-8 mb-8">
           <div className="flex items-start space-x-4 mb-6">
-          <FaCookie className="text-4xl text-cyber-green shrink-0 mt-1" />
+          <FaCookie className="text-2xl text-cyber-green shrink-0 mt-1" aria-hidden="true" />
             <div>
               <h2 className="text-xl font-bold text-text-primary mb-2">Cookie Consent Banner</h2>
               <p className="text-text-secondary mb-6">Manage how visitors consent to cookies on your website</p>
@@ -208,9 +208,9 @@ export default function CookieSettings() {
                 </div>
                 <div className="flex items-center space-x-4">
                   {category.enabled ? (
-                    <FaCheck className="text-cyber-green text-xl" />
+                    <FaCheck className="text-cyber-green text-xl" aria-hidden="true" />
                   ) : (
-                    <FaTimes className="text-cyber-red text-xl" />
+                    <FaTimes className="text-cyber-red text-xl" aria-hidden="true" />
                   )}
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -219,13 +219,14 @@ export default function CookieSettings() {
                       checked={category.enabled}
                       onChange={() => toggleCategory(category.id)}
                       disabled={category.required}
+                      aria-label={`${category.name} cookies`}
                     />
                     <div
-                      className={`w-11 h-6 bg-dark-card rounded-full peer peer-checked:bg-cyber-green transition-colors ${
+                      className={`w-11 h-6 bg-[var(--adm-border-ctl)] rounded-full peer peer-checked:bg-cyber-green transition-colors ${
                         category.required ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                     >
-                      <div className="w-5 h-5 bg-white rounded-full transform transition-transform peer-checked:translate-x-5 translate-x-0.5 translate-y-0.5" />
+                      <div className={`w-5 h-5 bg-white rounded-full transition-transform translate-y-0.5 ${category.enabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
                     </div>
                   </label>
                 </div>
@@ -237,7 +238,7 @@ export default function CookieSettings() {
         {/* Compliance & Privacy */}
         <div className="card-cyber p-8 mb-8">
           <div className="flex items-start space-x-4 mb-6">
-          <FaShieldAlt className="text-4xl text-cyber-cyan shrink-0 mt-1" />
+          <FaShieldAlt className="text-2xl text-cyber-cyan shrink-0 mt-1" aria-hidden="true" />
             <div>
               <h2 className="text-xl font-bold text-text-primary mb-2">Privacy & Compliance</h2>
               <p className="text-text-secondary mb-6">Ensure your website meets GDPR and privacy regulations</p>
@@ -310,9 +311,9 @@ export default function CookieSettings() {
           <button
             type="submit"
             disabled={saving}
-            className="btn-primary px-8 py-3 flex items-center gap-2"
+            className="btn-primary flex items-center gap-2"
           >
-            <FaSave />
+            <FaSave aria-hidden="true" />
             <span>{saving ? 'Saving...' : 'Save Cookie Settings'}</span>
           </button>
         </div>
