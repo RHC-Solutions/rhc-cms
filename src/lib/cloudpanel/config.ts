@@ -36,9 +36,11 @@ export interface CloudPanelConfig {
   /** Invoke the wrapper through `sudo` (the normal setup). */
   useSudo: boolean;
   /**
-   * Second switch, separate from `enabled`, that unlocks the destructive verbs
-   * (site:delete, user:delete, certificate replacement). Deliberately its own
-   * flag: enabling read + provisioning must not silently enable deletion.
+   * Second switch, separate from `enabled`, that unlocks the gated verbs
+   * (site:delete, user:delete, db:import, certificate replacement, and the
+   * panel-account verbs user:add, user:reset:password, user:disable:mfa).
+   * Deliberately its own flag: enabling read + provisioning must not silently
+   * enable deletion or account creation.
    */
   allowDestructive: boolean;
   /** Hard timeout for a single clpctl invocation. */
@@ -72,13 +74,23 @@ function cleanPath(value: unknown, fallback: string): string {
   return v;
 }
 
+/**
+ * The wrapper path may move (non-standard install locations) but must still
+ * name the wrapper. Without sudo the panel executes this path directly and
+ * hands it the secrets on stdin, so it must not be pointable at any binary.
+ */
+function cleanWrapperPath(value: unknown, fallback: string): string {
+  const v = cleanPath(value, fallback);
+  return /^(\/[A-Za-z0-9._-]+)*\/rhc-clpctl$/.test(v) && !v.split('/').includes('..') ? v : fallback;
+}
+
 export async function getCloudPanelConfig(): Promise<CloudPanelConfig> {
   const stored = await getModuleSetting<Partial<CloudPanelConfig>>(CLOUDPANEL_SETTING_KEY, {});
   const timeout = Number(stored.timeoutMs);
   return {
     enabled: envBool('CLOUDPANEL_ENABLED') ?? stored.enabled ?? DEFAULT_CONFIG.enabled,
     dbPath: cleanPath(getSecret('CLOUDPANEL_DB_PATH') || stored.dbPath, DEFAULT_CONFIG.dbPath),
-    wrapperPath: cleanPath(
+    wrapperPath: cleanWrapperPath(
       getSecret('CLOUDPANEL_WRAPPER_PATH') || stored.wrapperPath,
       DEFAULT_CONFIG.wrapperPath,
     ),
@@ -102,7 +114,7 @@ export async function setCloudPanelConfig(
   const next: CloudPanelConfig = {
     enabled: typeof patch.enabled === 'boolean' ? patch.enabled : current.enabled,
     dbPath: cleanPath(patch.dbPath, current.dbPath),
-    wrapperPath: cleanPath(patch.wrapperPath, current.wrapperPath),
+    wrapperPath: cleanWrapperPath(patch.wrapperPath, current.wrapperPath),
     useSudo: typeof patch.useSudo === 'boolean' ? patch.useSudo : current.useSudo,
     allowDestructive:
       typeof patch.allowDestructive === 'boolean' ? patch.allowDestructive : current.allowDestructive,

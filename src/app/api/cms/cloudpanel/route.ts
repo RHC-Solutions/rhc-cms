@@ -11,6 +11,7 @@ import {
   ClpctlValidationError,
 } from '@adminpanel/lib/cloudpanel';
 import { recordAudit } from '@adminpanel/lib/audit';
+import { getClientIp } from '@adminpanel/lib/auth/client-ip';
 
 /**
  * CloudPanel module API.
@@ -24,14 +25,6 @@ import { recordAudit } from '@adminpanel/lib/audit';
 export const dynamic = 'force-dynamic';
 
 const NO_STORE = { 'Cache-Control': 'private, no-store' } as const;
-
-function clientIp(request: NextRequest): string | null {
-  return (
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    request.headers.get('x-real-ip') ||
-    null
-  );
-}
 
 async function requireAdmin(request: NextRequest) {
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
@@ -72,7 +65,9 @@ export async function POST(request: NextRequest) {
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const actorEmail = (token as any).email || 'admin';
-  const ip = clientIp(request);
+  // Not the leftmost X-Forwarded-For entry: that one is client-supplied and
+  // would let an attacker write any IP into the audit trail.
+  const ip = getClientIp((name) => request.headers.get(name));
 
   let body: any;
   try {
@@ -128,8 +123,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Unknown or disallowed command: ${command}` }, { status: 400 });
     }
 
-    // Typed confirmation for destructive verbs, checked before we build argv so a
-    // mistyped confirmation never reaches the spawn path.
+    // Typed confirmation for gated verbs (destructive or account-granting),
+    // checked before we build argv so a mistyped confirmation never reaches the
+    // spawn path.
     if (spec.destructive && !dryRun) {
       const target = confirmationTarget(params);
       const confirm = typeof body?.confirm === 'string' ? body.confirm.trim() : '';

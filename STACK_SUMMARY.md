@@ -53,7 +53,7 @@ middleware.ts       auth + role + MFA gate, CSP, security headers
 - **OODA self-improvement loop** (`src/lib/ooda/*`, `/admin/automation`) — observe/orient/decide/act; dry-run by default and auto-applies only a narrow `SAFE_ACTION_TYPES` allowlist (revalidate / sync-seo / scan-media).
 - **Panel self-update** (`src/lib/panel-update.ts`) — read-only GitHub compare check plus a deliberate, backed-up, `--ff-only` submodule update; the daily checker is opt-in and notify-only.
 - **Backups** — `src/lib/backup.ts` + Telegram-delivered archives, restore endpoint, checkpoint restore script.
-- **CloudPanel module** (`src/lib/cloudpanel/*`, `/admin/cloudpanel`) — manages the CloudPanel host the panel runs on. CloudPanel exposes no REST API, so inventory is a read-only, schema-introspecting reader over CloudPanel's own SQLite DB, and mutations are an allowlisted `clpctl` set executed through a root-owned sudo wrapper. Off by default; destructive verbs are double-gated (panel switch + root-owned marker file) and require a retyped target. File arguments are confined to two fixed root-owned directories (exports `/var/backups/rhc-clpctl/`, imports and certificates `/var/lib/rhc-clpctl/import/`).
+- **CloudPanel module** (`src/lib/cloudpanel/*`, `/admin/cloudpanel`) — manages the CloudPanel host the panel runs on. CloudPanel exposes no REST API, so inventory is a read-only, schema-introspecting reader over CloudPanel's own SQLite DB, and mutations are an allowlisted `clpctl` set executed through a root-owned sudo wrapper. Off by default; destructive and account-granting verbs are double-gated (panel switch + root-owned marker file) and require a retyped target. File arguments are confined to two fixed root-owned directories (exports `/var/backups/rhc-clpctl/`, imports and certificates `/var/lib/rhc-clpctl/import/`).
 
 ## Feature modules
 
@@ -74,7 +74,7 @@ Cloudflare (API token, DNS automation, Turnstile) · Google (GA4, Search Console
 - CSP set in middleware; `'unsafe-eval'` intentionally removed; `x-middleware-subrequest` blocked (CVE bypass).
 - `next/image` `remotePatterns` are explicit hosts only — no wildcards (SSRF/DoS class).
 - `env.ts setEnvValue` rejects CR/LF and `$`-injection; secrets files are `660`, group-owned.
-- The CloudPanel module never invokes a shell: `execFile` with an argv array, values emitted as single `--flag=value` elements, per-flag allowlist validators, and the same allowlist — per command, never looser — re-enforced root-side by the wrapper (`scripts/cloudpanel/test-rhc-clpctl.sh` tests it). The privileged child gets a minimal env so panel secrets are never inherited by a root process.
+- The CloudPanel module never invokes a shell: `execFile` with an argv array, values emitted as single `--flag=value` elements, per-flag allowlist validators, and the same allowlist — per command, never looser — re-enforced root-side by the wrapper (`scripts/cloudpanel/test-rhc-clpctl.sh` tests it). Values are limited to a small ASCII set because CloudPanel's own `clpctl` re-runs its arguments through `bash -c`; passwords reach the wrapper on stdin, never in argv. The privileged child gets a minimal env so panel secrets are never inherited by a root process.
 
 ## Build, runtime & deployment
 
@@ -86,7 +86,7 @@ npx --no-install tsc --noEmit   # type-check
 npm run lint    # eslint 10 + typescript-eslint
 ```
 
-Production runs under **PM2** (`ecosystem.config.js` runs `npm start` through `scripts/env-from-db.mjs` and pins only PORT/NODE_ENV/HOSTNAME), fronted by **Cloudflare**. `wrangler.toml`, `functions/`, `_headers` and `_redirects` support Cloudflare Pages/Workers deployment of static-site hosts. Static export (`output: 'export'`) is permanently disabled — the CMS needs API routes.
+Production runs under **PM2** (`ecosystem.config.js` runs `npm start` through `scripts/env-from-db.mjs` and pins only PORT/NODE_ENV/HOSTNAME), fronted by **Cloudflare**. `functions/`, `_headers` and `_redirects` support Cloudflare Pages/Workers deployment of static-site hosts. Static export (`output: 'export'`) is permanently disabled — the CMS needs API routes.
 
 ## Summary
 

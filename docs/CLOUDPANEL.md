@@ -90,15 +90,23 @@ cp acme.sql.gz site.key site.crt /var/lib/rhc-clpctl/import/
 
 ### 5. Enable the module
 
-`/admin/cloudpanel` → **Enable**. Destructive commands need a **second**,
-separate switch (see below).
+`/admin/cloudpanel` → **Enable**. Gated commands need a **second**, separate
+switch (see below).
 
-## Enabling destructive commands
+## Enabling gated commands
 
-`site:delete`, `user:delete`, `user:disable:mfa`, `db:import` and
-`site:install:certificate` are refused unless **both** are true:
+Two groups of commands are gated:
 
-1. **Panel side** — "Allow destructive commands" is on in `/admin/cloudpanel`.
+- **Destructive** — `site:delete`, `user:delete`, `db:import`,
+  `site:install:certificate`.
+- **Account-granting** — `user:add`, `user:reset:password`, `user:disable:mfa`.
+  A new CloudPanel admin, or a reset password on an existing one, can do
+  everything the destructive commands do from CloudPanel's own UI. Leaving these
+  open would make the gate decorative.
+
+They are refused unless **both** are true:
+
+1. **Panel side** — "Allow gated commands" is on in `/admin/cloudpanel`.
 2. **Root side** — the marker file exists:
    ```bash
    touch /etc/rhc-clpctl-allow-destructive
@@ -106,9 +114,9 @@ separate switch (see below).
 
 The marker is root-owned on purpose. A compromised web application can flip its
 own database row; it cannot create a file in `/etc`. Remove the marker to revoke
-deletion rights instantly, without touching the panel.
+these rights instantly, without touching the panel.
 
-Destructive commands additionally require the operator to **retype the target**
+Gated commands additionally require the operator to **retype the target**
 (the domain or username) in the UI before the request is accepted.
 
 ## Security model
@@ -127,22 +135,64 @@ Every value that reaches root passes three independent gates:
    `db:export`, refused everywhere else), every value is checked against the
    same shape as the panel's validators, and a flag may appear only once.
    `bash scripts/cloudpanel/test-rhc-clpctl.sh` runs its allowlist tests against
-   a stub `clpctl`; run it after any change to the wrapper.
+   a stub `clpctl` and against a copy of CloudPanel's own `clpctl` re-quoting;
+   run it after any change to the wrapper.
 
-Other properties:
+### Allowed characters
 
-- The child process gets a **minimal environment** (`PATH`, `LANG` only), so
-  `NEXTAUTH_SECRET`, `DATABASE_URL` and other panel secrets are never inherited
-  by a root process.
-- Passwords are masked (`********`) in dry-run output, the audit log, and the
-  wrapper's syslog line. They exist only in the argv array itself.
-- The wrapper ignores `$CLPCTL_BIN` when invoked through sudo, so the binary it
-  executes cannot be redirected even if the sudoers rule is later loosened.
+"No shell" on our side is not enough, because CloudPanel's own
+`/usr/bin/clpctl` (2.5.x) builds one. It does not exec its arguments; it
+re-quotes them with `printf ' "%q"'` and runs `bash -c` on the result:
+
+- A value holding **any byte outside printable ASCII** makes `%q` switch to
+  `$'...'` quoting, which the surrounding double quotes do not neutralise. A
+  password such as `$(cmd)é...` therefore ran `cmd` **as root**. Found and fixed
+  on 2026-10-17; the tests replay it against a verbatim copy of that script.
+- Spaces, commas, apostrophes and shell punctuation are not executed, but they
+  reach CloudPanel with a backslash in front of them, so the password that gets
+  set is not the one that was typed.
+
+So every value, on both the TypeScript and the wrapper side, is limited to
+letters, digits, space and `# % + , . / : = @ _ -`, and most flags are narrower:
+
+| Flag | Allowed |
+|---|---|
+| passwords | 8-128 of letters, digits and `# % + . / : = @ _ -` |
+| `firstName` / `lastName` | ASCII letters, `.` and `-`; no spaces |
+| `email` | `[A-Za-z0-9._%+-]` before the `@` |
+| `role` | `admin`, `site-manager` or `user` |
+| `sites` / `subjectAlternativeName` | comma-separated domains, no spaces |
+| `vhostTemplate` | words of letters, digits, `.`, `_`, `-`, single spaces between |
+| `reverseProxyUrl` | `http(s)://` plus letters, digits, `.`, `_`, `:`, `/`, `-` |
+
+Not verified against a live host: whether CloudPanel's root-only
+`clpctlWrapper` undoes the backslashes it receives for spaces and commas. If it
+does not, vhost template names with spaces and comma lists arrive mangled; that
+is CloudPanel's quoting, not a safety issue.
+
+### Other properties
+
+- **Passwords never travel in an argv the panel creates.** The panel sends
+  `--password=-` and writes the value to the wrapper's stdin, so sudo's own log
+  line (auth.log / journal) shows `-`, not the password. Dry-run output, the
+  audit log and the wrapper's syslog line mask them as `********`. The wrapper
+  then has to pass them to `clpctl` as arguments (it has no other way to take
+  them), so while `clpctl` runs they are visible in the process list to local
+  users unless `/proc` is mounted with `hidepid`.
+- **clpctl gets an empty environment** plus a fixed `PATH` and `LANG`, and
+  stdin from `/dev/null`. The panel already spawns the wrapper with only `PATH`
+  and `LANG`, so `NEXTAUTH_SECRET`, `DATABASE_URL` and other panel secrets are
+  never inherited by a root process; the wrapper's `env -i` keeps it that way
+  even if the sudoers rule is later loosened (`BASH_ENV`, `PHPRC`, `LD_*`, ...).
+- **The wrapper trusts nothing inherited.** It runs as `bash -p` (no
+  `BASH_ENV`, no imported functions), fixes `PATH` before its first external
+  command (CloudPanel's `clpctl` finds `bash` and `sudo` through it), resets
+  `IFS`, and ignores `$CLPCTL_BIN` and the other test overrides when invoked
+  through sudo, so the binary it executes cannot be redirected.
 - The **sudoers rule pins the wrapper's absolute path**, so changing "Wrapper
-  path" in the admin UI cannot redirect what runs as root — point it at
-  `/bin/sh` and sudo simply refuses, because only `/usr/local/bin/rhc-clpctl` is
-  permitted. The setting exists for non-standard install locations, not as a
-  privilege boundary.
+  path" in the admin UI cannot redirect what runs as root — sudo refuses any
+  other path. The setting exists for non-standard install locations, not as a
+  privilege boundary, and it must still end in `/rhc-clpctl`.
 - Every non-dry-run action is written to the panel's audit log
   (`/admin/audit`, action `cloudpanel.<command>`) **and** to host syslog
   (`logger -t rhc-clpctl`), so the trail survives loss of either system.
@@ -164,9 +214,11 @@ every file flag is confined to one fixed directory:
   subdirectories). In the UI you can type just the name; the panel prefixes the
   directory.
 - The wrapper refuses to run unless the directory is a real directory (not a
-  symlink), **owned by root** and **not group- or world-writable**, so the web
-  user can never plant a symlink in it. It also refuses a target that is a
-  symlink, and a read target that is not an existing regular file.
+  symlink) and both it and its parent are **owned by root** and **not group- or
+  world-writable**, so the web user can never plant a symlink in it or swap the
+  directory between the check and clpctl's open. It also refuses a target that
+  is a symlink, and a read target that is not an existing regular file. Dumps
+  are written with umask `077`.
 - The directories are fixed in the wrapper (like the `clpctl` path) and mirrored
   as `EXPORT_DIR` / `IMPORT_DIR` in `src/lib/cloudpanel/clpctl.ts`. To move them,
   change both.
@@ -190,7 +242,7 @@ page), so an operator can pin paths and stop the module's form from moving them.
 | CloudPanel DB path | `CLOUDPANEL_DB_PATH` | `/home/clp/htdocs/app/data/db.sq3` |
 | Wrapper path | `CLOUDPANEL_WRAPPER_PATH` | `/usr/local/bin/rhc-clpctl` |
 | Use sudo | `CLOUDPANEL_USE_SUDO` | `true` |
-| Allow destructive | `CLOUDPANEL_ALLOW_DESTRUCTIVE` | `false` |
+| Allow gated commands | `CLOUDPANEL_ALLOW_DESTRUCTIVE` | `false` |
 
 Non-absolute paths are rejected and fall back to the default — a relative
 `dbPath` would resolve against the Next process CWD and could be pointed at the
@@ -213,5 +265,6 @@ mysterious.
 | "CloudPanel database not readable" | Wrong `dbPath`, or missing ACL — see step 3. |
 | "Wrapper not found at …" | Step 1 not done, or a different path than configured. |
 | `sudo: a password is required` | The sudoers rule is missing, names the wrong user, or lacks `NOPASSWD`. The panel calls `sudo -n` and never waits for a prompt. |
-| "destructive command refused: /etc/rhc-clpctl-allow-destructive does not exist" | Working as designed — create the marker to allow it. |
+| "gated command '…' refused: /etc/rhc-clpctl-allow-destructive does not exist" | Working as designed — create the marker to allow it. |
+| "… may only contain letters, digits, spaces and …" | The value has a character CloudPanel's own `clpctl` would execute or mangle. See [Allowed characters](#allowed-characters). |
 | Command times out | Default limit is 120 s. Let's Encrypt issuance on a slow DNS propagation can exceed it; the command keeps running on the host. |

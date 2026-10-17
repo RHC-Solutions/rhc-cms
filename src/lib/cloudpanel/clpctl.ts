@@ -16,8 +16,17 @@
  *      spawn — allowlist, not denylist.
  *   4. Only commands in COMMANDS run. The command name is a map key, never
  *      caller-supplied text passed through to a process.
- *   5. Destructive commands additionally require config.allowDestructive AND a
- *      typed confirmation at the route layer.
+ *   5. Every value is limited to a small ASCII set (SAFE_VALUE_RE). CloudPanel's
+ *      own /usr/bin/clpctl does not exec its arguments: it re-quotes them with
+ *      printf %q and runs `bash -c` on the result, and a value holding any byte
+ *      outside printable ASCII makes that quoting expandable — a password like
+ *      `$(cmd)é...` ran `cmd` as root (2026-10-17 review). "No shell here" is
+ *      not enough when the program at the other end builds one.
+ *   6. Secret values never appear in an argv: they are sent on the wrapper's
+ *      stdin (`--password=-`), so sudo's own log line never records them.
+ *   7. Gated commands (destructive, or handing out panel access) additionally
+ *      require config.allowDestructive AND a typed confirmation at the route
+ *      layer, and the root-owned marker file on the host.
  *
  * The wrapper script (scripts/cloudpanel/rhc-clpctl) enforces the same allowlist
  * a second time on the root side, because a sudoers rule permitting arbitrary
@@ -48,7 +57,12 @@ export interface CommandSpec {
   /** The clpctl verb, e.g. `site:add:nodejs`. */
   command: string;
   summary: string;
-  /** Requires config.allowDestructive + typed confirmation. */
+  /**
+   * Gated: requires config.allowDestructive + typed confirmation (+ the
+   * root-side marker). Set for verbs that delete or overwrite data AND for those
+   * that hand out panel access (user:add, user:reset:password): a new CloudPanel
+   * admin can do everything the destructive verbs do from CloudPanel's own UI.
+   */
   destructive?: boolean;
   flags: FlagSpec[];
 }
@@ -56,6 +70,14 @@ export interface CommandSpec {
 /* ---------------------------------------------------------------- validators */
 
 const MAX_VALUE = 512;
+
+/**
+ * The only characters any value may contain, whatever its flag. Mirrors
+ * SAFE_VALUE_RE in scripts/cloudpanel/rhc-clpctl. Anything else is either
+ * dangerous once CloudPanel's clpctl re-quotes it for `bash -c` (any non-ASCII
+ * byte) or arrives mangled (a space, comma or apostrophe gains a backslash).
+ */
+const SAFE_VALUE_RE = /^[A-Za-z0-9 #%+,./:=@_-]+$/;
 
 function bounded(re: RegExp): Validator {
   return (v) => typeof v === 'string' && v.length > 0 && v.length <= MAX_VALUE && re.test(v);
@@ -72,29 +94,39 @@ export const isDomain: Validator = (v) => {
   );
 };
 
-const isDomainList: Validator = (v) =>
-  typeof v === 'string' && v.length <= MAX_VALUE && v.split(',').every((d) => isDomain(d.trim()));
+/** Comma-separated, no spaces (normalizeDomainList strips them first). */
+const isDomainList: Validator = (v) => {
+  if (typeof v !== 'string' || !v || v.length > MAX_VALUE || /\s/.test(v)) return false;
+  const parts = v.split(',');
+  return parts.length <= 100 && parts.every((d) => isDomain(d));
+};
+
+const normalizeDomainList = (v: string) =>
+  v
+    .split(',')
+    .map((d) => d.trim())
+    .join(',');
 
 /** POSIX-ish username, matching what CloudPanel accepts for a site user. */
 const isSiteUser = bounded(/^[a-z_][a-z0-9_-]{0,31}$/);
 
-const isUserName = bounded(/^[A-Za-z0-9._-]{1,64}$/);
+const isUserName = bounded(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
 
-const isEmail = bounded(/^[^\s@<>"'\\]{1,64}@[A-Za-z0-9.-]{1,180}\.[A-Za-z]{2,24}$/);
-
-/** Person name — letters, spaces, apostrophes, hyphens. No control chars. */
-const isPersonName = bounded(/^[\p{L}][\p{L} '.-]{0,63}$/u);
+const isEmail = bounded(/^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,180}\.[A-Za-z]{2,24}$/);
 
 /**
- * Passwords are the one place we accept punctuation freely. Control characters
- * are refused (they would corrupt the argv and any log line); everything else is
- * safe because there is no shell.
+ * Person name: ASCII letters, '.' and '-'. No spaces or apostrophes — CloudPanel's
+ * clpctl would store them with a backslash in front.
  */
-const isPassword: Validator = (v) =>
-  // Matching control characters IS the point: they are what we refuse, since
-  // they would corrupt the argv and any log line that echoes it.
-  // eslint-disable-next-line no-control-regex
-  typeof v === 'string' && v.length >= 8 && v.length <= 128 && !/[\u0000-\u001f\u007f]/.test(v);
+const isPersonName = bounded(/^[A-Za-z][A-Za-z.-]{0,63}$/);
+
+/**
+ * Passwords: letters, digits and the punctuation that survives CloudPanel's
+ * re-quoting unchanged. Anything else would either set a different password
+ * than the one typed or, outside ASCII, run as a command (see SAFE_VALUE_RE).
+ */
+const isPassword = bounded(/^[A-Za-z0-9#%+./:=@_-]{8,128}$/);
+const PASSWORD_HINT = '8-128 characters: letters, digits and # % + . / : = @ _ -';
 
 /** Dotted version, e.g. `22`, `8.3`, `3.12`. */
 const isVersion = bounded(/^[0-9]{1,3}(\.[0-9]{1,3}){0,2}$/);
@@ -103,7 +135,8 @@ const isPort: Validator = (v) => /^[0-9]{1,5}$/.test(v) && Number(v) >= 1 && Num
 
 const isDbIdent = bounded(/^[A-Za-z0-9_-]{1,64}$/);
 
-const isRole = bounded(/^[a-z][a-z-]{0,31}$/);
+/** CloudPanel's three panel roles. */
+const isRole = bounded(/^(admin|site-manager|user)$/);
 
 const isStatus = bounded(/^(0|1|active|inactive|enabled|disabled)$/i);
 
@@ -111,11 +144,14 @@ const isTimezone = bounded(
   /^(UTC|[A-Za-z][A-Za-z_-]{0,31}\/[A-Za-z0-9_+-]{1,48}(\/[A-Za-z0-9_+-]{1,48})?)$/,
 );
 
-const isTemplateName = bounded(/^[A-Za-z0-9 ._-]{1,64}$/);
+/** Words separated by single spaces, each starting with a letter or digit. */
+const isTemplateName: Validator = (v) =>
+  typeof v === 'string' && v.length <= 64 && /^[A-Za-z0-9][A-Za-z0-9._-]*( [A-Za-z0-9][A-Za-z0-9._-]*)*$/.test(v);
 
 /** http(s) URL only — this becomes an nginx proxy_pass target. */
 const isHttpUrl: Validator = (v) => {
-  if (typeof v !== 'string' || v.length > MAX_VALUE) return false;
+  // Same shape as the wrapper's URL_RE: no query strings, IPv6 brackets or quoting.
+  if (typeof v !== 'string' || v.length > MAX_VALUE || !/^https?:\/\/[A-Za-z0-9._:/-]+$/.test(v)) return false;
   let u: URL;
   try {
     u = new URL(v);
@@ -163,7 +199,7 @@ const importFile = (hint: string, required = true): Omit<FlagSpec, 'name'> => ({
 
 const SITE_USER_FLAGS: FlagSpec[] = [
   { name: 'siteUser', required: true, validate: isSiteUser, hint: 'lowercase system user, e.g. "acme"' },
-  { name: 'siteUserPassword', required: true, validate: isPassword, secret: true, hint: '8-128 characters' },
+  { name: 'siteUserPassword', required: true, validate: isPassword, secret: true, hint: PASSWORD_HINT },
 ];
 
 export const COMMANDS: Record<string, CommandSpec> = {
@@ -219,7 +255,12 @@ export const COMMANDS: Record<string, CommandSpec> = {
     summary: 'Issue and install a Let\u2019s Encrypt certificate',
     flags: [
       { name: 'domainName', required: true, validate: isDomain, hint: 'example.com' },
-      { name: 'subjectAlternativeName', validate: isDomainList, hint: 'comma-separated extra domains' },
+      {
+        name: 'subjectAlternativeName',
+        normalize: normalizeDomainList,
+        validate: isDomainList,
+        hint: 'comma-separated extra domains',
+      },
     ],
   },
   'db:add': {
@@ -234,7 +275,7 @@ export const COMMANDS: Record<string, CommandSpec> = {
         required: true,
         validate: isPassword,
         secret: true,
-        hint: '8-128 characters',
+        hint: PASSWORD_HINT,
       },
     ],
   },
@@ -249,14 +290,20 @@ export const COMMANDS: Record<string, CommandSpec> = {
   'user:add': {
     command: 'user:add',
     summary: 'Create a CloudPanel panel user',
+    destructive: true,
     flags: [
       { name: 'userName', required: true, validate: isUserName, hint: 'login name' },
       { name: 'email', required: true, validate: isEmail, hint: 'user@example.com' },
-      { name: 'firstName', required: true, validate: isPersonName, hint: 'given name' },
-      { name: 'lastName', required: true, validate: isPersonName, hint: 'family name' },
-      { name: 'password', required: true, validate: isPassword, secret: true, hint: '8-128 characters' },
-      { name: 'role', required: true, validate: isRole, hint: 'e.g. admin, user' },
-      { name: 'sites', validate: isDomainList, hint: 'comma-separated domains (non-admin roles)' },
+      { name: 'firstName', required: true, validate: isPersonName, hint: 'letters, "." or "-", no spaces' },
+      { name: 'lastName', required: true, validate: isPersonName, hint: 'letters, "." or "-", no spaces' },
+      { name: 'password', required: true, validate: isPassword, secret: true, hint: PASSWORD_HINT },
+      { name: 'role', required: true, validate: isRole, hint: 'admin, site-manager or user' },
+      {
+        name: 'sites',
+        normalize: normalizeDomainList,
+        validate: isDomainList,
+        hint: 'comma-separated domains (user role)',
+      },
       { name: 'timezone', validate: isTimezone, hint: 'e.g. Europe/Berlin' },
       { name: 'status', validate: isStatus, hint: '0 or 1' },
     ],
@@ -264,9 +311,10 @@ export const COMMANDS: Record<string, CommandSpec> = {
   'user:reset:password': {
     command: 'user:reset:password',
     summary: 'Reset a panel user\u2019s password',
+    destructive: true,
     flags: [
       { name: 'userName', required: true, validate: isUserName, hint: 'login name' },
-      { name: 'password', required: true, validate: isPassword, secret: true, hint: '8-128 characters' },
+      { name: 'password', required: true, validate: isPassword, secret: true, hint: PASSWORD_HINT },
     ],
   },
   'user:list': { command: 'user:list', summary: 'List panel users', flags: [] },
@@ -277,7 +325,8 @@ export const COMMANDS: Record<string, CommandSpec> = {
   },
   'vhost-templates:list': { command: 'vhost-templates:list', summary: 'List vhost templates', flags: [] },
 
-  /* ---- destructive: gated by config.allowDestructive + typed confirmation ---- */
+  /* ---- destructive: gated by config.allowDestructive + typed confirmation ----
+   * (user:add and user:reset:password above are gated the same way) */
 
   'site:delete': {
     command: 'site:delete',
@@ -367,10 +416,12 @@ export class ClpctlValidationError extends Error {
 
 export interface BuiltCommand {
   spec: CommandSpec;
-  /** Real argv passed to the wrapper. Never logged. */
+  /** argv passed to the wrapper. Secret flags appear as `--flag=-`. */
   args: string[];
   /** Same argv with secrets masked. Safe for logs, audit and the UI. */
   safeArgs: string[];
+  /** Secret values, in argv order, for the wrapper's stdin. Never logged. */
+  stdin: string[];
 }
 
 /**
@@ -389,6 +440,7 @@ export function buildCommand(command: string, params: Record<string, unknown>): 
 
   const args: string[] = [spec.command];
   const safeArgs: string[] = [spec.command];
+  const stdin: string[] = [];
 
   for (const flag of spec.flags) {
     const raw = params ? params[flag.name] : undefined;
@@ -413,16 +465,27 @@ export function buildCommand(command: string, params: Record<string, unknown>): 
     }
     const trimmed = String(raw).trim();
     const value = flag.normalize ? flag.normalize(trimmed) : trimmed;
+    if (!SAFE_VALUE_RE.test(value)) {
+      throw new ClpctlValidationError(
+        `Invalid value for --${flag.name}: only letters, digits, spaces and # % + , . / : = @ _ - are allowed`,
+      );
+    }
     if (!flag.validate(value)) {
       throw new ClpctlValidationError(`Invalid value for --${flag.name} (expected ${flag.hint})`);
     }
 
     // Single argv element: the value can never be re-read as a separate flag.
-    args.push(`--${flag.name}=${value}`);
+    // A secret goes to stdin instead, so no argv (or sudo log line) holds it.
+    if (flag.secret) {
+      args.push(`--${flag.name}=-`);
+      stdin.push(value);
+    } else {
+      args.push(`--${flag.name}=${value}`);
+    }
     safeArgs.push(`--${flag.name}=${flag.secret ? '********' : value}`);
   }
 
-  return { spec, args, safeArgs };
+  return { spec, args, safeArgs, stdin };
 }
 
 /* ------------------------------------------------------------------- runner */
@@ -497,7 +560,7 @@ export async function runCommand(
   const argv = config.useSudo ? ['-n', config.wrapperPath, ...built.args] : built.args;
 
   return new Promise<ExecResult>((resolve) => {
-    execFile(
+    const child = execFile(
       file,
       argv,
       {
@@ -537,5 +600,10 @@ export async function runCommand(
         resolve({ ...base, ok: true, exitCode: 0, stdout: out, stderr: errOut, durationMs });
       },
     );
+    // Secrets, one per line, in the order of their `--flag=-` arguments. The
+    // wrapper may exit before reading them (a refused command); the resulting
+    // EPIPE must not become an unhandled error that takes the server down.
+    child.stdin?.on('error', () => {});
+    child.stdin?.end(built.stdin.map((v) => `${v}\n`).join(''));
   });
 }

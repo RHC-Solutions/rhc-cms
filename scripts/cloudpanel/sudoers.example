@@ -16,3 +16,8 @@ rhcsolutions_com ALL=(root) NOPASSWD: /usr/local/bin/rhc-clpctl
 # wrapper, so $CLPCTL_BIN and friends can never influence what runs as root.
 Defaults!/usr/local/bin/rhc-clpctl env_reset
 Defaults!/usr/local/bin/rhc-clpctl !setenv
+
+# The panel sends passwords on the wrapper's stdin so they never appear in
+# sudo's log line. Keep sudo's I/O logging off for this command, or the stdin
+# log would record them instead.
+Defaults!/usr/local/bin/rhc-clpctl !log_input, !log_output
