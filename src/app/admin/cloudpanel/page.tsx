@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  FaServer,
   FaSync,
   FaPlay,
   FaEye,
@@ -197,15 +196,15 @@ export default function CloudPanelPage() {
 
   const statusTone = (status?: string) =>
     status === 'ok'
-      ? 'bg-green-900/40 border-green-700 text-green-200'
+      ? 'border-green-500/30 bg-green-500/10 text-green-200'
       : status === 'disabled'
-        ? 'bg-gray-800 border-gray-700 text-gray-300'
-        : 'bg-yellow-900/40 border-yellow-700 text-yellow-100';
+        ? 'border-gray-500/30 bg-gray-500/10 text-text-secondary'
+        : 'border-yellow-500/30 bg-yellow-500/10 text-yellow-100';
 
   if (loading) {
     return (
       <AdminShell title="CloudPanel">
-        <div className="p-8 text-center text-gray-400">Loading CloudPanel…</div>
+        <div className="p-8 text-center text-text-muted">Loading CloudPanel…</div>
       </AdminShell>
     );
   }
@@ -213,44 +212,44 @@ export default function CloudPanelPage() {
   return (
     <AdminShell title="CloudPanel">
       <div className="space-y-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="heading-xl text-gradient mb-2 flex items-center gap-3">
-              <FaServer /> CloudPanel
-            </h1>
-            <p className="text-gray-400 mt-2">
+        {/* Header */}
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="heading-xl">CloudPanel</h1>
+            <p className="text-text-secondary text-sm mt-1">
               Manage sites, databases and panel users on the CloudPanel server this panel runs on.
             </p>
           </div>
-          <button
-            onClick={load}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg font-semibold transition"
-          >
-            <FaSync /> Refresh
+          <button onClick={load} className="btn-secondary">
+            <FaSync aria-hidden="true" /> Refresh
           </button>
         </div>
 
         {/* Connection status */}
-        <div className={`border rounded-lg p-4 ${statusTone(inventory?.status)}`}>
+        <div className={`rounded-lg border p-4 text-sm ${statusTone(inventory?.status)}`}>
           <div className="flex items-center gap-2 font-semibold">
-            {inventory?.status === 'ok' ? <FaCheckCircle /> : <FaExclamationTriangle />}
+            {inventory?.status === 'ok' ? (
+              <FaCheckCircle aria-hidden="true" />
+            ) : (
+              <FaExclamationTriangle aria-hidden="true" />
+            )}
             {inventory?.status === 'ok'
               ? `Connected — ${inventory.sites.length} site(s), ${inventory.users.length} panel user(s)`
               : inventory?.message || 'CloudPanel not connected'}
           </div>
           {inventory?.status !== 'ok' && (
-            <p className="text-sm mt-2 opacity-90">
-              Setup instructions live in <code className="font-mono">docs/CLOUDPANEL.md</code>. Write actions
-              work independently of database access.
+            <p className="mt-2 text-text-secondary">
+              Setup instructions live in <code>docs/CLOUDPANEL.md</code>. Write actions work independently of
+              database access.
             </p>
           )}
         </div>
 
         {/* Configuration */}
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-green-400">Configuration</h2>
+        <div className="card-dark space-y-4">
+          <h2 className="heading-md">Configuration</h2>
 
-          <label className="flex items-center gap-3 text-gray-200">
+          <label className="flex items-center gap-3">
             <input
               type="checkbox"
               checked={!!config?.enabled}
@@ -259,14 +258,14 @@ export default function CloudPanelPage() {
               className="w-4 h-4"
             />
             <span>
-              <span className="font-medium">Enable the CloudPanel module</span>
-              <span className="block text-sm text-gray-400">
+              <span className="font-medium text-text-primary">Enable the CloudPanel module</span>
+              <span className="block text-sm text-text-muted">
                 Off by default. Nothing reads or executes while disabled.
               </span>
             </span>
           </label>
 
-          <label className="flex items-center gap-3 text-gray-200">
+          <label className="flex items-center gap-3">
             <input
               type="checkbox"
               checked={!!config?.allowDestructive}
@@ -275,16 +274,17 @@ export default function CloudPanelPage() {
               className="w-4 h-4"
             />
             <span>
-              <span className="font-medium text-red-300">Allow destructive commands</span>
-              <span className="block text-sm text-gray-400">
-                site:delete, user:delete, db:import, certificate replacement. Also requires the root-owned
-                marker file <code className="font-mono">/etc/rhc-clpctl-allow-destructive</code> on the host —
-                this switch alone is not enough.
+              <span className="font-medium text-text-primary">Allow gated commands</span>
+              <span className="block text-sm text-text-muted">
+                Destructive commands (site:delete, user:delete, db:import, certificate replacement) and the ones
+                that hand out panel access (user:add, user:reset:password, user:disable:mfa). Also requires the
+                root-owned marker file <code>/etc/rhc-clpctl-allow-destructive</code> on the host; this switch
+                alone is not enough.
               </span>
             </span>
           </label>
 
-          <label className="flex items-center gap-3 text-gray-200">
+          <label className="flex items-center gap-3">
             <input
               type="checkbox"
               checked={!!config?.useSudo}
@@ -292,33 +292,39 @@ export default function CloudPanelPage() {
               onChange={(e) => saveConfig({ useSudo: e.target.checked })}
               className="w-4 h-4"
             />
-            <span className="font-medium">Invoke the wrapper through sudo</span>
+            <span className="font-medium text-text-primary">Invoke the wrapper through sudo</span>
           </label>
 
           <div className="grid md:grid-cols-2 gap-4 pt-2">
             <div>
-              <label className="block text-sm text-gray-400 mb-1">CloudPanel database (read-only)</label>
+              <label htmlFor="cp-db-path" className="block text-sm mb-1">
+                CloudPanel database (read-only)
+              </label>
               <input
+                id="cp-db-path"
                 defaultValue={config?.dbPath || ''}
                 onBlur={(e) => e.target.value !== config?.dbPath && saveConfig({ dbPath: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-gray-200 font-mono text-sm"
+                className="input font-mono"
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Root wrapper path</label>
+              <label htmlFor="cp-wrapper-path" className="block text-sm mb-1">
+                Root wrapper path
+              </label>
               <input
+                id="cp-wrapper-path"
                 defaultValue={config?.wrapperPath || ''}
                 onBlur={(e) =>
                   e.target.value !== config?.wrapperPath && saveConfig({ wrapperPath: e.target.value })
                 }
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-gray-200 font-mono text-sm"
+                className="input font-mono"
               />
             </div>
           </div>
         </div>
 
         {/* Sites */}
-        <Section title="Sites" icon={<FaGlobe />} count={inventory?.sites.length ?? 0}>
+        <Section title="Sites" icon={<FaGlobe aria-hidden="true" />} count={inventory?.sites.length ?? 0}>
           <Table
             headers={['Domain', 'Site user', 'Type', 'PHP', 'Root directory']}
             rows={(inventory?.sites || []).map((s) => [
@@ -333,7 +339,7 @@ export default function CloudPanelPage() {
         </Section>
 
         {/* Panel users */}
-        <Section title="Panel users" icon={<FaUsers />} count={inventory?.users.length ?? 0}>
+        <Section title="Panel users" icon={<FaUsers aria-hidden="true" />} count={inventory?.users.length ?? 0}>
           <Table
             headers={['Username', 'Email', 'Role', 'Status']}
             rows={(inventory?.users || []).map((u) => [
@@ -347,7 +353,11 @@ export default function CloudPanelPage() {
         </Section>
 
         {/* Databases */}
-        <Section title="Databases" icon={<FaDatabase />} count={inventory?.databases.length ?? 0}>
+        <Section
+          title="Databases"
+          icon={<FaDatabase aria-hidden="true" />}
+          count={inventory?.databases.length ?? 0}
+        >
           <Table
             headers={['Name', 'Site ID']}
             rows={(inventory?.databases || []).map((d) => [d.name ?? '—', d.siteId ?? '—'])}
@@ -356,14 +366,17 @@ export default function CloudPanelPage() {
         </Section>
 
         {/* Command runner */}
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-green-400">Run a command</h2>
-          <p className="text-sm text-gray-400">
-            Every command is allowlisted and executed without a shell. Preview first — it shows the exact
-            argument list, with passwords masked.
-          </p>
+        <div className="card-dark space-y-4">
+          <div>
+            <h2 className="heading-md">Run a command</h2>
+            <p className="text-sm text-text-secondary mt-1">
+              Every command is allowlisted and checked again on the host before it runs. Preview first: it shows
+              the exact argument list, with passwords masked.
+            </p>
+          </div>
 
           <select
+            aria-label="Command"
             value={selected}
             onChange={(e) => {
               setSelected(e.target.value);
@@ -372,13 +385,13 @@ export default function CloudPanelPage() {
               setResult(null);
             }}
             disabled={!config?.enabled}
-            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-gray-200"
+            className="input"
           >
             <option value="">Select a command…</option>
             {commands.map((c) => (
               <option key={c.command} value={c.command}>
-                {c.destructive ? '⚠ ' : ''}
                 {c.command} — {c.summary}
+                {c.destructive ? ' (gated)' : ''}
               </option>
             ))}
           </select>
@@ -386,11 +399,11 @@ export default function CloudPanelPage() {
           {spec && (
             <>
               {spec.destructive && (
-                <div className="bg-red-900/40 border border-red-700 rounded p-3 text-red-100 text-sm flex gap-2">
-                  <FaLock className="mt-0.5 shrink-0" />
+                <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200 flex gap-2">
+                  <FaLock className="mt-0.5 shrink-0" aria-hidden="true" />
                   <span>
-                    Destructive. Requires the “Allow destructive commands” switch above, the root-owned marker
-                    file on the host, and retyping the target below.
+                    Gated. Requires the “Allow gated commands” switch above, the root-owned marker file on the
+                    host, and retyping the target below.
                   </span>
                 </div>
               )}
@@ -398,28 +411,29 @@ export default function CloudPanelPage() {
               <div className="grid md:grid-cols-2 gap-4">
                 {spec.flags.map((flag) =>
                   flag.boolean ? (
-                    <label key={flag.name} className="flex items-center gap-2 text-gray-200 self-end">
+                    <label key={flag.name} className="flex items-center gap-2 self-end">
                       <input
                         type="checkbox"
                         checked={params[flag.name] === true}
                         onChange={(e) => setParams((p) => ({ ...p, [flag.name]: e.target.checked }))}
                         className="w-4 h-4"
                       />
-                      <span className="font-mono text-sm">--{flag.name}</span>
+                      <span className="font-mono text-sm text-text-primary">--{flag.name}</span>
                     </label>
                   ) : (
                     <div key={flag.name}>
-                      <label className="block text-sm text-gray-300 mb-1 font-mono">
+                      <label htmlFor={`cp-flag-${flag.name}`} className="block text-sm mb-1 font-mono">
                         --{flag.name}
                         {flag.required && <span className="text-red-400"> *</span>}
                       </label>
                       <input
+                        id={`cp-flag-${flag.name}`}
                         type={flag.secret ? 'password' : 'text'}
                         autoComplete="new-password"
                         value={(params[flag.name] as string) || ''}
                         placeholder={flag.hint}
                         onChange={(e) => setParams((p) => ({ ...p, [flag.name]: e.target.value }))}
-                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-gray-200 text-sm"
+                        className="input"
                       />
                     </div>
                   ),
@@ -428,25 +442,22 @@ export default function CloudPanelPage() {
 
               {spec.destructive && (
                 <div>
-                  <label className="block text-sm text-gray-300 mb-1">
+                  <label htmlFor="cp-confirm" className="block text-sm mb-1">
                     Retype <span className="font-mono text-red-300">{confirmTarget || 'the target'}</span> to
                     confirm
                   </label>
                   <input
+                    id="cp-confirm"
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-800 border border-red-800 rounded text-gray-200 text-sm"
+                    className="input"
                   />
                 </div>
               )}
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => run(true)}
-                  disabled={running}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-gray-100 rounded-lg font-semibold transition"
-                >
-                  <FaEye /> Preview
+              <div className="flex flex-wrap gap-3">
+                <button onClick={() => run(true)} disabled={running} className="btn-secondary">
+                  <FaEye aria-hidden="true" /> Preview
                 </button>
                 <button
                   onClick={() => run(false)}
@@ -455,13 +466,9 @@ export default function CloudPanelPage() {
                     !config?.enabled ||
                     (spec.destructive && (!confirmTarget || confirm !== confirmTarget))
                   }
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition disabled:opacity-50 ${
-                    spec.destructive
-                      ? 'bg-red-600 hover:bg-red-500 text-white'
-                      : 'bg-green-500 hover:bg-green-600 text-black'
-                  }`}
+                  className={spec.destructive ? 'btn-danger' : 'btn-primary'}
                 >
-                  <FaPlay /> {running ? 'Running…' : 'Run'}
+                  <FaPlay aria-hidden="true" /> {running ? 'Running…' : 'Run'}
                 </button>
               </div>
             </>
@@ -470,25 +477,25 @@ export default function CloudPanelPage() {
           {result && (
             <div className="space-y-3 pt-2">
               <div>
-                <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">
+                <div className="text-xs text-text-muted mb-1">
                   {result.dryRun ? 'Would run (dry run)' : 'Executed'}
                 </div>
-                <pre className="bg-black/60 border border-gray-800 rounded p-3 text-xs text-green-300 overflow-x-auto whitespace-pre-wrap break-all">
+                <pre className="bg-dark-input border border-dark-border rounded-lg p-3 text-xs text-text-primary overflow-x-auto whitespace-pre-wrap break-all">
                   clpctl {result.argv.join(' ')}
                 </pre>
               </div>
               {!result.dryRun && (
-                <div className="text-sm text-gray-400">
+                <div className="text-sm text-text-muted">
                   exit {result.exitCode ?? '—'} · {result.durationMs} ms
                 </div>
               )}
               {result.error && (
-                <pre className="bg-red-950/60 border border-red-800 rounded p-3 text-xs text-red-200 overflow-x-auto whitespace-pre-wrap">
+                <pre className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-200 overflow-x-auto whitespace-pre-wrap">
                   {result.error}
                 </pre>
               )}
               {result.stdout && (
-                <pre className="bg-black/60 border border-gray-800 rounded p-3 text-xs text-gray-300 overflow-x-auto whitespace-pre-wrap">
+                <pre className="bg-dark-input border border-dark-border rounded-lg p-3 text-xs text-text-secondary overflow-x-auto whitespace-pre-wrap">
                   {result.stdout}
                 </pre>
               )}
@@ -496,8 +503,8 @@ export default function CloudPanelPage() {
           )}
 
           {excluded.length > 0 && (
-            <p className="text-xs text-gray-500 pt-2 border-t border-gray-800">
-              Intentionally not available here: <span className="font-mono">{excluded.join(', ')}</span> — see
+            <p className="text-xs text-text-muted pt-3 border-t border-dark-border">
+              Intentionally not available here: <span className="font-mono">{excluded.join(', ')}</span>. See
               docs/CLOUDPANEL.md for why.
             </p>
           )}
@@ -505,9 +512,9 @@ export default function CloudPanelPage() {
 
         {/* Diagnostics */}
         {inventory && (
-          <details className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-            <summary className="cursor-pointer text-gray-300 font-medium">Diagnostics</summary>
-            <div className="mt-3 text-sm text-gray-400 space-y-1 font-mono">
+          <details className="card-dark">
+            <summary className="cursor-pointer font-medium text-text-primary">Diagnostics</summary>
+            <div className="mt-3 text-sm text-text-secondary space-y-1 font-mono">
               <div>db: {inventory.schema.dbPath}</div>
               <div>site table: {inventory.schema.siteTable ?? '(not found)'}</div>
               <div>user table: {inventory.schema.userTable ?? '(not found)'}</div>
@@ -533,9 +540,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-      <div className="px-6 py-3 border-b border-gray-800 flex items-center gap-2 text-green-400 font-semibold">
-        {icon} {title} <span className="text-gray-500 font-normal">({count})</span>
+    <div className="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
+      <div className="px-4 py-3 border-b border-dark-border flex items-center gap-2 font-semibold text-text-primary">
+        <span className="text-text-muted">{icon}</span> {title}{' '}
+        <span className="text-text-muted font-normal">({count})</span>
       </div>
       {children}
     </div>
@@ -551,24 +559,24 @@ function Table({
   rows: string[][];
   empty: string;
 }) {
-  if (rows.length === 0) return <div className="p-6 text-center text-gray-500 text-sm">{empty}</div>;
+  if (rows.length === 0) return <div className="p-6 text-center text-text-muted text-sm">{empty}</div>;
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
-        <thead className="bg-gray-800 border-b border-gray-700">
+        <thead className="bg-dark-lighter text-text-muted text-left">
           <tr>
             {headers.map((h) => (
-              <th key={h} className="px-6 py-3 text-left text-green-400 font-semibold">
+              <th key={h} className="px-4 py-3 font-medium">
                 {h}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-800">
+        <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className="hover:bg-gray-800/60 transition">
+            <tr key={i} className="border-t border-dark-border hover:bg-dark-lighter/40">
               {row.map((cell, j) => (
-                <td key={j} className="px-6 py-3 text-gray-300 font-mono text-xs">
+                <td key={j} className="px-4 py-3 text-text-secondary font-mono text-xs">
                   {cell}
                 </td>
               ))}
