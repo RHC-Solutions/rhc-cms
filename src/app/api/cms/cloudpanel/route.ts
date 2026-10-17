@@ -69,6 +69,15 @@ export async function POST(request: NextRequest) {
   // would let an attacker write any IP into the audit trail.
   const ip = getClientIp((name) => request.headers.get(name));
 
+  // request.json() parses any body, so without this a cross-site <form
+  // enctype="text/plain"> could smuggle a JSON command in with the admin's
+  // cookie from a same-site origin (a sibling subdomain hosted on the same
+  // server, say). application/json cannot be sent cross-origin without a CORS
+  // preflight, which this route never answers.
+  if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) {
+    return NextResponse.json({ error: 'Content-Type must be application/json' }, { status: 415 });
+  }
+
   let body: any;
   try {
     body = await request.json();
