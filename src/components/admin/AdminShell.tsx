@@ -11,6 +11,7 @@ import {
   FaPalette, FaListAlt, FaCloud, FaChevronDown, FaTrash, FaSpinner, FaShieldAlt,
   FaPlug, FaBullhorn, FaRobot, FaSyncAlt, FaGoogle, FaExternalLinkAlt, FaAngleDoubleLeft,
   FaAngleDoubleRight,
+  FaDesktop,
 } from 'react-icons/fa';
 
 type Role = 'admin' | 'editor' | 'jobs_manager';
@@ -52,6 +53,7 @@ const NAVIGATION: NavSection[] = [
     items: [
       { name: 'Pages', href: '/admin/pages', icon: FaFileAlt, roles: AE },
       { name: 'Landing Pages', href: '/admin/landing-pages', icon: FaBullhorn, roles: AE },
+      { name: 'Demos', href: '/admin/demos', icon: FaDesktop, roles: AE },
       { name: 'Media', href: '/admin/media', icon: FaImages, roles: AE },
       { name: 'Menu', href: '/admin/menu', icon: FaList, roles: AE },
       { name: 'Footer', href: '/admin/footer', icon: FaListAlt, roles: AE },

@@ -39,6 +39,8 @@ export const ADMIN_SEARCH_INDEX: AdminSearchItem[] = [
     keywords: ['pages', 'content', 'blocks', 'create', 'edit', 'delete', 'publish', 'draft', 'slug', 'meta title', 'meta description'] },
   { id: 'landing-pages', title: 'Landing Pages', description: 'Campaign landing pages and their leads', href: '/admin/landing-pages', roles: ADMIN_EDITOR,
     keywords: ['landing pages', 'campaign', 'lp', 'marketing', 'leads', 'funnel'] },
+  { id: 'demos', title: 'Demos', description: 'Live product demos on synthetic data: landing pages, menu and SEO', href: '/admin/demos', roles: ADMIN_EDITOR,
+    keywords: ['demos', 'demo', 'products', 'live demo', 'showcase', 'sandbox', 'engine'] },
   { id: 'media', title: 'Media Library', description: 'Upload and manage images and files', href: '/admin/media', roles: ADMIN_EDITOR,
     keywords: ['media', 'images', 'files', 'upload', 'gallery', 'assets', 'photos'] },
   { id: 'menu', title: 'Navigation Menu', description: 'Configure the site header navigation', href: '/admin/menu', roles: ADMIN_EDITOR,
