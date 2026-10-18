@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
 import { useToast } from '@adminpanel/components/admin/Toast';
 import type {
-  Demo, DemoBullet, DemoCard, DemoContent, DemoFlowNode, DemoLiveTile, DemoSection, DemoSeo, DemoStat, DemoTile,
+  Demo, DemoBullet, DemoCard, DemoContent, DemoFlowNode, DemoLiveTile, DemoSection, DemoSeo, DemoStat, DemoTile, DemoVideo,
 } from '@adminpanel/lib/cms/demos';
 import {
   FaPlus, FaEdit, FaTrash, FaExternalLinkAlt, FaEye, FaTimes, FaCheck, FaArrowUp, FaArrowDown, FaSpinner, FaDesktop,
@@ -438,12 +438,13 @@ function NewDemoModal({
 
 /* ------------------------------------------------------------------- Edit */
 
-type EditTab = 'basics' | 'hero' | 'sections' | 'flow' | 'contact';
+type EditTab = 'basics' | 'hero' | 'sections' | 'flow' | 'videos' | 'contact';
 const TABS: { id: EditTab; label: string }[] = [
   { id: 'basics', label: 'Basics' },
   { id: 'hero', label: 'Hero & live card' },
   { id: 'sections', label: 'Sections' },
   { id: 'flow', label: 'How it works' },
+  { id: 'videos', label: 'Videos' },
   { id: 'contact', label: 'Contact & SEO' },
 ];
 
@@ -786,6 +787,48 @@ function EditModal({
               />
             </Group>
           </>
+        )}
+
+        {tab === 'videos' && (
+          <Group title="Walkthrough videos">
+            <p className="text-xs text-text-muted">
+              Narrated walkthroughs shown on the public page, the way visitors see the product now that the app itself is admin-only.
+              Files are site paths (e.g. <span className="font-mono">/demos-media/{draft.slug || 'slug'}/overview.mp4</span>) or https URLs.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Text label="Kicker" value={c.videos.kicker} onChange={(v) => patch('videos', { kicker: v })} />
+              <Text label="Title" value={c.videos.title} onChange={(v) => patch('videos', { title: v })} />
+              <Text label="Highlight" value={c.videos.highlight} onChange={(v) => patch('videos', { highlight: v })} />
+            </div>
+            <Area label="Lead" rows={2} value={c.videos.lead} onChange={(v) => patch('videos', { lead: v })} />
+            <Repeatable<DemoVideo>
+              title="Videos"
+              hint={sectionOptions.length ? `Link a video to a product section (${sectionOptions.join(', ')}) to show "Watch the walkthrough" on that card.` : undefined}
+              items={c.videos.items}
+              max={12}
+              blank={() => ({ id: '', title: '', summary: '', src: '', poster: '', captions: '', duration: 0, section: '' })}
+              onChange={(items) => patch('videos', { items })}
+              render={(v, update) => (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <Text label="Id" hint="e.g. overview" value={v.id} onChange={(x) => update({ id: slugTyping(x) })} mono />
+                    <Text label="Title" value={v.title} onChange={(x) => update({ title: x })} />
+                    <Text label="Section" hint="Product section id, optional" value={v.section} onChange={(x) => update({ section: slugTyping(x) })} mono />
+                  </div>
+                  <Text label="Summary" value={v.summary} onChange={(x) => update({ summary: x })} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Text label="Video (.mp4)" value={v.src} onChange={(x) => update({ src: x })} mono />
+                    <Text label="Poster (.jpg)" value={v.poster} onChange={(x) => update({ poster: x })} mono />
+                    <Text label="Captions (.vtt)" value={v.captions} onChange={(x) => update({ captions: x })} mono />
+                    <Text label="Length (seconds)" value={String(v.duration || '')} onChange={(x) => update({ duration: Number(x.replace(/\D/g, '')) || 0 })} mono />
+                  </div>
+                  {v.src && (
+                    <video src={v.src} poster={v.poster || undefined} controls preload="none" className="w-full max-w-md rounded border border-dark-border" />
+                  )}
+                </div>
+              )}
+            />
+          </Group>
         )}
 
         {tab === 'contact' && (
