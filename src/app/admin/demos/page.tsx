@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import AdminShell from '@adminpanel/components/admin/AdminShell';
 import { useToast } from '@adminpanel/components/admin/Toast';
 import type {
-  Demo, DemoBullet, DemoCard, DemoContent, DemoFlowNode, DemoLiveTile, DemoSection, DemoSeo, DemoStat, DemoTile, DemoVideo,
+  Demo, DemoBullet, DemoCard, DemoContent, DemoFlowNode, DemoLiveTile, DemoMark, DemoSection, DemoSeo, DemoShot, DemoStat, DemoTile, DemoVideo,
 } from '@adminpanel/lib/cms/demos';
 import {
   FaPlus, FaEdit, FaTrash, FaExternalLinkAlt, FaEye, FaTimes, FaCheck, FaArrowUp, FaArrowDown, FaSpinner, FaDesktop,
@@ -645,7 +645,7 @@ function EditModal({
         {tab === 'sections' && (
           <Repeatable<DemoSection>
             title="Product screens"
-            hint="One card per part of the product on the public page. Preview path and CTA point into the app, which only admins can open; they are not shown publicly."
+            hint="One block per part of the product on the public page: a screenshot with numbered highlights beside the bullets. Preview path and CTA point into the app, which only admins can open; they are not shown publicly."
             items={c.sections}
             max={12}
             blank={() => ({ id: '', kicker: '', title: '', highlight: '', bullets: [], preview: '/app', cta: 'Open', flip: false })}
@@ -662,9 +662,10 @@ function EditModal({
                   <Text label="Preview path" placeholder="/app/vpn" value={s.preview} onChange={(v) => update({ preview: v })} mono />
                   <Text label="CTA" value={s.cta} onChange={(v) => update({ cta: v })} />
                   <div className="pt-6">
-                    <Check label="Flip (preview on the left)" checked={!!s.flip} onChange={(v) => update({ flip: v })} />
+                    <Check label="Flip (screenshot on the right)" checked={!!s.flip} onChange={(v) => update({ flip: v })} />
                   </div>
                 </div>
+                <ShotEditor shot={s.shot} onChange={(shot) => update({ shot })} />
                 <Repeatable<DemoBullet>
                   title={`Bullets for section ${i + 1}`}
                   items={s.bullets}
@@ -979,6 +980,49 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 }
 
 /** A list of rows with add / remove / move up / move down. */
+const BLANK_SHOT: DemoShot = { src: '', alt: '', width: 0, height: 0, marks: [] };
+
+/** Screenshot + highlight boxes for a product section. Boxes are in percent of the image; n = bullet number. */
+function ShotEditor({ shot, onChange }: { shot?: DemoShot; onChange: (s: DemoShot | undefined) => void }) {
+  const cur = shot || BLANK_SHOT;
+  const [text, setText] = useState(() => JSON.stringify(cur.marks, null, 0));
+  const [bad, setBad] = useState(false);
+  const set = (p: Partial<DemoShot>) => {
+    const next = { ...cur, ...p };
+    onChange(next.src ? next : undefined);
+  };
+  return (
+    <div className="space-y-2 rounded border border-dark-border p-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Text label="Screenshot" hint="e.g. /demos-media/<slug>/shot-<section>.jpg" value={cur.src} onChange={(v) => set({ src: v })} mono />
+        <Text label="Screenshot description (alt)" value={cur.alt} onChange={(v) => set({ alt: v })} />
+      </div>
+      <Field label="Highlights" hint='JSON list: [{"x":10,"y":20,"w":30,"h":15,"n":1,"label":"…"}] — percent of the image; n is the bullet it illustrates.'>
+        <textarea
+          className={`input font-mono text-xs w-full ${bad ? 'border-red-500' : ''}`}
+          rows={3}
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+            try { const marks = JSON.parse(e.target.value) as DemoMark[]; if (!Array.isArray(marks)) throw new Error(); setBad(false); set({ marks }); } catch { setBad(true); }
+          }}
+        />
+      </Field>
+      {cur.src && (
+        <div className="relative max-w-xl border border-dark-border rounded overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={cur.src} alt={cur.alt} className="block w-full" />
+          {cur.marks.map((m, k) => (
+            <span key={k} className="absolute border-2 border-cyber-green rounded" style={{ left: `${m.x}%`, top: `${m.y}%`, width: `${m.w}%`, height: `${m.h}%` }}>
+              <span className="absolute -left-2 -top-2 w-5 h-5 rounded-full bg-cyber-green text-black text-[10px] font-bold grid place-items-center">{m.n}</span>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Repeatable<T>({
   title, hint, items, onChange, blank, render, max, compact,
 }: {
