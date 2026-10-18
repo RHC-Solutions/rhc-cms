@@ -8,8 +8,11 @@ import type {
   Demo, DemoBullet, DemoCard, DemoContent, DemoFlowNode, DemoLiveTile, DemoSection, DemoSeo, DemoStat, DemoTile,
 } from '@adminpanel/lib/cms/demos';
 import {
-  FaPlus, FaEdit, FaTrash, FaExternalLinkAlt, FaEye, FaTimes, FaCheck, FaArrowUp, FaArrowDown, FaSpinner,
+  FaPlus, FaEdit, FaTrash, FaExternalLinkAlt, FaEye, FaTimes, FaCheck, FaArrowUp, FaArrowDown, FaSpinner, FaDesktop,
 } from 'react-icons/fa';
+
+// The demo application (/demos/<slug>/app) only opens for signed-in admins and editors; visitors see the landing.
+const appHref = (slug: string) => `/demos/${slug}/app`;
 
 interface EngineInfo { id: string; name: string; tagline?: string }
 
@@ -268,6 +271,18 @@ export default function DemosAdmin() {
                         >
                           <FaArrowDown aria-hidden="true" />
                         </button>
+                        {d.engine && (
+                          <a
+                            href={appHref(d.slug)}
+                            target="_blank"
+                            rel="noopener"
+                            title="Open the demo app (admins only)"
+                            aria-label={`Open the ${d.name} app`}
+                            className="p-2 text-text-secondary hover:text-cyber-green"
+                          >
+                            <FaDesktop aria-hidden="true" />
+                          </a>
+                        )}
                         <a
                           href={d.status === 'published' ? `/demos/${d.slug}` : `/demos/${d.slug}?preview=1`}
                           target="_blank"
@@ -474,6 +489,11 @@ function EditModal({
               <FaEye aria-hidden="true" /> Preview draft
             </a>
           )}
+          {draft.engine && (
+            <a href={appHref(draft.slug)} target="_blank" rel="noopener" className="text-cyber-green hover:underline inline-flex items-center gap-1">
+              <FaDesktop aria-hidden="true" /> Open app
+            </a>
+          )}
           <span className="font-mono text-text-muted">{publicHref}</span>
         </span>
       }
@@ -586,9 +606,9 @@ function EditModal({
               <Text label="Headline" value={c.hero.headline} onChange={(v) => patch('hero', { headline: v })} />
               <Area label="Lead" rows={3} value={c.hero.lead} onChange={(v) => patch('hero', { lead: v })} />
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Text label="Primary CTA" value={c.hero.primaryCta} onChange={(v) => patch('hero', { primaryCta: v })} />
+                <Text label="Primary CTA" hint="Admin only: the public button is “Book a live walkthrough”." value={c.hero.primaryCta} onChange={(v) => patch('hero', { primaryCta: v })} />
                 <Text label="Secondary CTA" value={c.hero.secondaryCta} onChange={(v) => patch('hero', { secondaryCta: v })} />
-                <Text label="Secondary href" placeholder="#sections or /contact" value={c.hero.secondaryHref} onChange={(v) => patch('hero', { secondaryHref: v })} />
+                <Text label="Secondary href" placeholder="#section-id" hint="Links into the app are not shown publicly." value={c.hero.secondaryHref} onChange={(v) => patch('hero', { secondaryHref: v })} />
               </div>
             </Group>
             <Group title="Live card">
@@ -624,7 +644,7 @@ function EditModal({
         {tab === 'sections' && (
           <Repeatable<DemoSection>
             title="Product screens"
-            hint="A live preview of one app page beside a short list of what it does."
+            hint="One card per part of the product on the public page. Preview path and CTA point into the app, which only admins can open; they are not shown publicly."
             items={c.sections}
             max={12}
             blank={() => ({ id: '', kicker: '', title: '', highlight: '', bullets: [], preview: '/app', cta: 'Open', flip: false })}
@@ -741,7 +761,7 @@ function EditModal({
               />
             </Group>
 
-            <Group title="Tiles (see it for yourself)">
+            <Group title="Tiles (app shortcuts: admin only, not shown on the public page)">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Text label="Kicker" value={c.tiles.kicker} onChange={(v) => patch('tiles', { kicker: v })} />
                 <Text label="Title" value={c.tiles.title} onChange={(v) => patch('tiles', { title: v })} />
