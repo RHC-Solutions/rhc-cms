@@ -19,7 +19,16 @@ export interface DemoLiveTile {
   of?: string;
 }
 export interface DemoBullet { b: string; text: string }
-/** A product screen: a live preview of one app page beside a short list of what it does. */
+/** A highlighted area on a section screenshot, in percent of the image (0–100). */
+export interface DemoMark {
+  x: number; y: number; w: number; h: number;
+  /** The bullet it illustrates (1-based); its number is shown on the mark and the bullet. */
+  n: number;
+  label?: string;
+}
+/** A still of the product screen with highlighted areas — what visitors see instead of the live app. */
+export interface DemoShot { src: string; alt: string; width: number; height: number; marks: DemoMark[] }
+/** A product screen: a screenshot with highlights beside a short list of what it does. */
 export interface DemoSection {
   id: string;
   kicker: string;
@@ -30,6 +39,7 @@ export interface DemoSection {
   preview: string;
   cta: string;
   flip?: boolean;
+  shot?: DemoShot;
 }
 export interface DemoFlowNode { title: string; sub: string; hl?: boolean }
 export interface DemoCard { num?: string; title: string; text: string }
@@ -157,6 +167,19 @@ const mediaUrl = (v: unknown) => { const u = str(v, 300).trim(); return /^\/(?!\
 const arr = <T>(v: unknown, map: (x: Record<string, unknown>) => T, max = 40): T[] =>
   Array.isArray(v) ? v.slice(0, max).filter((x) => x && typeof x === 'object').map((x) => map(x as Record<string, unknown>)) : [];
 
+const pct = (v: unknown) => Math.max(0, Math.min(100, Math.round((Number(v) || 0) * 100) / 100));
+function normalizeShot(raw: unknown): DemoShot | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const s = raw as Record<string, unknown>;
+  const src = mediaUrl(s.src);
+  if (!src) return undefined;
+  return {
+    src, alt: str(s.alt, 200), width: Math.max(0, Math.round(Number(s.width) || 0)), height: Math.max(0, Math.round(Number(s.height) || 0)),
+    marks: arr(s.marks, (m) => ({ x: pct(m.x), y: pct(m.y), w: pct(m.w), h: pct(m.h), n: Math.max(1, Math.min(8, Math.round(Number(m.n) || 1))),
+      label: m.label ? str(m.label, 60) : undefined }), 8),
+  };
+}
+
 /** Fill a partial/foreign content object out to the full shape so renderers never see undefined. */
 export function normalizeContent(raw: unknown): DemoContent {
   const d = emptyContent();
@@ -169,7 +192,8 @@ export function normalizeContent(raw: unknown): DemoContent {
     live: { title: str(live.title, 60) || d.live.title, footnote: str(live.footnote, 300),
       tiles: arr(live.tiles, (t) => ({ label: str(t.label, 60), key: str(t.key, 60), format: (['number', 'percent', 'bytes', 'text'] as const).find((f) => f === t.format), of: t.of ? str(t.of, 60) : undefined }), 8) },
     sections: arr(c.sections, (s) => ({ id: slugify(str(s.id || s.title, 60)) || 'section', kicker: str(s.kicker, 80), title: str(s.title, 160), highlight: str(s.highlight, 100),
-      bullets: arr(s.bullets, (b) => ({ b: str(b.b, 120), text: str(b.text, 400) }), 8), preview: str(s.preview, 120), cta: str(s.cta, 60), flip: !!s.flip }), 12),
+      bullets: arr(s.bullets, (b) => ({ b: str(b.b, 120), text: str(b.text, 400) }), 8), preview: str(s.preview, 120), cta: str(s.cta, 60), flip: !!s.flip,
+      shot: normalizeShot(s.shot) }), 12),
     flow: { kicker: str(flow.kicker, 80) || d.flow.kicker, title: str(flow.title, 160), highlight: str(flow.highlight, 100), lead: str(flow.lead, 600),
       nodes: arr(flow.nodes, (n) => ({ title: str(n.title, 60), sub: str(n.sub, 80), hl: !!n.hl }), 8),
       cards: arr(flow.cards, (k) => ({ num: str(k.num, 4), title: str(k.title, 100), text: str(k.text, 400) }), 12),
@@ -270,7 +294,7 @@ export function createDemo(input: Record<string, unknown>): Demo {
   const maxOrder = (store().prepare('SELECT MAX(sortOrder) AS m FROM demos').get() as { m: number | null }).m ?? -1;
   const demo: Demo = {
     id: `demo-${Date.now()}`, slug, name, product: s.product || '', tagline: s.tagline || '', tag: s.tag || '', blurb: s.blurb || '',
-    status: s.status || 'draft', order: s.order ?? maxOrder + 1, showInMenu: s.showInMenu ?? true, showInFooter: s.showInFooter ?? false,
+    status: s.status || 'draft', order: s.order ?? maxOrder + 1, showInMenu: s.showInMenu ?? true, showInFooter: s.showInFooter ?? true,
     engine: s.engine ?? null, externalUrl: s.externalUrl ?? null, content: s.content || emptyContent(), seo: s.seo || {},
     createdAt: now, updatedAt: now,
   };
