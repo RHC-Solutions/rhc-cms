@@ -155,7 +155,7 @@ export function emptyContent(): DemoContent {
     flow: { kicker: 'How it works', title: '', highlight: '', lead: '', nodes: [], cards: [], stats: [] },
     why: { kicker: 'For your team', title: '', highlight: '', cards: [] },
     tiles: { kicker: 'See it for yourself', title: 'Click anything.', highlight: 'It is all live.', lead: '', items: [] },
-    videos: { kicker: 'Watch the walkthrough', title: 'See it running,', highlight: 'step by step', lead: '', items: [] },
+    videos: { kicker: 'Watch the walkthrough', title: 'See it running, step by step', highlight: 'step by step', lead: '', items: [] },
     contact: { lead: '', placeholder: '' },
     note: '',
   };
