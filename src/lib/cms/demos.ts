@@ -35,6 +35,23 @@ export interface DemoFlowNode { title: string; sub: string; hl?: boolean }
 export interface DemoCard { num?: string; title: string; text: string }
 export interface DemoStat { n: string; l: string }
 export interface DemoTile { label: string; sub: string; path: string }
+/** A narrated walkthrough of the product, shown on the public landing. */
+export interface DemoVideo {
+  id: string;
+  title: string;
+  /** One line under the title. */
+  summary: string;
+  /** Site path or https URL of the .mp4 */
+  src: string;
+  /** Still shown before playback (.jpg/.png) */
+  poster: string;
+  /** WebVTT captions, optional */
+  captions: string;
+  /** Length in seconds (shown on the card, used in VideoObject structured data) */
+  duration: number;
+  /** Id of the product section this video walks through: that card links to it. */
+  section: string;
+}
 
 export interface DemoContent {
   hero: { eyebrow: string; headline: string; highlight: string; lead: string; primaryCta: string; secondaryCta: string; secondaryHref: string };
@@ -43,6 +60,7 @@ export interface DemoContent {
   flow: { kicker: string; title: string; highlight: string; lead: string; nodes: DemoFlowNode[]; cards: DemoCard[]; stats: DemoStat[] };
   why: { kicker: string; title: string; highlight: string; cards: DemoCard[] };
   tiles: { kicker: string; title: string; highlight: string; lead: string; items: DemoTile[] };
+  videos: { kicker: string; title: string; highlight: string; lead: string; items: DemoVideo[] };
   contact: { lead: string; placeholder: string };
   /** Trademark / not-affiliated sentence shown in the footer note. */
   note: string;
@@ -127,12 +145,15 @@ export function emptyContent(): DemoContent {
     flow: { kicker: 'How it works', title: '', highlight: '', lead: '', nodes: [], cards: [], stats: [] },
     why: { kicker: 'For your team', title: '', highlight: '', cards: [] },
     tiles: { kicker: 'See it for yourself', title: 'Click anything.', highlight: 'It is all live.', lead: '', items: [] },
+    videos: { kicker: 'Watch the walkthrough', title: 'See it running,', highlight: 'step by step', lead: '', items: [] },
     contact: { lead: '', placeholder: '' },
     note: '',
   };
 }
 
 const str = (v: unknown, max = 2000) => (typeof v === 'string' ? v.slice(0, max) : v == null ? '' : String(v).slice(0, max));
+// Media paths: site-relative or https only (they end up in src attributes and structured data).
+const mediaUrl = (v: unknown) => { const u = str(v, 300).trim(); return /^\/(?!\/)/.test(u) || /^https:\/\//.test(u) ? u : ''; };
 const arr = <T>(v: unknown, map: (x: Record<string, unknown>) => T, max = 40): T[] =>
   Array.isArray(v) ? v.slice(0, max).filter((x) => x && typeof x === 'object').map((x) => map(x as Record<string, unknown>)) : [];
 
@@ -141,6 +162,7 @@ export function normalizeContent(raw: unknown): DemoContent {
   const d = emptyContent();
   const c = (raw && typeof raw === 'object' ? raw : {}) as Record<string, any>;
   const hero = c.hero || {}, live = c.live || {}, flow = c.flow || {}, why = c.why || {}, tiles = c.tiles || {}, contact = c.contact || {};
+  const videos = c.videos || {};
   return {
     hero: { eyebrow: str(hero.eyebrow, 120), headline: str(hero.headline, 200), highlight: str(hero.highlight, 120), lead: str(hero.lead, 800),
       primaryCta: str(hero.primaryCta, 60) || d.hero.primaryCta, secondaryCta: str(hero.secondaryCta, 60), secondaryHref: str(hero.secondaryHref, 200) },
@@ -156,6 +178,10 @@ export function normalizeContent(raw: unknown): DemoContent {
       cards: arr(why.cards, (k) => ({ title: str(k.title, 100), text: str(k.text, 400) }), 12) },
     tiles: { kicker: str(tiles.kicker, 80) || d.tiles.kicker, title: str(tiles.title, 120) || d.tiles.title, highlight: str(tiles.highlight, 80), lead: str(tiles.lead, 400),
       items: arr(tiles.items, (t) => ({ label: str(t.label, 60), sub: str(t.sub, 100), path: str(t.path, 120) }), 16) },
+    videos: { kicker: str(videos.kicker, 80) || d.videos.kicker, title: str(videos.title, 160) || d.videos.title, highlight: str(videos.highlight, 100), lead: str(videos.lead, 400),
+      items: arr(videos.items, (v) => ({ id: slugify(str(v.id || v.title, 60)) || 'walkthrough', title: str(v.title, 120), summary: str(v.summary, 240),
+        src: mediaUrl(v.src), poster: mediaUrl(v.poster), captions: mediaUrl(v.captions),
+        duration: Math.max(0, Math.min(36000, Math.round(Number(v.duration) || 0))), section: slugify(str(v.section, 60)) }), 12) },
     contact: { lead: str(contact.lead, 600), placeholder: str(contact.placeholder, 200) },
     note: str(c.note, 400),
   };
