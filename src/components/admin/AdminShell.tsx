@@ -69,7 +69,10 @@ const NAVIGATION: NavSection[] = [
     items: [
       {
         name: 'SEO', href: '/admin/seo', icon: FaSearch, roles: AE,
-        children: [{ name: 'Search Console', href: '/admin/search-console', icon: FaGoogle, roles: A }],
+        children: [
+          { name: 'Search Console', href: '/admin/search-console', icon: FaGoogle, roles: A },
+          { name: 'AI Visibility', href: '/admin/ai-visibility', icon: FaRobot, roles: A },
+        ],
       },
       { name: 'Social Autopilot', href: '/admin/buffer', icon: FaBullhorn, roles: A },
     ],

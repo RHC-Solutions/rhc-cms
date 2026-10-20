@@ -159,6 +159,16 @@ export const INTEGRATIONS: Integration[] = [
     ],
   },
   {
+    id: 'ai-visibility',
+    name: 'AI Visibility',
+    description:
+      'Powers /admin/ai-visibility: a weekly check of how often ChatGPT, Gemini, Claude and Perplexity name RHC Solutions. It uses the OpenAI, Gemini and Anthropic keys under Social Autopilot above, plus the Perplexity key here. Each assistant with a key is checked; the others are skipped.',
+    dashboardLink: 'https://www.perplexity.ai/account/api/keys',
+    fields: [
+      { envVar: 'PERPLEXITY_API_KEY', label: 'Perplexity API key', type: 'secret', description: 'perplexity.ai → Settings → API → Generate key. Billed per request on the Sonar API.' },
+    ],
+  },
+  {
     id: 'misc',
     name: 'Miscellaneous',
     description: 'Other server-side values that aren\'t tied to a specific third-party.',
