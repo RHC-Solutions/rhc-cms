@@ -97,6 +97,8 @@ export const ADMIN_SEARCH_INDEX: AdminSearchItem[] = [
     keywords: ['ooda', 'health', 'monitoring', 'uptime', 'self healing', 'restart', 'incidents', 'alerts', 'maintenance', 'disk', 'log scan'] },
   { id: 'aikido', title: 'Security (Aikido)', description: 'Vulnerability and dependency scanning', href: '/admin/aikido', roles: ADMIN_ONLY,
     keywords: ['security', 'aikido', 'vulnerabilities', 'cve', 'scanning', 'dependencies', 'audit', 'risks'] },
+  { id: 'cloudpanel', title: 'CloudPanel', description: 'Manage CloudPanel sites, databases and panel users on this server', href: '/admin/cloudpanel', roles: ADMIN_ONLY,
+    keywords: ['cloudpanel', 'clpctl', 'server', 'hosting', 'vhost', 'nginx', 'site user', 'lets encrypt', 'certificate', 'ssl', 'provision', 'control panel'] },
 
   // ---- Settings -----------------------------------------------------------
   { id: 'settings', title: 'General Settings', description: 'Site identity, homepage and contact page content', href: '/admin/settings', roles: ADMIN_EDITOR,

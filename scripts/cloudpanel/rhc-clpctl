@@ -1,0 +1,347 @@
+#!/bin/bash -p
+#
+# rhc-clpctl — root-side allowlist wrapper around CloudPanel's `clpctl`.
+#
+# Install to /usr/local/bin/rhc-clpctl, owned by root:root, mode 0755, and grant
+# the panel's system user permission to run ONLY this path via sudo:
+#
+#   # /etc/sudoers.d/rhc-clpctl   (visudo -f /etc/sudoers.d/rhc-clpctl)
+#   rhcsolutions_com ALL=(root) NOPASSWD: /usr/local/bin/rhc-clpctl
+#
+# WHY THIS FILE EXISTS.
+# The obvious sudoers rule is `NOPASSWD: /usr/bin/clpctl`, and it is a mistake:
+# it grants the web app every clpctl verb forever, including ones added by future
+# CloudPanel releases. This wrapper is the thing sudo permits, and it re-derives
+# the allowlist here, on the root side. The panel's TypeScript validation is a
+# usability layer; THIS is the security boundary. Assume the caller is hostile.
+#
+# What it enforces:
+#   - Only the commands in the table below, each with ONLY its own flags. A flag
+#     that is fine on one verb (--file on db:export) is refused on every other.
+#   - Every value is checked against the same shape as the panel's validators,
+#     never looser, and every value is limited to a small ASCII character set.
+#     CloudPanel's own /usr/bin/clpctl (2.5.x) does not exec its arguments: it
+#     rebuilds them into a string with printf ' "%q"' and runs `bash -c` on it.
+#     A value holding any byte outside printable ASCII makes %q switch to $'...'
+#     quoting, which those double quotes do not neutralise, so `$(...)` or a
+#     backtick in it RUNS AS ROOT (2026-10-17 review). Characters outside the
+#     set are either that, or get mangled by the same re-quoting (a space, a
+#     comma or an apostrophe arrives with a backslash in front of it).
+#   - Passwords can arrive on stdin (`--password=-`, one line per such flag, in
+#     argument order), so sudo's own log line never holds them. The panel always
+#     sends them that way.
+#   - File arguments are confined to two fixed, root-owned directories, because
+#     clpctl reads and writes them as root:
+#       db:export writes      -> /var/backups/rhc-clpctl/<name>
+#       db:import, site:install:certificate read
+#                             -> /var/lib/rhc-clpctl/import/<name>
+#     A bare <name> only (no subdirectories), the directory and its parent must
+#     be owned by root and not group/world-writable, and the file must not be a
+#     symlink. Without this, `db:export --file=/etc/passwd` would have root
+#     overwrite any file on the host (2026-10-05 review), and a cert/import path
+#     could make root read any file into a place the caller can see.
+#   - clpctl runs with an empty environment plus a fixed PATH and LANG, and
+#     stdin from /dev/null.
+#
+# Gated verbs are refused unless the marker file exists:
+#   touch /etc/rhc-clpctl-allow-destructive
+# Gated means destructive (deletes or overwrites data) OR account-granting
+# (creates panel users, resets their passwords, disables their MFA): a new
+# CloudPanel admin can do everything the other gated verbs do from CloudPanel's
+# own UI, so leaving account creation open would make the gate decorative. The
+# marker is root-owned, so a compromised web app cannot grant itself these
+# rights by flipping a database row.
+#
+# Tests: scripts/cloudpanel/test-rhc-clpctl.sh (runs against a stub clpctl).
+
+set -euo pipefail
+
+# Under sudo this runs as root, so nothing inherited is trusted. PATH is fixed
+# before the first external command (CloudPanel's clpctl itself finds `bash` and
+# `sudo` through it), IFS is reset, and anything this creates is private.
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+IFS=$' \t\n'
+umask 077
+export LC_ALL=C
+
+# Binary, marker, directories and the owner they must have are FIXED whenever we
+# run under sudo. Honouring $CLPCTL_BIN from a sudo caller would be a
+# root-execution hole the moment anyone adds env_keep to the sudoers rule: point
+# it at /tmp/evil and the wrapper runs that as root. sudo sets SUDO_USER, so we
+# key off it and only allow overrides for direct (test-harness) invocation.
+if [ -n "${SUDO_USER:-}" ] || [ "$(id -u 2>/dev/null || echo 0)" = "0" ]; then
+  CLPCTL="/usr/bin/clpctl"
+  DESTRUCTIVE_MARKER="/etc/rhc-clpctl-allow-destructive"
+  EXPORT_DIR="/var/backups/rhc-clpctl"
+  IMPORT_DIR="/var/lib/rhc-clpctl/import"
+  OWNER_UID=0
+else
+  CLPCTL="${CLPCTL_BIN:-/usr/bin/clpctl}"
+  DESTRUCTIVE_MARKER="${CLPCTL_DESTRUCTIVE_MARKER:-/etc/rhc-clpctl-allow-destructive}"
+  EXPORT_DIR="${RHC_CLPCTL_EXPORT_DIR:-/var/backups/rhc-clpctl}"
+  IMPORT_DIR="${RHC_CLPCTL_IMPORT_DIR:-/var/lib/rhc-clpctl/import}"
+  OWNER_UID="$(id -u)"
+fi
+
+die() {
+  echo "rhc-clpctl: $*" >&2
+  exit 64
+}
+
+log() {
+  # Best-effort audit trail on the host itself, independent of the panel's DB.
+  command -v logger >/dev/null 2>&1 && logger -t rhc-clpctl -- "$*" || true
+}
+
+# Caller-supplied text that is about to be refused, made safe to echo or log.
+printable() {
+  local s="${1:0:80}"
+  printf '%s' "${s//[^A-Za-z0-9:._=-]/?}"
+}
+
+[ "$#" -ge 1 ] || die "no command given"
+
+COMMAND="$1"
+shift
+
+# --- the allowlist -------------------------------------------------------------
+# One entry per verb: the flags it may take, and whether it is gated.
+# Mirrors COMMANDS in src/lib/cloudpanel/clpctl.ts. A literal case match, so an
+# empty, globbed or path-like command can never match.
+DESTRUCTIVE=0
+case "$COMMAND" in
+  site:add:nodejs)        FLAGS="domainName nodejsVersion appPort siteUser siteUserPassword" ;;
+  site:add:static)        FLAGS="domainName siteUser siteUserPassword" ;;
+  site:add:php)           FLAGS="domainName phpVersion vhostTemplate siteUser siteUserPassword" ;;
+  site:add:python)        FLAGS="domainName pythonVersion appPort siteUser siteUserPassword" ;;
+  site:add:reverse-proxy) FLAGS="domainName reverseProxyUrl siteUser siteUserPassword" ;;
+  lets-encrypt:install:certificate) FLAGS="domainName subjectAlternativeName" ;;
+  db:add)                 FLAGS="domainName databaseName databaseUserName databaseUserPassword" ;;
+  db:export)              FLAGS="databaseName file" ;;
+  user:list|cloudflare:update:ips|vhost-templates:list) FLAGS="" ;;
+  user:add)               FLAGS="userName email firstName lastName password role sites timezone status"; DESTRUCTIVE=1 ;;
+  user:reset:password)    FLAGS="userName password"; DESTRUCTIVE=1 ;;
+  site:delete)            FLAGS="domainName force"; DESTRUCTIVE=1 ;;
+  user:delete)            FLAGS="userName"; DESTRUCTIVE=1 ;;
+  user:disable:mfa)       FLAGS="userName"; DESTRUCTIVE=1 ;;
+  db:import)              FLAGS="databaseName file"; DESTRUCTIVE=1 ;;
+  site:install:certificate) FLAGS="domainName privateKey certificate certificateChain"; DESTRUCTIVE=1 ;;
+  *)
+    log "DENIED unknown command $(printable "$COMMAND")"
+    die "command not allowed: $(printable "$COMMAND")"
+    ;;
+esac
+
+if [ "$DESTRUCTIVE" = 1 ] && [ ! -f "$DESTRUCTIVE_MARKER" ]; then
+  log "DENIED gated $COMMAND (marker $DESTRUCTIVE_MARKER absent)"
+  die "gated command '$COMMAND' refused: $DESTRUCTIVE_MARKER does not exist"
+fi
+
+flag_allowed() {
+  local f
+  [ -n "$1" ] || return 1
+  for f in $FLAGS; do [ "$f" = "$1" ] && return 0; done
+  return 1
+}
+
+# Flags whose value may be given as `-`, meaning "the next line of stdin".
+SECRET_FLAGS=" password siteUserPassword databaseUserPassword "
+
+# --- value shapes (same as the panel's validators, never looser) -----------------
+# Every value, whatever its flag, must fit this set (see the header for why).
+SAFE_VALUE_RE='^[A-Za-z0-9 #%+,./:=@_-]+$'
+LABEL='[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?'
+DOMAIN_RE="^(${LABEL}\.)+${LABEL}$"
+SITE_USER_RE='^[a-z_][a-z0-9_-]{0,31}$'
+USER_NAME_RE='^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$'
+DB_IDENT_RE='^[A-Za-z0-9_-]{1,64}$'
+EMAIL_RE='^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,180}\.[A-Za-z]{2,24}$'
+# No space, comma, quote or shell character: CloudPanel's re-quoting would
+# change the password that gets set (or worse, see the header).
+PASSWORD_RE='^[A-Za-z0-9#%+./:=@_-]{8,128}$'
+NAME_RE='^[A-Za-z][A-Za-z.-]{0,63}$'
+VERSION_RE='^[0-9]{1,3}(\.[0-9]{1,3}){0,2}$'
+PORT_RE='^[0-9]{1,5}$'
+ROLE_RE='^(admin|site-manager|user)$'
+STATUS_RE='^(0|1|active|inactive|enabled|disabled)$'
+TIMEZONE_RE='^(UTC|[A-Za-z][A-Za-z_-]{0,31}/[A-Za-z0-9_+-]{1,48}(/[A-Za-z0-9_+-]{1,48})?)$'
+# Words separated by single spaces, each starting with a letter or digit, so no
+# word can ever read as a flag even if something downstream splits on spaces.
+TEMPLATE_RE='^[A-Za-z0-9][A-Za-z0-9._-]*( [A-Za-z0-9][A-Za-z0-9._-]*)*$'
+URL_RE='^https?://[A-Za-z0-9._:/-]+$'
+FILE_NAME_RE='^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'
+
+is_domain() {
+  [ "${#1}" -le 253 ] && [[ $1 =~ $DOMAIN_RE ]]
+}
+
+# Comma-separated, no spaces, no empty items.
+is_domain_list() {
+  local part parts
+  case "$1" in '' | ,* | *, | *,,* | *' '*) return 1 ;; esac
+  IFS=',' read -r -a parts <<< "$1"
+  { [ "${#parts[@]}" -ge 1 ] && [ "${#parts[@]}" -le 100 ]; } || return 1
+  for part in "${parts[@]}"; do
+    is_domain "$part" || return 1
+  done
+}
+
+# The directory must be a real directory (not a symlink), owned by root and not
+# writable by group or others, and so must its parent — otherwise the caller
+# could plant a symlink in it, or swap the whole directory between this check
+# and clpctl's open, and steer root's read or write anywhere.
+check_dir_owner() {
+  local dir="$1" uid mode
+  read -r uid mode < <(stat -c '%u %a' -- "$dir")
+  [ "$uid" = "$OWNER_UID" ] || die "$dir must be owned by uid $OWNER_UID"
+  (( (8#$mode & 8#022) == 0 )) || die "$dir must not be group- or world-writable"
+}
+
+secure_dir() {
+  local dir="$1" create="$2"
+  if [ ! -e "$dir" ] && [ "$create" = 1 ]; then
+    mkdir -p -m 0700 -- "$dir" || die "cannot create $dir"
+  fi
+  { [ -d "$dir" ] && [ ! -L "$dir" ]; } || die "$dir is missing or not a real directory"
+  check_dir_owner "$dir"
+  check_dir_owner "$(dirname -- "$dir")"
+}
+
+# confine_path <flag> <value> <dir> <read|write>
+confine_path() {
+  local flag="$1" value="$2" dir="$3" mode="$4" name
+  name="${value#"$dir"/}"
+  [ "$value" = "$dir/$name" ] || die "--$flag must be a file directly inside $dir"
+  [[ $name =~ $FILE_NAME_RE ]] || die "--$flag: file name must be letters, digits, '.', '_' or '-' (no subdirectories)"
+  if [ "$mode" = read ]; then
+    secure_dir "$dir" 0
+    { [ -f "$value" ] && [ ! -L "$value" ]; } || die "--$flag: $value must be an existing regular file, not a symlink"
+  else
+    secure_dir "$dir" 1
+    [ ! -L "$value" ] || die "--$flag: $value is a symlink"
+    { [ ! -e "$value" ] || [ -f "$value" ]; } || die "--$flag: $value exists and is not a regular file"
+  fi
+}
+
+# --- argument validation ----------------------------------------------------------
+# Accepted shapes are exactly:
+#   --flagName=value    (a flag this command allows; value must match its shape)
+#   --secretFlag=-      (value read from the next line of stdin)
+#   --force             (the one valueless flag, site:delete only)
+# Validated arguments are collected into OUT, which is what clpctl receives;
+# SAFE_LOG is the same with passwords masked.
+SEEN=" "
+OUT=()
+SAFE_LOG="$COMMAND"
+for arg in "$@"; do
+  case "$arg" in
+    --force)
+      flag_allowed force || die "flag not allowed for $COMMAND: --force"
+      flag="force"
+      OUT+=("--force")
+      SAFE_LOG="$SAFE_LOG --force"
+      ;;
+    --*=*)
+      flag="${arg%%=*}"
+      flag="${flag#--}"
+      value="${arg#*=}"
+
+      { flag_allowed "$flag" && [ "$flag" != force ]; } || die "flag not allowed for $COMMAND: --$(printable "$flag")"
+
+      secret=0
+      if [[ $SECRET_FLAGS == *" $flag "* ]]; then
+        secret=1
+        if [ "$value" = "-" ]; then
+          value=""
+          IFS= read -r -t 10 value || [ -n "$value" ] || die "--$flag=-: expected the value on standard input"
+        fi
+      fi
+
+      [ -n "$value" ] || die "empty value for --$flag"
+      [ "${#value}" -le 1024 ] || die "value too long for --$flag"
+      # Refuse control characters (newlines included) outright, then anything
+      # outside the shared safe set.
+      if [[ $value =~ [[:cntrl:]] ]]; then die "control character in --$flag"; fi
+      [[ $value =~ $SAFE_VALUE_RE ]] \
+        || die "--$flag may only contain letters, digits, spaces and # % + , . / : = @ _ -"
+
+      case "$flag" in
+        domainName)
+          is_domain "$value" || die "--$flag must be a domain name" ;;
+        sites|subjectAlternativeName)
+          is_domain_list "$value" || die "--$flag must be a comma-separated list of domains, without spaces" ;;
+        siteUser)
+          [[ $value =~ $SITE_USER_RE ]] || die "--$flag must match $SITE_USER_RE"
+          # site:add creates this system user. Pointing it at an account that
+          # already exists (root, clp, the panel's own user...) is never right.
+          ! getent passwd "$value" >/dev/null 2>&1 || die "--$flag: system user '$value' already exists"
+          ;;
+        userName)
+          [[ $value =~ $USER_NAME_RE ]] || die "--$flag must match $USER_NAME_RE" ;;
+        databaseName|databaseUserName)
+          [[ $value =~ $DB_IDENT_RE ]] || die "--$flag must match $DB_IDENT_RE" ;;
+        email)
+          [[ $value =~ $EMAIL_RE ]] || die "--$flag must be an email address" ;;
+        firstName|lastName)
+          [[ $value =~ $NAME_RE ]] || die "--$flag must be letters, '.' or '-' (no spaces), up to 64 characters" ;;
+        password|siteUserPassword|databaseUserPassword)
+          [[ $value =~ $PASSWORD_RE ]] \
+            || die "--$flag must be 8-128 characters: letters, digits and # % + . / : = @ _ -" ;;
+        appPort)
+          { [[ $value =~ $PORT_RE ]] && [ "$((10#$value))" -ge 1 ] && [ "$((10#$value))" -le 65535 ]; } \
+            || die "--$flag must be a port number (1-65535)" ;;
+        nodejsVersion|phpVersion|pythonVersion)
+          [[ $value =~ $VERSION_RE ]] || die "--$flag must be a version number" ;;
+        role)
+          [[ $value =~ $ROLE_RE ]] || die "--$flag must be admin, site-manager or user" ;;
+        status)
+          [[ ${value,,} =~ $STATUS_RE ]] || die "--$flag must be 0, 1, active, inactive, enabled or disabled" ;;
+        timezone)
+          [[ $value =~ $TIMEZONE_RE ]] || die "--$flag must be a timezone like Europe/Berlin" ;;
+        vhostTemplate)
+          { [ "${#value}" -le 64 ] && [[ $value =~ $TEMPLATE_RE ]]; } \
+            || die "--$flag must be words of letters, digits, '.', '_' or '-' separated by single spaces" ;;
+        reverseProxyUrl)
+          [[ $value =~ $URL_RE ]] || die "--$flag must be an http(s) URL" ;;
+        file)
+          if [ "$COMMAND" = db:export ]; then
+            confine_path "$flag" "$value" "$EXPORT_DIR" write
+          else
+            confine_path "$flag" "$value" "$IMPORT_DIR" read
+          fi
+          ;;
+        privateKey|certificate|certificateChain)
+          confine_path "$flag" "$value" "$IMPORT_DIR" read ;;
+        *)
+          # Every flag in the table above has a shape here. Reaching this means
+          # the two lists drifted — refuse rather than pass an unchecked value.
+          die "no validator for --$flag" ;;
+      esac
+
+      OUT+=("--$flag=$value")
+      if [ "$secret" = 1 ]; then
+        SAFE_LOG="$SAFE_LOG --$flag=********"
+      else
+        SAFE_LOG="$SAFE_LOG --$flag=$value"
+      fi
+      ;;
+    *)
+      die "unexpected argument: $(printable "$arg")"
+      ;;
+  esac
+  case "$SEEN" in
+    *" $flag "*) die "--$flag given more than once" ;;
+  esac
+  SEEN="$SEEN$flag "
+done
+
+[ -x "$CLPCTL" ] || die "clpctl not found or not executable at $CLPCTL"
+
+log "RUN $SAFE_LOG (invoked by uid=${SUDO_UID:-unknown} user=${SUDO_USER:-unknown})"
+
+# Empty environment apart from PATH and LANG: nothing the caller's environment
+# holds (BASH_ENV, PHPRC, PHP_INI_SCAN_DIR, LD_*, ...) reaches clpctl, its
+# `bash -c` or PHP, even if the sudoers rule is later loosened. stdin is closed
+# so clpctl can never read leftover input or wait on a prompt.
+exec /usr/bin/env -i PATH="$PATH" LANG=C.UTF-8 "$CLPCTL" "$COMMAND" "${OUT[@]}" </dev/null
