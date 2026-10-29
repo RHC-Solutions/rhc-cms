@@ -196,6 +196,15 @@ export async function readInventory(): Promise<CloudPanelInventory> {
       };
     }
 
+    // 2.x keeps the PHP version in its own table, linked by site.php_settings_id.
+    const phpVersions = new Map<string, string>();
+    const phpTable = pickTable(tables, ['php_settings']);
+    if (phpTable) {
+      for (const r of selectMapped(db, phpTable, { id: ['id'], version: ['php_version', 'phpVersion'] }, 1000)) {
+        if (r.id != null && r.version != null) phpVersions.set(String(r.id), String(r.version));
+      }
+    }
+
     const sites: CloudPanelSite[] = siteTable
       ? selectMapped(
           db,
@@ -205,8 +214,12 @@ export async function readInventory(): Promise<CloudPanelInventory> {
             domainName: ['domain_name', 'domainName', 'domain'],
             siteUser: ['site_user', 'siteUser', 'user', 'system_user', 'username'],
             rootDirectory: ['root_directory', 'rootDirectory', 'document_root', 'home_directory'],
-            application: ['application', 'type', 'site_type', 'vhost_template', 'vhostTemplate'],
+            application: ['application', 'vhost_template', 'vhostTemplate'],
+            // CloudPanel 2.x leaves `application` null on Node.js/Python/proxy
+            // sites; `type` (nodejs, php, …) is the fallback.
+            siteType: ['type', 'site_type'],
             phpVersion: ['php_version', 'phpVersion'],
+            phpSettingsId: ['php_settings_id', 'phpSettingsId'],
             createdAt: ['created_at', 'createdAt'],
           },
           500,
@@ -215,8 +228,8 @@ export async function readInventory(): Promise<CloudPanelInventory> {
           domainName: str(r.domainName),
           siteUser: str(r.siteUser),
           rootDirectory: str(r.rootDirectory),
-          application: str(r.application),
-          phpVersion: str(r.phpVersion),
+          application: str(r.application) ?? str(r.siteType),
+          phpVersion: str(r.phpVersion) ?? phpVersions.get(String(r.phpSettingsId)) ?? null,
           createdAt: str(r.createdAt),
         }))
       : [];
