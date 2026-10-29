@@ -11,7 +11,7 @@ import {
   FaPalette, FaListAlt, FaCloud, FaChevronDown, FaTrash, FaSpinner, FaShieldAlt,
   FaPlug, FaBullhorn, FaRobot, FaSyncAlt, FaGoogle, FaExternalLinkAlt, FaAngleDoubleLeft,
   FaAngleDoubleRight,
-  FaDesktop, FaServer,
+  FaDesktop,
 } from 'react-icons/fa';
 
 type Role = 'admin' | 'editor' | 'jobs_manager';
@@ -101,7 +101,6 @@ const NAVIGATION: NavSection[] = [
       { name: 'Automation', href: '/admin/automation', icon: FaRobot, roles: A },
       { name: 'OODA', href: '/admin/ooda', icon: FaSyncAlt, roles: A },
       { name: 'Security (Aikido)', href: '/admin/aikido', icon: FaShieldAlt, roles: A },
-      { name: 'CloudPanel', href: '/admin/cloudpanel', icon: FaServer, roles: A },
     ],
   },
 ];
