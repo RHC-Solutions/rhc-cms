@@ -16,6 +16,7 @@ import {
   FaHome, FaFileAlt, FaImages, FaUsers, FaCog, FaChartLine,
   FaBars, FaTimes, FaSignOutAlt, FaEdit, FaCookie, FaSearch, FaList, FaDatabase,
   FaPalette, FaListAlt, FaCloud, FaChevronDown, FaTrash, FaSpinner, FaShieldAlt,
+  FaDesktop,
   FaPlug, FaBullhorn, FaRobot, FaSyncAlt, FaHistory, FaStore, FaBoxOpen, FaShoppingCart, FaUserFriends,
   FaCalendarAlt, FaConciergeBell, FaCalendarCheck, FaClock, FaGift, FaLanguage, FaUser,
   FaExternalLinkAlt, FaAngleDoubleLeft, FaAngleDoubleRight,
@@ -38,7 +39,7 @@ interface NavSection {
 // Resolve admin-nav.ts iconName strings to components. The nav tree itself lives in
 // src/lib/admin-nav.ts (shared with search) and carries no React imports.
 const NAV_ICONS: Record<string, IconType> = {
-  FaHome, FaChartLine, FaCog, FaFileAlt, FaBullhorn, FaStore, FaBoxOpen, FaShoppingCart,
+  FaHome, FaChartLine, FaCog, FaFileAlt, FaBullhorn, FaDesktop, FaStore, FaBoxOpen, FaShoppingCart,
   FaGift, FaUserFriends, FaCalendarAlt, FaCalendarCheck, FaConciergeBell, FaClock, FaImages,
   FaEdit, FaList, FaListAlt, FaPalette, FaLanguage, FaUsers, FaSearch, FaCookie, FaCloud,
   FaPlug, FaDatabase, FaRobot, FaSyncAlt, FaShieldAlt, FaHistory, FaUser,

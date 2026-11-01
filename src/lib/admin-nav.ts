@@ -35,6 +35,7 @@ export const ADMIN_NAV: AdminNavEntry[] = [
   { name: 'Analytics', href: '/admin/analytics', iconName: 'FaChartLine', roles: ['admin', 'editor'], description: 'View site analytics and traffic', keywords: ['analytics', 'stats', 'traffic', 'visitors', 'engagement', 'ga4', 'google analytics'] },
   { name: 'Pages', section: 'Content', href: '/admin/pages', iconName: 'FaFileAlt', roles: ['admin', 'editor'], description: 'Manage website pages', keywords: ['pages', 'content', 'create', 'edit', 'delete', 'homepage', 'contact'] },
   { name: 'Landing Pages', section: 'Content', href: '/admin/landing-pages', iconName: 'FaBullhorn', roles: ['admin', 'editor'], description: 'Manage marketing landing pages', keywords: ['landing', 'campaigns', 'marketing', 'lead', 'pages'] },
+  { name: 'Demos', section: 'Content', href: '/admin/demos', iconName: 'FaDesktop', roles: ['admin', 'editor'], description: 'Live product demos on synthetic data: landing pages, menu and SEO', keywords: ['demos', 'demo', 'products', 'live demo', 'showcase', 'sandbox', 'engine'] },
   {
     name: 'Store', section: 'Commerce', href: '/admin/store/products', iconName: 'FaStore', roles: ['admin', 'editor'],
     children: [
