@@ -357,6 +357,20 @@ export default function CMSPagesEditor() {
               placeholder="Heading text"
               className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
             />
+            <input
+              type="text"
+              value={(block.props && typeof block.props === 'object' && block.props.description) || ''}
+              onChange={(e) => updateBlock(block.id, { props: writeProp(block.props, 'description', e.target.value) })}
+              placeholder="Intro line under the heading (optional, shown when an illustration is set)"
+              className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
+            />
+            <input
+              type="text"
+              value={(block.props && typeof block.props === 'object' && block.props.image) || ''}
+              onChange={(e) => updateBlock(block.id, { props: writeProp(block.props, 'image', e.target.value) })}
+              placeholder="Illustration URL, e.g. /media/services/cloud-v1.svg (optional)"
+              className="w-full bg-dark border border-dark-border rounded px-3 py-2 text-text-primary text-sm"
+            />
           </div>
         );
       case 'paragraph':
