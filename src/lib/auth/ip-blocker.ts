@@ -28,6 +28,8 @@ function loadBlockedIPs(): BlockedIP[] {
 function saveBlockedIPs(ips: BlockedIP[]) {
   try {
     fs.writeFileSync(BLOCKED_IPS_FILE, JSON.stringify(ips, null, 2));
+    // Owner+group only — default umask leaves it world-readable on the shared host.
+    fs.chmodSync(BLOCKED_IPS_FILE, 0o660);
   } catch (error) {
     console.error('[IPBlocker] Error saving blocked IPs:', error);
   }
@@ -49,7 +51,12 @@ function isIPBlocked(ip: string): boolean {
     return false;
   }
 
-  return true;
+  // Only actually block once the IP has hit the failed-attempt threshold.
+  // recordFailedAttempt() sets blockedUntil on EVERY failure (including the
+  // first), so without this check a single wrong password/2FA blocks the IP for
+  // 7 days. Keep consistent with getBlockedIPInfo()'s isBlocked condition.
+  // (Ported 2026-11-05 — the June fix only reached the unused host copy.)
+  return blocked.failedAttempts >= MAX_FAILED_ATTEMPTS;
 }
 
 function recordFailedAttempt(ip: string): { isNowBlocked: boolean; attemptsLeft: number } {

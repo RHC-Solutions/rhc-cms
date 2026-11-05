@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import bcrypt from 'bcryptjs';
+import { randomInt } from 'crypto';
 import { getSecret } from '@adminpanel/lib/env';
 import { verifyTurnstileToken } from '@adminpanel/lib/cloudflare/turnstile';
 
@@ -38,31 +39,35 @@ function ipRateLimited(ip: string): boolean {
   return hits.length > IP_MAX;
 }
 
-// Generate a secure 64-character password with extra complexity
+// Generate a secure 64-character password with extra complexity.
+// crypto.randomInt (CSPRNG) + Fisher-Yates — Math.random() and a
+// sort-based shuffle are neither secure nor uniform.
 function generateSecurePassword(length: number = 64): string {
   const lowercase = 'abcdefghijklmnopqrstuvwxyz';
   const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const numbers = '0123456789';
   const specialChars = '!@#$%^&*()_+-=[]{}|;:,.<>?';
   const allChars = lowercase + uppercase + numbers + specialChars;
-  
-  let password = '';
-  
+  const pick = (set: string) => set[randomInt(set.length)];
+
+  const chars: string[] = [];
   // Ensure at least 2 of each type for extra complexity
   for (let i = 0; i < 2; i++) {
-    password += lowercase[Math.floor(Math.random() * lowercase.length)];
-    password += uppercase[Math.floor(Math.random() * uppercase.length)];
-    password += numbers[Math.floor(Math.random() * numbers.length)];
-    password += specialChars[Math.floor(Math.random() * specialChars.length)];
+    chars.push(pick(lowercase), pick(uppercase), pick(numbers), pick(specialChars));
   }
-  
-  // Fill the rest randomly
-  for (let i = password.length; i < length; i++) {
-    password += allChars[Math.floor(Math.random() * allChars.length)];
+  while (chars.length < length) chars.push(pick(allChars));
+
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = randomInt(i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
   }
-  
-  // Shuffle the password to randomize the guaranteed characters
-  return password.split('').sort(() => Math.random() - 0.5).join('');
+  return chars.join('');
+}
+
+// Telegram parse_mode HTML rejects a raw <, > or & ("can't parse entities"),
+// and the password alphabet contains all three — escape anything interpolated.
+function escapeHtml(value: string): string {
+  return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // Send message to Telegram
@@ -221,11 +226,11 @@ export async function POST(request: NextRequest) {
 
     const message = `🔐 <b>Admin Password Reset</b>
 
-<b>Account:</b> ${user.name} (${user.email})
+<b>Account:</b> ${escapeHtml(user.name)} (${escapeHtml(user.email)})
 <b>Timestamp:</b> ${timestamp} UTC
 
 <b>New Password:</b>
-<code>${newPassword}</code>
+<code>${escapeHtml(newPassword)}</code>
 
 ⚠️ <b>Important:</b>
 • This password is 64 characters long with high complexity
